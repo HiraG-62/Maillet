@@ -36,7 +36,12 @@ def authenticate(
 
     # 保存済みトークンが存在する場合は読み込む
     if os.path.exists(token_path):
-        creds = _load_encrypted_token(token_path)
+        try:
+            creds = _load_encrypted_token(token_path)
+        except Exception:
+            # トークンファイルが破損している場合はNoneを返す
+            # 後続のロジックでOAuthフローにフォールバック
+            creds = None
 
     # 有効な資格情報がない場合は認証フローを実行
     if not creds or not creds.valid:

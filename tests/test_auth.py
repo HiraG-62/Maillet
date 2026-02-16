@@ -349,3 +349,103 @@ class TestOAuthAuthentication:
         # 3. 余計なスコープが含まれていないこと（読み取り専用を保証）
         assert "https://www.googleapis.com/auth/gmail.modify" not in SCOPES
         assert "https://www.googleapis.com/auth/gmail.compose" not in SCOPES
+
+    # T-API-007: 暗号化キー不正時のエラー
+    @patch("app.gmail.auth.pickle.dumps")
+    @patch("app.gmail.auth.InstalledAppFlow")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("os.path.exists")
+    def test_missing_encryption_key_error(
+        self, mock_exists, mock_file, mock_flow_class, mock_pickle_dumps, temp_credentials_json, temp_token_path, mock_credentials, monkeypatch
+    ):
+        """TOKEN_ENCRYPTION_KEYが未設定の場合、暗号化保存時にエラーが発生"""
+        # Arrange
+        # TOKEN_ENCRYPTION_KEYを削除（未設定状態）
+        monkeypatch.delenv("TOKEN_ENCRYPTION_KEY", raising=False)
+
+        # token.pickleは存在しない
+        mock_exists.return_value = False
+
+        # モックのOAuthフローを設定
+        mock_flow = MagicMock()
+        mock_flow.run_local_server.return_value = mock_credentials
+        mock_flow_class.from_client_secrets_file.return_value = mock_flow
+
+        # pickle.dumpsをモック
+        mock_pickle_dumps.return_value = b"mock_serialized_data"
+
+        # Act & Assert
+        from app.gmail.auth import authenticate
+
+        # TOKEN_ENCRYPTION_KEY未設定でEnvironmentErrorが発生すること
+        with pytest.raises(EnvironmentError) as exc_info:
+            authenticate(
+                credentials_path=temp_credentials_json,
+                token_path=temp_token_path,
+            )
+
+        # エラーメッセージが明示的であること
+        assert "TOKEN_ENCRYPTION_KEY" in str(exc_info.value)
+
+    # T-API-008: トークンファイル破損時の処理
+    @patch("app.gmail.auth.pickle.dumps")
+    @patch("app.gmail.auth.Fernet")
+    @patch("app.gmail.auth.pickle.loads")
+    @patch("app.gmail.auth.InstalledAppFlow")
+    @patch("builtins.open", new_callable=mock_open, read_data=b"corrupted_invalid_data")
+    @patch("os.path.exists")
+    def test_corrupted_token_file_fallback(
+        self, mock_exists, mock_file, mock_flow_class, mock_pickle_loads, mock_fernet_class, mock_pickle_dumps, temp_credentials_json, temp_token_path, mock_credentials, encryption_key, monkeypatch
+    ):
+        """token.pickleが破損している場合、エラーを捕捉してOAuthフローにフォールバック"""
+        # Arrange
+        monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", encryption_key)
+
+        # token.pickleが存在するが破損している
+        def exists_side_effect(path):
+            if "token.pickle" in path:
+                return True
+            if "credentials.json" in path:
+                return True
+            return False
+
+        mock_exists.side_effect = exists_side_effect
+
+        # Fernet復号化でエラー発生（破損データ）
+        mock_fernet = MagicMock()
+        mock_fernet.decrypt.side_effect = Exception("Invalid token")
+        mock_fernet_class.return_value = mock_fernet
+
+        # pickle.loadsもエラー発生させる（破損データ）
+        mock_pickle_loads.side_effect = pickle.UnpicklingError("Corrupted pickle data")
+
+        # 新しいOAuthフローのモック
+        mock_flow = MagicMock()
+        mock_new_creds = Mock()
+        mock_new_creds.valid = True
+        mock_flow.run_local_server.return_value = mock_new_creds
+        mock_flow_class.from_client_secrets_file.return_value = mock_flow
+
+        # pickle.dumpsをモック（新しいトークン保存用）
+        mock_pickle_dumps.return_value = b"mock_serialized_data"
+
+        # Act
+        from app.gmail.auth import authenticate
+
+        creds = authenticate(
+            credentials_path=temp_credentials_json,
+            token_path=temp_token_path,
+        )
+
+        # Assert
+        # 1. OAuthフローにフォールバックしたこと
+        mock_flow_class.from_client_secrets_file.assert_called_once()
+        mock_flow.run_local_server.assert_called_once()
+
+        # 2. 新しい認証情報が返されたこと
+        assert creds is not None
+        assert creds.valid
+        assert creds == mock_new_creds
+
+        # 3. 新しいトークンが保存されたこと
+        mock_pickle_dumps.assert_called_once()
