@@ -5,7 +5,9 @@
 タスクID: subtask_004c
 """
 
+import re
 from typing import Optional
+from datetime import datetime
 
 
 # 信頼ドメイン定義（設計書4.3参照）
@@ -78,4 +80,43 @@ def detect_card_company(subject: str, from_address: str) -> Optional[str]:
                 return company
 
     # 判別不能
+    return None
+
+
+def extract_amount(email_body: str, card_company: str) -> Optional[int]:
+    """
+    金額抽出（カード会社別パターンマッチング）
+
+    Args:
+        email_body: メール本文
+        card_company: カード会社名 (例: "三井住友")
+
+    Returns:
+        Optional[int]: 抽出された金額（円）、抽出失敗時はNone
+
+    対応テストケース: T-PARSE-030〜082
+    """
+    # 三井住友カード: "利用金額: 1,234円"
+    if card_company == "三井住友":
+        match = re.search(r'利用金額[:：]\s*([0-9,]+)円', email_body)
+        if match:
+            amount_str = match.group(1).replace(',', '')
+            return int(amount_str)
+
+    return None
+
+
+def extract_transaction_date(email_body: str, card_company: str) -> Optional[datetime]:
+    """
+    利用日時抽出（カード会社別パターンマッチング）
+
+    Args:
+        email_body: メール本文
+        card_company: カード会社名 (例: "三井住友")
+
+    Returns:
+        Optional[datetime]: 抽出された日時、抽出失敗時はNone
+
+    対応テストケース: T-PARSE-090〜122
+    """
     return None
