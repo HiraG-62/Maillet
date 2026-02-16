@@ -123,3 +123,166 @@ class TestDuplicateDetection:
         assert original is not None
         assert original.card_company == "三井住友カード"
         assert original.amount == 8000
+
+    def test_edge_017_duplicate_gmail_message_id_twice(self, session):
+        """
+        T-EDGE-017: 同一Gmail message IDを2回取得.
+
+        When the same Gmail message is retrieved twice,
+        the second attempt should be skipped with INTEGRITY ERROR.
+        """
+        # First retrieval - should succeed
+        transaction_data1 = {
+            "card_company": "楽天カード",
+            "amount": 15000,
+            "transaction_date": datetime(2024, 3, 5, 18, 20),
+            "merchant": "ユニクロ",
+            "email_subject": "【楽天カード】カードご利用のお知らせ",
+            "email_from": "info@mail.rakuten-card.co.jp",
+            "gmail_message_id": "msg_edge_017",
+        }
+        result1 = save_transaction(session, transaction_data1)
+        assert result1 is not None
+        assert result1.amount == 15000
+
+        # Second retrieval of the same message - should skip
+        result2 = save_transaction(session, transaction_data1)
+        assert result2 is None
+
+        # Verify only one transaction exists
+        all_transactions = session.query(CardTransaction).all()
+        assert len(all_transactions) == 1
+
+    def test_edge_018_rakuten_preliminary_to_final_different_amount(self, session):
+        """
+        T-EDGE-018: 楽天カード速報版→確定版（金額異なる）.
+
+        When preliminary notification (速報版) is received first,
+        then final notification (確定版) with different amount arrives,
+        only the preliminary version should be saved.
+        """
+        # Preliminary notification (速報版) - should succeed
+        preliminary_data = {
+            "card_company": "楽天カード",
+            "amount": 4980,
+            "transaction_date": datetime(2024, 4, 10, 14, 15),
+            "merchant": "Amazon",
+            "email_subject": "【楽天カード】カードご利用のお知らせ（速報版）",
+            "email_from": "info@mail.rakuten-card.co.jp",
+            "gmail_message_id": "msg_rakuten_001",  # Same message ID
+        }
+        result1 = save_transaction(session, preliminary_data)
+        assert result1 is not None
+        assert result1.amount == 4980
+
+        # Final notification (確定版) with different amount - should skip
+        final_data = {
+            "card_company": "楽天カード",
+            "amount": 5000,  # Different amount!
+            "transaction_date": datetime(2024, 4, 10, 14, 15),
+            "merchant": "Amazon",
+            "email_subject": "【楽天カード】カードご利用のお知らせ（確定版）",
+            "email_from": "info@mail.rakuten-card.co.jp",
+            "gmail_message_id": "msg_rakuten_001",  # Same message ID - duplicate!
+        }
+        result2 = save_transaction(session, final_data)
+        assert result2 is None
+
+        # Verify only preliminary version is saved
+        saved_transaction = session.query(CardTransaction).filter_by(
+            gmail_message_id="msg_rakuten_001"
+        ).first()
+        assert saved_transaction is not None
+        assert saved_transaction.amount == 4980  # Preliminary amount
+        assert "速報版" in saved_transaction.email_subject
+
+        # Verify total count
+        assert session.query(CardTransaction).count() == 1
+
+    def test_edge_019_rakuten_preliminary_to_final_same_amount(self, session):
+        """
+        T-EDGE-019: 楽天カード速報版→確定版（金額同じ）.
+
+        When preliminary and final notifications have the same amount,
+        only the preliminary version should be saved.
+        """
+        # Preliminary notification (速報版) - should succeed
+        preliminary_data = {
+            "card_company": "楽天カード",
+            "amount": 7500,
+            "transaction_date": datetime(2024, 5, 20, 10, 30),
+            "merchant": "ヨドバシカメラ",
+            "email_subject": "【楽天カード】カードご利用のお知らせ（速報版）",
+            "email_from": "info@mail.rakuten-card.co.jp",
+            "gmail_message_id": "msg_rakuten_002",
+        }
+        result1 = save_transaction(session, preliminary_data)
+        assert result1 is not None
+        assert result1.amount == 7500
+
+        # Final notification (確定版) with same amount - should skip
+        final_data = {
+            "card_company": "楽天カード",
+            "amount": 7500,  # Same amount
+            "transaction_date": datetime(2024, 5, 20, 10, 30),
+            "merchant": "ヨドバシカメラ",
+            "email_subject": "【楽天カード】カードご利用のお知らせ（確定版）",
+            "email_from": "info@mail.rakuten-card.co.jp",
+            "gmail_message_id": "msg_rakuten_002",  # Duplicate!
+        }
+        result2 = save_transaction(session, final_data)
+        assert result2 is None
+
+        # Verify only preliminary version is saved
+        saved_transaction = session.query(CardTransaction).filter_by(
+            gmail_message_id="msg_rakuten_002"
+        ).first()
+        assert saved_transaction is not None
+        assert saved_transaction.amount == 7500
+        assert "速報版" in saved_transaction.email_subject
+
+        # Verify total count
+        assert session.query(CardTransaction).count() == 1
+
+    def test_parse_173_duplicate_skip_log_confirmation(self, session, caplog):
+        """
+        T-PARSE-173: 重複スキップログ確認.
+
+        When a duplicate email is processed, the system should log:
+        "Duplicate email skipped: msg_001"
+        """
+        import logging
+
+        caplog.set_level(logging.INFO)
+
+        # First email - should succeed
+        email_data1 = {
+            "card_company": "JCBカード",
+            "amount": 12000,
+            "transaction_date": datetime(2024, 6, 15, 16, 45),
+            "merchant": "家電量販店",
+            "email_subject": "【JCB】カード利用のお知らせ",
+            "email_from": "noreply@jcb.co.jp",
+            "gmail_message_id": "msg_001",
+        }
+        result1 = save_transaction(session, email_data1)
+        assert result1 is not None
+
+        # Clear previous logs
+        caplog.clear()
+
+        # Duplicate email - should skip and log
+        email_data2 = {
+            "card_company": "JCBカード",
+            "amount": 12000,
+            "transaction_date": datetime(2024, 6, 15, 16, 45),
+            "merchant": "家電量販店",
+            "email_subject": "【JCB】カード利用のお知らせ",
+            "email_from": "noreply@jcb.co.jp",
+            "gmail_message_id": "msg_001",  # Duplicate!
+        }
+        result2 = save_transaction(session, email_data2)
+        assert result2 is None
+
+        # Verify log message
+        assert "Duplicate email skipped: msg_001" in caplog.text
