@@ -7,6 +7,7 @@ import pickle
 from pathlib import Path
 
 from cryptography.fernet import Fernet
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
@@ -41,7 +42,12 @@ def authenticate(
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             # トークンの自動リフレッシュ
-            creds.refresh(Request())
+            try:
+                creds.refresh(Request())
+            except RefreshError:
+                # リフレッシュトークンが無効な場合、OAuthフローにフォールバック
+                flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
+                creds = flow.run_local_server(port=0)
         else:
             # 初回OAuth認証フロー
             flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)

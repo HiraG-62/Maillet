@@ -254,3 +254,79 @@ class TestOAuthAuthentication:
         # 4. リフレッシュ後の認証情報が返されたこと
         assert creds is not None
         assert creds.valid
+
+    # T-API-005: リフレッシュトークン失効時の処理
+    @patch("app.gmail.auth.pickle.dumps")
+    @patch("app.gmail.auth.Fernet")
+    @patch("app.gmail.auth.pickle.loads")
+    @patch("app.gmail.auth.Request")
+    @patch("app.gmail.auth.InstalledAppFlow")
+    @patch("builtins.open", new_callable=mock_open, read_data=b"encrypted_token_data")
+    @patch("os.path.exists")
+    def test_refresh_error_fallback_to_oauth(
+        self, mock_exists, mock_file, mock_flow_class, mock_request_class, mock_pickle_loads, mock_fernet_class, mock_pickle_dumps, temp_credentials_json, temp_token_path, encryption_key, monkeypatch
+    ):
+        """リフレッシュトークンが無効な場合、RefreshErrorが発生し、再認証フローにフォールバック"""
+        # Arrange
+        monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", encryption_key)
+
+        # token.pickleが存在する
+        def exists_side_effect(path):
+            if "token.pickle" in path:
+                return True
+            if "credentials.json" in path:
+                return True
+            return False
+
+        mock_exists.side_effect = exists_side_effect
+
+        # 期限切れのトークンをモック
+        mock_expired_creds = Mock()
+        mock_expired_creds.valid = False
+        mock_expired_creds.expired = True
+        mock_expired_creds.refresh_token = "invalid_refresh_token"
+
+        # refresh()でRefreshError発生
+        mock_expired_creds.refresh.side_effect = RefreshError("Invalid refresh token")
+
+        mock_pickle_loads.return_value = mock_expired_creds
+
+        # Fernet復号化をモック
+        mock_fernet = MagicMock()
+        mock_fernet.decrypt.return_value = b"decrypted_pickle_data"
+        mock_fernet_class.return_value = mock_fernet
+
+        # pickle.dumpsをモック
+        mock_pickle_dumps.return_value = b"mock_serialized_data"
+
+        # Request()をモック
+        mock_request = Mock()
+        mock_request_class.return_value = mock_request
+
+        # 新しいOAuthフローのモック
+        mock_flow = MagicMock()
+        mock_new_creds = Mock()
+        mock_new_creds.valid = True
+        mock_flow.run_local_server.return_value = mock_new_creds
+        mock_flow_class.from_client_secrets_file.return_value = mock_flow
+
+        # Act
+        from app.gmail.auth import authenticate
+
+        creds = authenticate(
+            credentials_path=temp_credentials_json,
+            token_path=temp_token_path,
+        )
+
+        # Assert
+        # 1. refresh()が試行されたこと
+        mock_expired_creds.refresh.assert_called_once()
+
+        # 2. RefreshErrorが捕捉され、OAuthフローにフォールバック
+        mock_flow_class.from_client_secrets_file.assert_called_once()
+        mock_flow.run_local_server.assert_called_once()
+
+        # 3. 新しい認証情報が返されたこと
+        assert creds is not None
+        assert creds.valid
+        assert creds == mock_new_creds
