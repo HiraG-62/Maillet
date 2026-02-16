@@ -99,3 +99,40 @@ class TestOAuthAuthentication:
         # 3. 認証情報が返されたこと
         assert creds is not None
         assert creds.valid
+
+    # T-API-002: トークンの暗号化保存
+    @patch("app.gmail.auth.pickle.dumps")
+    def test_token_encryption_on_save(self, mock_pickle_dumps, temp_credentials_json, temp_token_path, encryption_key, monkeypatch, mock_credentials):
+        """認証成功時にtoken.pickleが暗号化されて保存される"""
+        # Arrange
+        monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", encryption_key)
+
+        # pickle.dumpsの戻り値をモック
+        mock_serialized_data = b"mock_credential_data"
+        mock_pickle_dumps.return_value = mock_serialized_data
+
+        # Act: _save_encrypted_tokenを直接テスト
+        from app.gmail.auth import _save_encrypted_token
+
+        _save_encrypted_token(mock_credentials, temp_token_path)
+
+        # Assert
+        # 1. pickle.dumpsが呼ばれたこと
+        mock_pickle_dumps.assert_called_once_with(mock_credentials)
+
+        # 2. トークンファイルが作成されたこと
+        assert os.path.exists(temp_token_path)
+
+        # 3. ファイルが暗号化されていること
+        with open(temp_token_path, "rb") as f:
+            encrypted_data = f.read()
+
+        # Fernetで復号化できること
+        fernet = Fernet(encryption_key.encode())
+        decrypted_data = fernet.decrypt(encrypted_data)
+
+        # 復号化されたデータが元のシリアライズデータと一致すること
+        assert decrypted_data == mock_serialized_data
+
+        # 4. 生データとして直接読めないこと（暗号化されている）
+        assert encrypted_data != mock_serialized_data
