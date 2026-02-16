@@ -31,24 +31,28 @@ def test_sec_011_token_encryption():
     """
     from app.gmail.auth import _save_encrypted_token, _load_encrypted_token
     from cryptography.fernet import Fernet
+    from google.oauth2.credentials import Credentials
     import tempfile
-    from unittest.mock import Mock
 
     # 暗号化キーを生成
     encryption_key = Fernet.generate_key()
     os.environ["TOKEN_ENCRYPTION_KEY"] = encryption_key.decode()
 
-    # モック資格情報を作成
-    mock_creds = Mock()
-    mock_creds.token = "test_access_token"
-    mock_creds.refresh_token = "test_refresh_token"
+    # 実際のCredentialsオブジェクトを作成
+    test_creds = Credentials(
+        token="test_access_token",
+        refresh_token="test_refresh_token",
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id="test_client_id",
+        client_secret="test_client_secret"
+    )
 
     # 一時ファイルに暗号化保存
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pickle") as tmp:
         token_path = tmp.name
 
     try:
-        _save_encrypted_token(mock_creds, token_path)
+        _save_encrypted_token(test_creds, token_path)
 
         # ファイルが存在することを確認
         assert os.path.exists(token_path), "Token file should exist"
@@ -82,7 +86,8 @@ def test_sec_013_gitignore_credentials():
     OWASP: A05:2021 セキュリティ設定ミス
     優先度: Critical
     """
-    gitignore_path = Path("/mnt/e/dev/card-spending-tracker/.gitignore")
+    # プロジェクトルートからの相対パス使用（Docker環境対応）
+    gitignore_path = Path(".gitignore")
     assert gitignore_path.exists(), ".gitignore file should exist"
 
     gitignore_content = gitignore_path.read_text()

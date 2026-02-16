@@ -137,6 +137,13 @@ def extract_amount(email_body: str, card_company: str) -> Optional[int]:
             amount_str = match.group(1).replace(',', '')
             return int(amount_str)
 
+    # AMEX: "ご利用金額: 8,900円" or "金額: ¥ 5,000円" or "金額: 3,000円"
+    elif card_company == "AMEX":
+        match = re.search(r'(?:ご利用金額|金額)[:：]\s*¥?\s*([0-9,]+)円?', email_body)
+        if match:
+            amount_str = match.group(1).replace(',', '')
+            return int(amount_str)
+
     # 汎用パターン（フォールバック）— 会社別パターンが全て失敗した場合
     match = re.search(FALLBACK_AMOUNT_PATTERN, email_body)
     if match:
@@ -165,6 +172,14 @@ def extract_transaction_date(email_body: str, card_company: str) -> Optional[dat
         match = re.search(r'利用日[:：]\s*(\d{4})/(\d{2})/(\d{2})\s+(\d{2}):(\d{2})', email_body)
         if match:
             year, month, day, hour, minute = map(int, match.groups())
+            return datetime(year, month, day, hour, minute)
+
+    # 汎用パターン（フォールバック）— 会社別パターンが全て失敗した場合
+    for pattern in FALLBACK_DATETIME_PATTERNS:
+        match = re.search(pattern, email_body)
+        if match:
+            year, month, day, hour, minute = map(int, match.groups())
+            logger.warning(f"Fallback pattern used for datetime extraction (company: {card_company})")
             return datetime(year, month, day, hour, minute)
 
     return None

@@ -136,7 +136,7 @@ def test_summary_command_default(runner):
         mock_db.return_value = mock_db_instance
 
         # Mock aggregation service
-        with patch("app.cli.commands.get_all_time_summary") as mock_summary:
+        with patch("app.cli.commands.get_all_time_summary_by_card") as mock_summary:
             mock_summary.return_value = {
                 "三井住友": {"total": 10000, "count": 5, "average": 2000},
                 "楽天": {"total": 5000, "count": 2, "average": 2500},
@@ -216,7 +216,7 @@ def test_summary_command_no_data(runner):
         mock_db.return_value = mock_db_instance
 
         # Mock aggregation service to return empty dict
-        with patch("app.cli.commands.get_all_time_summary") as mock_summary:
+        with patch("app.cli.commands.get_all_time_summary_by_card") as mock_summary:
             mock_summary.return_value = {}
 
             result = runner.invoke(cli, ["summary"])
@@ -233,7 +233,10 @@ def test_summary_command_no_data(runner):
 
 def test_setup_command_success(runner):
     """Test setup command with successful OAuth flow."""
-    with patch("app.cli.commands.authenticate") as mock_auth:
+    with patch("app.cli.commands.authenticate") as mock_auth, \
+         patch("app.cli.commands.os.getenv") as mock_getenv:
+        # Mock environment variable
+        mock_getenv.return_value = "test_encryption_key"
         # Mock authenticate to complete successfully
         mock_auth.return_value = MagicMock()
 
@@ -269,7 +272,10 @@ def test_setup_command_token_encryption_key_missing(runner):
 
 def test_setup_command_user_cancellation(runner):
     """Test setup command when user cancels OAuth flow."""
-    with patch("app.cli.commands.authenticate") as mock_auth:
+    with patch("app.cli.commands.authenticate") as mock_auth, \
+         patch("app.cli.commands.os.getenv") as mock_getenv:
+        # Mock environment variable
+        mock_getenv.return_value = "test_encryption_key"
         # Mock authenticate to raise user cancellation error
         mock_auth.side_effect = Exception("User denied access")
 
