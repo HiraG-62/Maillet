@@ -151,20 +151,84 @@ class TestTransactionsSummaryEndpoint:
 
 
 class TestSyncEndpoint:
-    """Tests for POST /api/sync endpoint."""
+    """Tests for POST /api/sync endpoint with Gmail integration."""
 
-    def test_sync_stub_implementation(self):
-        """POST /api/sync returns stub response (not implemented)."""
+    @patch("app.api.routes.sync.authenticate")
+    @patch("app.api.routes.sync.build")
+    @patch("app.api.routes.sync.get_session")
+    def test_sync_gmail_success_with_messages(
+        self, mock_get_session, mock_build, mock_authenticate
+    ):
+        """POST /api/sync successfully syncs messages from Gmail."""
         from app.api.main import app
 
-        client = TestClient(app)
-        response = client.post("/api/sync")
+        # Mock Gmail API responses
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
 
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "success"
-        assert data["new_transactions"] == 0
-        assert "not implemented" in data["message"].lower()
+        # Mock GmailClient.list_messages to return 2 messages
+        mock_messages = [{"id": "msg1"}, {"id": "msg2"}]
+
+        # Mock GmailClient.get_message responses
+        def mock_get_message_side_effect(msg_id):
+            return {
+                "id": msg_id,
+                "payload": {
+                    "headers": [
+                        {"name": "Subject", "value": "三井住友カード利用通知"},
+                        {"name": "From", "value": "notify@contact.vpass.ne.jp"},
+                    ]
+                },
+                "snippet": "ご利用金額: ¥5,000円 利用日時: 2026-02-15 14:30 ご利用先: Amazon",
+            }
+
+        # Mock session for database operations
+        mock_session = MagicMock()
+        mock_get_session.return_value.__enter__.return_value = mock_session
+
+        # Patch list_messages and get_message methods
+        with patch("app.api.routes.sync.GmailClient") as MockGmailClient:
+            mock_client = MockGmailClient.return_value
+            mock_client.list_messages.return_value = mock_messages
+            mock_client.get_message.side_effect = mock_get_message_side_effect
+
+            # Patch save_transaction to return success
+            with patch("app.api.routes.sync.save_transaction") as mock_save:
+                mock_save.return_value = MagicMock()  # Return non-None for success
+
+                client = TestClient(app)
+                response = client.post("/api/sync")
+
+                assert response.status_code == 200
+                data = response.json()
+                assert data["status"] == "success"
+                assert data["new_transactions"] == 2
+                assert "2 new transactions" in data["message"]
+
+    @patch("app.api.routes.sync.authenticate")
+    @patch("app.api.routes.sync.build")
+    @patch("app.api.routes.sync.get_session")
+    def test_sync_gmail_no_messages(
+        self, mock_get_session, mock_build, mock_authenticate
+    ):
+        """POST /api/sync returns success when no messages found."""
+        from app.api.main import app
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+
+        with patch("app.api.routes.sync.GmailClient") as MockGmailClient:
+            mock_client = MockGmailClient.return_value
+            mock_client.list_messages.return_value = []  # No messages
+
+            client = TestClient(app)
+            response = client.post("/api/sync")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "success"
+            assert data["new_transactions"] == 0
+            assert "No new emails" in data["message"]
 
     def test_sync_method_not_allowed(self):
         """GET /api/sync returns 405 method not allowed."""
