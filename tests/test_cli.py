@@ -182,12 +182,11 @@ def test_summary_command_with_card_option(runner):
         mock_db_instance.get_session.return_value.__enter__.return_value = mock_session
         mock_db.return_value = mock_db_instance
 
-        # Mock aggregation service
-        with patch("app.cli.commands.get_monthly_summary") as mock_summary:
+        # Mock aggregation service - all time summary by card
+        with patch("app.cli.commands.get_all_time_summary_by_card") as mock_summary:
             mock_summary.return_value = {
-                "total": 10000,
-                "count": 5,
-                "average": 2000,
+                "三井住友": {"total": 10000, "count": 5, "average": 2000},
+                "楽天": {"total": 5000, "count": 2, "average": 2500},
             }
 
             result = runner.invoke(cli, ["summary", "--card", "三井住友"])
