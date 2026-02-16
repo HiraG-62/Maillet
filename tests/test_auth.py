@@ -330,3 +330,22 @@ class TestOAuthAuthentication:
         assert creds is not None
         assert creds.valid
         assert creds == mock_new_creds
+
+    # T-API-006: スコープ検証
+    def test_correct_scope_used(self):
+        """正しいスコープ（gmail.readonly）で認証されることを確認"""
+        # Act
+        from app.gmail.auth import SCOPES
+
+        # Assert
+        # 1. SCOPESが正しく定義されていること
+        assert SCOPES is not None
+        assert isinstance(SCOPES, list)
+        assert len(SCOPES) == 1
+
+        # 2. gmail.readonlyスコープが含まれていること
+        assert "https://www.googleapis.com/auth/gmail.readonly" in SCOPES
+
+        # 3. 余計なスコープが含まれていないこと（読み取り専用を保証）
+        assert "https://www.googleapis.com/auth/gmail.modify" not in SCOPES
+        assert "https://www.googleapis.com/auth/gmail.compose" not in SCOPES
