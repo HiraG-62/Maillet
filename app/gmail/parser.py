@@ -133,4 +133,11 @@ def extract_transaction_date(email_body: str, card_company: str) -> Optional[dat
 
     対応テストケース: T-PARSE-090〜122
     """
+    # 三井住友カード: "利用日: 2026/02/15 14:30"
+    if card_company == "三井住友":
+        match = re.search(r'利用日[:：]\s*(\d{4})/(\d{2})/(\d{2})\s+(\d{2}):(\d{2})', email_body)
+        if match:
+            year, month, day, hour, minute = map(int, match.groups())
+            return datetime(year, month, day, hour, minute)
+
     return None
