@@ -37,7 +37,9 @@ class TestGmailClientListMessages:
             ],
             "resultSizeEstimate": 2,
         }
-        gmail_client.service.users().messages().list().execute.return_value = mock_response
+        mock_list_call = Mock()
+        mock_list_call.execute.return_value = mock_response
+        gmail_client.service.users().messages().list.return_value = mock_list_call
 
         # Act
         result = gmail_client.list_messages(query=query, max_results=100)
@@ -100,8 +102,10 @@ class TestGmailClientListMessages:
         }
 
         # executeメソッドが呼ばれるたびに異なるレスポンスを返す
+        mock_list_call = Mock()
+        mock_list_call.execute.side_effect = [page1_response, page2_response]
         mock_list = gmail_client.service.users().messages().list
-        mock_list().execute.side_effect = [page1_response, page2_response]
+        mock_list.return_value = mock_list_call
 
         result = gmail_client.list_messages(query=query, max_results=200)
 
@@ -189,7 +193,9 @@ class TestGmailClientGetMessage:
             },
             "snippet": "メールスニペット...",
         }
-        gmail_client.service.users().messages().get().execute.return_value = mock_message
+        mock_get_call = Mock()
+        mock_get_call.execute.return_value = mock_message
+        gmail_client.service.users().messages().get.return_value = mock_get_call
 
         result = gmail_client.get_message(message_id=message_id, format="full")
 
