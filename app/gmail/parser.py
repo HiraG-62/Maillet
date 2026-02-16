@@ -33,7 +33,8 @@ CARD_KEYWORDS = {
 }
 
 # 汎用パターン（フォールバック用）— 会社別パターンが全て失敗した場合に使用
-FALLBACK_AMOUNT_PATTERN = r'(?:ご?利用金額|金額|お支払い金額)[:：]\s*¥?\s*([0-9,]+)円?'
+# T-EDGE-007: 厳密なパターン（数値と円の間に不正文字を許容しない）
+FALLBACK_AMOUNT_PATTERN = r'(?:ご?利用金額|金額|お支払い金額)[:：]\s*¥?\s*([0-9,]+)\s*円'
 FALLBACK_DATETIME_PATTERNS = [
     r'(?:ご?利用日時?|利用日)[:：]\s*(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})',  # ISO形式
     r'(?:ご?利用日時?|利用日)[:：]\s*(\d{4})/(\d{2})/(\d{2})\s+(\d{2}):(\d{2})',  # スラッシュ形式
@@ -113,7 +114,7 @@ def extract_amount(email_body: str, card_company: str) -> Optional[int]:
 
     # 三井住友カード: "利用金額: 1,234円"
     if card_company == "三井住友":
-        match = re.search(r'利用金額[:：]\s*([0-9,]+)円', email_body)
+        match = re.search(r'利用金額[:：]\s*([0-9,]+)\s*円', email_body)
         if match:
             amount_str = match.group(1).replace(',', '')
             amount_value = int(amount_str)

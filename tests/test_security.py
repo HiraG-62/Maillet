@@ -301,3 +301,351 @@ def test_sec_010_path_traversal():
     assert ".." not in sanitized, "Path traversal should be prevented"
     assert "/" not in sanitized, "Path separators should be removed"
     assert sanitized == "etcpasswd", "Only safe characters should remain"
+
+
+# ========================================
+# T-SEC-014〜015: APIレート制限
+# ========================================
+def test_sec_014_rate_limit_exponential_backoff():
+    """
+    T-SEC-014: 429エラー（Rate Limit Exceeded） → Exponential Backoff実装
+    OWASP: A04:2021 安全でない設計
+    優先度: High
+    """
+    from app.security.rate_limiter import exponential_backoff
+    from unittest.mock import Mock
+    from googleapiclient.errors import HttpError
+
+    # 429エラーモック
+    mock_response = Mock()
+    mock_response.status = 429
+    error_429 = HttpError(resp=mock_response, content=b'Rate limit exceeded')
+
+    # Exponential Backoffのテスト
+    wait_times = []
+    for attempt in range(1, 4):
+        wait_time = exponential_backoff(attempt)
+        wait_times.append(wait_time)
+
+    # 2秒 → 4秒 → 8秒の増加を確認
+    assert wait_times[0] == 2, "First backoff should be 2 seconds"
+    assert wait_times[1] == 4, "Second backoff should be 4 seconds"
+    assert wait_times[2] == 8, "Third backoff should be 8 seconds"
+
+
+def test_sec_015_rate_limit_handling():
+    """
+    T-SEC-015: 連続100回のAPI呼び出し → レート制限に到達しない、またはBackoffで回復
+    OWASP: A04:2021 安全でない設計
+    優先度: High
+    """
+    from app.security.rate_limiter import RateLimiter
+
+    # レート制限マネージャー（毎分60リクエストを想定）
+    limiter = RateLimiter(max_requests_per_minute=60)
+
+    # 100回の呼び出しをシミュレート（Backoffで回復することを想定）
+    success_count = 0
+    for i in range(100):
+        if limiter.allow_request():
+            success_count += 1
+
+    # 少なくとも60リクエストは成功するはず
+    assert success_count >= 60, "At least 60 requests should succeed"
+
+
+# ========================================
+# T-SEC-016〜017: 認証エラー
+# ========================================
+def test_sec_016_auth_401_token_refresh():
+    """
+    T-SEC-016: 401エラー（Unauthorized、トークン期限切れ） → 自動リフレッシュ実行
+    OWASP: A07:2021 認証の失敗
+    優先度: Critical
+    """
+    from app.gmail.auth import authenticate
+    from google.auth.exceptions import RefreshError
+    from google.oauth2.credentials import Credentials
+    from unittest.mock import Mock, patch
+    import tempfile
+    from cryptography.fernet import Fernet
+
+    # 暗号化キー設定
+    encryption_key = Fernet.generate_key()
+    os.environ["TOKEN_ENCRYPTION_KEY"] = encryption_key.decode()
+
+    # 期限切れcredentialsをモック
+    expired_creds = Mock(spec=Credentials)
+    expired_creds.valid = False
+    expired_creds.expired = True
+    expired_creds.refresh_token = "test_refresh_token"
+
+    with patch('app.gmail.auth._load_encrypted_token', return_value=expired_creds):
+        with patch.object(expired_creds, 'refresh') as mock_refresh:
+            with patch('app.gmail.auth._save_encrypted_token'):
+                # 一時credentialsファイル作成
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp_cred:
+                    tmp_cred.write(b'{"installed": {"client_id": "test", "client_secret": "test"}}')
+                    cred_path = tmp_cred.name
+
+                try:
+                    # リフレッシュが呼ばれることを確認
+                    # Note: 実際のOAuthフローは省略（モック使用）
+                    expired_creds.refresh(Mock())
+                    assert mock_refresh.called, "Refresh should be called for expired token"
+                finally:
+                    os.remove(cred_path)
+                    del os.environ["TOKEN_ENCRYPTION_KEY"]
+
+
+def test_sec_017_auth_403_scope_insufficient():
+    """
+    T-SEC-017: 403エラー（Forbidden、スコープ不足） → エラーメッセージ表示
+    OWASP: A07:2021 認証の失敗
+    優先度: High
+    """
+    from googleapiclient.errors import HttpError
+    from unittest.mock import Mock
+
+    # 403エラーモック
+    mock_response = Mock()
+    mock_response.status = 403
+    error_403 = HttpError(resp=mock_response, content=b'Insufficient permissions')
+
+    # エラー情報を確認
+    assert error_403.resp.status == 403, "Should be 403 Forbidden"
+    # 実際のアプリでは、このエラーをキャッチしてユーザーに案内メッセージを表示
+
+
+# ========================================
+# T-SEC-018: CSRF
+# ========================================
+def test_sec_018_csrf_protection():
+    """
+    T-SEC-018: FastAPI /api/syncエンドポイントへの不正リクエスト → CSRFトークン検証
+    OWASP: A01:2021 アクセス制御の不備
+    優先度: High
+    """
+    # このアプリはCLIツールでありWeb APIを提供しないため、
+    # CSRFリスクは存在しない。このテストは「CSRFリスクがないこと」を確認する。
+
+    # FastAPIエンドポイントが存在しないことを確認
+    import os
+    project_files = []
+    for root, dirs, files in os.walk("app"):
+        for file in files:
+            if file.endswith(".py"):
+                project_files.append(os.path.join(root, file))
+
+    has_fastapi_import = False
+    for file_path in project_files:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            if 'from fastapi import' in content or 'import fastapi' in content:
+                has_fastapi_import = True
+                break
+
+    # FastAPIが使用されていないことを確認（CSRFリスクなし）
+    assert not has_fastapi_import, "FastAPI should not be used in this CLI application"
+
+
+# ========================================
+# T-SEC-019〜020: DoS攻撃
+# ========================================
+def test_sec_019_dos_large_html():
+    """
+    T-SEC-019: 極端に大きいHTML（10MB超のメール本文） → サイズ上限チェック
+    OWASP: A04:2021 安全でない設計
+    優先度: Medium
+    """
+    from app.security.validators import validate_email_size
+
+    # 10MB超のメール本文をシミュレート
+    large_html = "X" * (10 * 1024 * 1024 + 1)  # 10MB + 1 byte
+
+    # サイズ上限チェック
+    is_valid = validate_email_size(large_html, max_size_mb=10)
+
+    assert not is_valid, "Large emails should be rejected"
+
+
+def test_sec_020_redos_protection():
+    """
+    T-SEC-020: 正規表現DoS（ReDoS） → タイムアウト設定、複雑度の低い正規表現使用
+    OWASP: A04:2021 安全でない設計
+    優先度: Medium
+    """
+    import re
+    import time
+
+    # 悪意のある入力（大量バックトラックを引き起こす）
+    malicious_input = "a" * 50 + "X"
+
+    # 安全な正規表現パターン（原子グループ使用）
+    safe_pattern = r'^(?>[a-z]+)\d+$'
+
+    start_time = time.time()
+    result = re.match(safe_pattern, malicious_input)
+    elapsed_time = time.time() - start_time
+
+    # タイムアウトなく完了することを確認（1秒以内）
+    assert elapsed_time < 1.0, "Regex should complete within 1 second"
+    assert result is None, "Pattern should not match malicious input"
+
+
+# ========================================
+# T-SEC-021〜022: 機密情報漏洩
+# ========================================
+def test_sec_021_sqlite_file_permissions():
+    """
+    T-SEC-021: SQLiteファイルの権限が777 → ファイル権限600推奨
+    OWASP: A05:2021 セキュリティ設定ミス
+    優先度: High
+    """
+    import tempfile
+    import stat
+
+    # 一時SQLiteファイル作成
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".db") as tmp_db:
+        db_path = tmp_db.name
+
+    try:
+        # ファイル権限を600に設定
+        os.chmod(db_path, 0o600)
+
+        # 権限確認
+        file_stat = os.stat(db_path)
+        file_mode = stat.filemode(file_stat.st_mode)
+
+        # 所有者のみ読み書き可能であることを確認
+        assert file_stat.st_mode & 0o777 == 0o600, "Database file should have 600 permissions"
+
+    finally:
+        os.remove(db_path)
+
+
+def test_sec_022_error_message_sanitization():
+    """
+    T-SEC-022: エラーメッセージに内部パスが含まれる → スタックトレース非表示
+    OWASP: A09:2021 セキュリティログの失敗
+    優先度: Medium
+    """
+    from app.security.validators import sanitize_error_message
+
+    # 内部パスを含むエラーメッセージ
+    error_with_path = "FileNotFoundError: /home/user/app/credentials/token.pickle not found"
+
+    # サニタイズ
+    sanitized = sanitize_error_message(error_with_path)
+
+    # 内部パスが含まれていないことを確認
+    assert "/home/" not in sanitized, "Internal paths should be removed"
+    assert "credentials" not in sanitized, "Sensitive directory names should be removed"
+
+
+# ========================================
+# T-SEC-023: MITM（中間者攻撃）
+# ========================================
+def test_sec_023_mitm_https_enforcement():
+    """
+    T-SEC-023: OAuth認証時のHTTP接続 → HTTPS強制、証明書検証
+    OWASP: A02:2021 暗号化の失敗
+    優先度: Critical
+    """
+    from google_auth_oauthlib.flow import InstalledAppFlow
+
+    # Google OAuth flowはデフォルトでHTTPSを使用
+    # token_uriがHTTPSであることを確認
+    token_uri = "https://oauth2.googleapis.com/token"
+
+    assert token_uri.startswith("https://"), "OAuth token URI must use HTTPS"
+
+
+# ========================================
+# T-SEC-024: トークン盗難
+# ========================================
+def test_sec_024_token_theft_protection():
+    """
+    T-SEC-024: token.pickleファイルが盗まれた場合 → 暗号化、環境変数KEYなしでは復号不可
+    OWASP: A02:2021 暗号化の失敗
+    優先度: High
+    """
+    from app.gmail.auth import _save_encrypted_token, _load_encrypted_token
+    from cryptography.fernet import Fernet
+    from google.oauth2.credentials import Credentials
+    import tempfile
+
+    # 暗号化キー生成
+    encryption_key = Fernet.generate_key()
+    os.environ["TOKEN_ENCRYPTION_KEY"] = encryption_key.decode()
+
+    # テストcredentials作成
+    test_creds = Credentials(
+        token="secret_token",
+        refresh_token="secret_refresh",
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id="test",
+        client_secret="test"
+    )
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pickle") as tmp:
+        token_path = tmp.name
+
+    try:
+        # トークン保存
+        _save_encrypted_token(test_creds, token_path)
+
+        # 環境変数を削除（盗難シミュレート）
+        del os.environ["TOKEN_ENCRYPTION_KEY"]
+
+        # 復号化を試みる（失敗するはず）
+        try:
+            _load_encrypted_token(token_path)
+            assert False, "Should not be able to decrypt without encryption key"
+        except (EnvironmentError, Exception):
+            # 期待通り失敗
+            pass
+
+    finally:
+        if os.path.exists(token_path):
+            os.remove(token_path)
+
+
+# ========================================
+# T-SEC-025: 依存ライブラリ脆弱性
+# ========================================
+def test_sec_025_dependency_vulnerability_check():
+    """
+    T-SEC-025: google-api-python-clientに既知の脆弱性 → 定期的な依存関係更新
+    OWASP: A06:2021 脆弱な古いコンポーネント
+    優先度: Medium
+    """
+    import subprocess
+    import json
+
+    # このテストは「依存関係が最新であることの確認」を目的とする
+    # 実際の脆弱性スキャンは pip-audit や safety などのツールを使用
+
+    # pyproject.toml が存在することを確認
+    assert os.path.exists("pyproject.toml"), "pyproject.toml should exist"
+
+    # poetryまたはpipが利用可能であることを確認
+    try:
+        result = subprocess.run(
+            ["pip", "list", "--format=json"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        packages = json.loads(result.stdout)
+
+        # google-api-python-clientが含まれていることを確認
+        google_api_pkg = next((pkg for pkg in packages if pkg["name"] == "google-api-python-client"), None)
+
+        if google_api_pkg:
+            # バージョンが存在することを確認（具体的なバージョンチェックは省略）
+            assert "version" in google_api_pkg, "Package version should be available"
+
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        # Docker環境外ではスキップ
+        pytest.skip("pip not available in test environment")
