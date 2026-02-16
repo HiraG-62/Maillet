@@ -20,7 +20,7 @@ docker run --rm \
   python:3.11-slim \
   bash -c "
     pip install -q --no-cache-dir \
-      pytest pytest-cov \
+      pytest pytest-cov httpx \
       google-api-python-client google-auth-httplib2 google-auth-oauthlib \
       sqlalchemy fastapi pydantic click python-dotenv cryptography ruff && \
     echo '✅ Dependencies installed' && \
