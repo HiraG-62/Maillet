@@ -74,3 +74,52 @@ class TestDuplicateDetection:
         all_transactions = session.query(CardTransaction).all()
         assert len(all_transactions) == 1
         assert all_transactions[0].card_company == "楽天カード"
+
+    def test_data_058_integrity_error_automatic_rollback(self, session):
+        """
+        T-DATA-058: IntegrityError時の自動ロールバック.
+
+        When IntegrityError occurs due to duplicate gmail_message_id,
+        the database should automatically rollback to the previous state.
+        """
+        # Insert first transaction
+        transaction_data1 = {
+            "card_company": "三井住友カード",
+            "amount": 8000,
+            "transaction_date": datetime(2024, 2, 10, 15, 45),
+            "merchant": "ビックカメラ",
+            "email_subject": "【三井住友カード】ご利用のお知らせ",
+            "email_from": "info@smbc-card.com",
+            "gmail_message_id": "msg_058_original",
+        }
+        result1 = save_transaction(session, transaction_data1)
+        assert result1 is not None
+
+        # Verify database state before duplicate attempt
+        count_before = session.query(CardTransaction).count()
+        assert count_before == 1
+
+        # Attempt to insert duplicate
+        transaction_data2 = {
+            "card_company": "JCBカード",
+            "amount": 2000,
+            "transaction_date": datetime(2024, 2, 11, 12, 30),
+            "merchant": "マクドナルド",
+            "email_subject": "【JCB】カード利用のお知らせ",
+            "email_from": "noreply@jcb.co.jp",
+            "gmail_message_id": "msg_058_original",  # Duplicate!
+        }
+        result2 = save_transaction(session, transaction_data2)
+        assert result2 is None
+
+        # Verify database state rolled back - only first transaction exists
+        count_after = session.query(CardTransaction).count()
+        assert count_after == 1
+
+        # Verify the original transaction is still intact
+        original = session.query(CardTransaction).filter_by(
+            gmail_message_id="msg_058_original"
+        ).first()
+        assert original is not None
+        assert original.card_company == "三井住友カード"
+        assert original.amount == 8000
