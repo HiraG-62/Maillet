@@ -136,3 +136,55 @@ class TestOAuthAuthentication:
 
         # 4. 生データとして直接読めないこと（暗号化されている）
         assert encrypted_data != mock_serialized_data
+
+    # T-API-003: 有効なトークンの再利用
+    @patch("app.gmail.auth.Fernet")
+    @patch("app.gmail.auth.pickle.loads")
+    @patch("app.gmail.auth.InstalledAppFlow")
+    @patch("builtins.open", new_callable=mock_open, read_data=b"encrypted_token_data")
+    @patch("os.path.exists")
+    def test_reuse_valid_token(
+        self, mock_exists, mock_file, mock_flow_class, mock_pickle_loads, mock_fernet_class, temp_credentials_json, temp_token_path, mock_credentials, encryption_key, monkeypatch
+    ):
+        """token.pickleが存在し、有効期限内の場合、再認証せずAPI呼び出しが成功"""
+        # Arrange
+        monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", encryption_key)
+
+        # token.pickleが存在する
+        mock_exists.return_value = True
+
+        # 有効なトークンをモック
+        mock_credentials.valid = True
+        mock_credentials.expired = False
+        mock_pickle_loads.return_value = mock_credentials
+
+        # Fernet復号化をモック
+        mock_fernet = MagicMock()
+        mock_fernet.decrypt.return_value = b"decrypted_pickle_data"
+        mock_fernet_class.return_value = mock_fernet
+
+        # Act
+        from app.gmail.auth import authenticate
+
+        creds = authenticate(
+            credentials_path=temp_credentials_json,
+            token_path=temp_token_path,
+        )
+
+        # Assert
+        # 1. OAuthフローが呼ばれないこと（既存トークンを再利用）
+        mock_flow_class.from_client_secrets_file.assert_not_called()
+
+        # 2. トークンファイルから読み込まれたこと
+        mock_file.assert_called()
+
+        # 3. Fernet復号化が呼ばれたこと
+        mock_fernet.decrypt.assert_called_once()
+
+        # 4. pickle.loadsが呼ばれたこと
+        mock_pickle_loads.assert_called_once()
+
+        # 5. 有効な認証情報が返されたこと
+        assert creds is not None
+        assert creds.valid
+        assert creds == mock_credentials
