@@ -237,13 +237,33 @@ def extract_merchant(email_body: str, card_company: str) -> Optional[str]:
     Returns:
         Optional[str]: 抽出された店舗名、抽出失敗時はNone
 
-    対応テストケース: T-PARSE-160〜161
+    対応テストケース: T-PARSE-160〜161, T-EDGE-013, T-EDGE-014
     """
     # 汎用パターン（フォールバック）— 現時点では会社別パターンなしで汎用のみ実装
-    match = re.search(FALLBACK_MERCHANT_PATTERN, email_body)
+    # T-EDGE-014: 改行を考慮した抽出（複数行店舗名対応）
+    match = re.search(r'(?:ご?利用先|店舗名|加盟店)[:：]\s*(.+?)(?:\s*$)', email_body, re.MULTILINE)
+    if not match:
+        # 元のパターンでも試行
+        match = re.search(FALLBACK_MERCHANT_PATTERN, email_body)
+
     if match:
         merchant_name = match.group(1).strip()
         logger.warning(f"Fallback pattern used for merchant extraction (company: {card_company})")
+
+        # T-EDGE-014: 特殊文字サニタイズ
+        # NULL文字、制御文字を除去
+        merchant_name = ''.join(char for char in merchant_name if char >= ' ' or char == '\n')
+        # 改行をスペースに置換
+        merchant_name = merchant_name.replace('\n', ' ').replace('\r', ' ')
+        # 連続スペースを1つに
+        merchant_name = re.sub(r'\s+', ' ', merchant_name).strip()
+
+        # T-EDGE-013: 長さ制限（1000文字）
+        MAX_MERCHANT_LENGTH = 1000
+        if len(merchant_name) > MAX_MERCHANT_LENGTH:
+            logger.warning(f"Merchant name too long ({len(merchant_name)} chars), truncating to {MAX_MERCHANT_LENGTH}")
+            merchant_name = merchant_name[:MAX_MERCHANT_LENGTH]
+
         return merchant_name
 
     return None

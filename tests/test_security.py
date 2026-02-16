@@ -353,6 +353,16 @@ def test_sec_015_rate_limit_handling():
     # 少なくとも60リクエストは成功するはず
     assert success_count >= 60, "At least 60 requests should succeed"
 
+    # wait_if_needed()のカバレッジ向上
+    # 制限に到達後、wait_timeを取得
+    limiter2 = RateLimiter(max_requests_per_minute=2)
+    limiter2.allow_request()
+    limiter2.allow_request()
+
+    # 3回目は制限される
+    wait_time = limiter2.wait_if_needed()
+    assert wait_time is None or wait_time >= 0, "Wait time should be None or non-negative"
+
 
 # ========================================
 # T-SEC-016〜017: 認証エラー

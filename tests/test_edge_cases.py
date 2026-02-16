@@ -14,6 +14,7 @@ from app.gmail.parser import (
     extract_amount,
     extract_transaction_date,
     detect_card_company,
+    extract_merchant,
 )
 
 
@@ -169,20 +170,36 @@ class TestParserEdgeCases:
 
     def test_t_edge_013_long_merchant_name(self, caplog):
         """T-EDGE-013: 店舗名が1000文字超 → 切り捨て、警告ログ"""
-        # 1000文字超の店舗名（実装待ち）
+        # 1000文字超の店舗名
         long_merchant = "A" * 1500
+        email_body = f"利用先: {long_merchant}"
 
-        # extract_merchant実装後にテスト
-        pass  # 実装待ち
+        with caplog.at_level(logging.WARNING):
+            merchant = extract_merchant(email_body, "三井住友")
+
+        # 1000文字に切り捨て
+        assert merchant is not None
+        assert len(merchant) == 1000
+        # 警告ログ記録
+        assert "切り捨て" in caplog.text or "truncat" in caplog.text.lower()
 
     def test_t_edge_014_special_characters_in_merchant(self):
         """T-EDGE-014: 店舗名に特殊文字 → サニタイズ処理"""
-        # 特殊文字を含む店舗名（実装待ち）
-        merchant_with_newline = "店舗\n名"
-        merchant_with_null = "店舗\x00名"
+        # 改行文字を含む店舗名
+        email_body_newline = "利用先: 店舗\n名"
+        merchant1 = extract_merchant(email_body_newline, "三井住友")
+        # 改行は除去またはスペースに置換
+        assert merchant1 is not None
+        assert "\n" not in merchant1
+        assert "店舗" in merchant1 and "名" in merchant1
 
-        # extract_merchant実装後にサニタイズ処理をテスト
-        pass  # 実装待ち
+        # NULL文字を含む店舗名
+        email_body_null = "利用先: 店舗\x00名"
+        merchant2 = extract_merchant(email_body_null, "三井住友")
+        # NULL文字は除去
+        assert merchant2 is not None
+        assert "\x00" not in merchant2
+        assert "店舗名" in merchant2
 
     def test_t_edge_015_unknown_card_company(self):
         """T-EDGE-015: カード会社判別失敗 → 不明カード会社、is_verified=0"""
