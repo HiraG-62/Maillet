@@ -240,8 +240,8 @@ def extract_merchant(email_body: str, card_company: str) -> Optional[str]:
     対応テストケース: T-PARSE-160〜161, T-EDGE-013, T-EDGE-014
     """
     # 汎用パターン（フォールバック）— 現時点では会社別パターンなしで汎用のみ実装
-    # T-EDGE-014: 改行を考慮した抽出（複数行店舗名対応）
-    match = re.search(r'(?:ご?利用先|店舗名|加盟店)[:：]\s*(.+?)(?:\s*$)', email_body, re.MULTILINE)
+    # T-EDGE-014: 改行を含む可能性を考慮（DOTALLで改行もマッチ、行末まで取得）
+    match = re.search(r'(?:ご?利用先|店舗名|加盟店)[:：]\s*(.{1,100}?)(?:\n\n|$)', email_body, re.DOTALL)
     if not match:
         # 元のパターンでも試行
         match = re.search(FALLBACK_MERCHANT_PATTERN, email_body)
