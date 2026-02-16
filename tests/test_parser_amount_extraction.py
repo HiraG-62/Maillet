@@ -32,3 +32,22 @@ class TestAmountExtraction:
         email_body = "利用金額: 100円"
         result = extract_amount(email_body, "三井住友")
         assert result == 100
+
+    # JCBカード金額抽出
+    def test_t_parse_040_jcb_basic(self):
+        """T-PARSE-040: JCB金額抽出（基本形式）"""
+        email_body = "ご利用金額: 2,500円"
+        result = extract_amount(email_body, "JCB")
+        assert result == 2500
+
+    def test_t_parse_041_jcb_fullwidth_colon(self):
+        """T-PARSE-041: JCB金額抽出（全角コロン）"""
+        email_body = "ご利用金額:3,000円"
+        result = extract_amount(email_body, "JCB")
+        assert result == 3000
+
+    def test_t_parse_042_jcb_preliminary(self):
+        """T-PARSE-042: JCB金額抽出（速報版）"""
+        email_body = "ご利用金額(速報): 1,500円"
+        result = extract_amount(email_body, "JCB")
+        assert result == 1500
