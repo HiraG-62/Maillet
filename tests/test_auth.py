@@ -188,3 +188,69 @@ class TestOAuthAuthentication:
         assert creds is not None
         assert creds.valid
         assert creds == mock_credentials
+
+    # T-API-004: トークンの自動リフレッシュ
+    @patch("app.gmail.auth.pickle.dumps")
+    @patch("app.gmail.auth.Fernet")
+    @patch("app.gmail.auth.pickle.loads")
+    @patch("app.gmail.auth.Request")
+    @patch("app.gmail.auth.InstalledAppFlow")
+    @patch("builtins.open", new_callable=mock_open, read_data=b"encrypted_token_data")
+    @patch("os.path.exists")
+    def test_automatic_token_refresh(
+        self, mock_exists, mock_file, mock_flow_class, mock_request_class, mock_pickle_loads, mock_fernet_class, mock_pickle_dumps, temp_credentials_json, temp_token_path, encryption_key, monkeypatch
+    ):
+        """アクセストークンが期限切れの場合、リフレッシュトークンで自動更新される"""
+        # Arrange
+        monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", encryption_key)
+
+        # token.pickleが存在する
+        mock_exists.return_value = True
+
+        # 期限切れのトークンをモック
+        mock_creds = Mock()
+        mock_creds.valid = False
+        mock_creds.expired = True
+        mock_creds.refresh_token = "mock_refresh_token"
+
+        # refresh()呼び出し後はvalid=Trueにする
+        def refresh_side_effect(request):
+            mock_creds.valid = True
+
+        mock_creds.refresh.side_effect = refresh_side_effect
+
+        mock_pickle_loads.return_value = mock_creds
+
+        # Fernet復号化をモック
+        mock_fernet = MagicMock()
+        mock_fernet.decrypt.return_value = b"decrypted_pickle_data"
+        mock_fernet_class.return_value = mock_fernet
+
+        # pickle.dumpsをモック
+        mock_pickle_dumps.return_value = b"mock_serialized_data"
+
+        # Request()をモック
+        mock_request = Mock()
+        mock_request_class.return_value = mock_request
+
+        # Act
+        from app.gmail.auth import authenticate
+
+        creds = authenticate(
+            credentials_path=temp_credentials_json,
+            token_path=temp_token_path,
+        )
+
+        # Assert
+        # 1. OAuthフローが呼ばれないこと（リフレッシュで対応）
+        mock_flow_class.from_client_secrets_file.assert_not_called()
+
+        # 2. refresh()が呼ばれたこと
+        mock_creds.refresh.assert_called_once_with(mock_request)
+
+        # 3. トークンが再保存されたこと
+        mock_pickle_dumps.assert_called_once()
+
+        # 4. リフレッシュ後の認証情報が返されたこと
+        assert creds is not None
+        assert creds.valid
