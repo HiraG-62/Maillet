@@ -159,19 +159,18 @@ def test_summary_command_with_month_option(runner):
         mock_db_instance.get_session.return_value.__enter__.return_value = mock_session
         mock_db.return_value = mock_db_instance
 
-        # Mock aggregation service
-        with patch("app.cli.commands.get_monthly_summary") as mock_summary:
-            mock_summary.return_value = {
-                "total": 15000,
-                "count": 7,
-                "average": 2142,
-            }
+        # Mock aggregation service - get_monthly_by_card returns list
+        with patch("app.services.aggregation_service.get_monthly_by_card") as mock_summary:
+            mock_summary.return_value = [
+                {"card_company": "三井住友", "total": 10000, "count": 5, "average": 2000},
+                {"card_company": "楽天", "total": 5000, "count": 2, "average": 2500},
+            ]
 
             result = runner.invoke(cli, ["summary", "--month", "2026-02"])
 
             assert result.exit_code == 0
-            assert "2026-02" in result.output or "2026年2月" in result.output
-            assert "15000" in result.output or "15,000" in result.output
+            assert "2026-02" in result.output
+            assert "三井住友" in result.output
 
 
 def test_summary_command_with_card_option(runner):

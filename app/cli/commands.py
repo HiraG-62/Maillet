@@ -148,19 +148,50 @@ def summary(month: Optional[str], card: Optional[str], db: str):
                 if card:
                     # 特定カード会社・特定月
                     result = get_monthly_summary(session, year, month_num, card)
+                    if result["count"] == 0:
+                        click.echo("📭 取引データがありません")
+                        return
                     _display_single_card_summary(month, card, result)
                 else:
                     # 全カード会社・特定月
-                    result = get_all_time_summary_by_card(session)
-                    # TODO: Filter by month in aggregation service
-                    _display_monthly_summary(month, result)
+                    from app.services.aggregation_service import get_monthly_by_card
+                    results = get_monthly_by_card(session, year, month_num)
+                    if not results:
+                        click.echo("📭 データが見つかりません")
+                        return
+                    # Convert list to dict
+                    result_dict = {
+                        r["card_company"]: {
+                            "total": r["total"],
+                            "count": r["count"],
+                            "average": r["average"],
+                        }
+                        for r in results
+                    }
+                    _display_monthly_summary(month, result_dict)
             else:
                 # 全期間集計
-                result = get_all_time_summary_by_card(session)
-                if not result:
-                    click.echo("📭 取引データがありません")
-                    return
-                _display_all_time_summary(result)
+                if card:
+                    # 特定カード会社・全期間
+                    # Use all-time summary and filter by card
+                    result = get_all_time_summary_by_card(session)
+                    if card not in result:
+                        click.echo("📭 取引データがありません")
+                        return
+                    card_data = result[card]
+                    click.echo(f"\n📊 {card} の全期間集計")
+                    click.echo("=" * 50)
+                    click.echo(f"合計金額: ¥{card_data['total']:,} 円")
+                    click.echo(f"取引件数: {card_data['count']} 件")
+                    click.echo(f"平均金額: ¥{card_data['average']:,} 円")
+                    click.echo()
+                else:
+                    # 全カード会社・全期間
+                    result = get_all_time_summary_by_card(session)
+                    if not result:
+                        click.echo("📭 取引データがありません")
+                        return
+                    _display_all_time_summary(result)
 
     except Exception as e:
         click.echo(f"❌ エラー: {e}", err=True)
