@@ -51,3 +51,22 @@ class TestAmountExtraction:
         email_body = "ご利用金額(速報): 1,500円"
         result = extract_amount(email_body, "JCB")
         assert result == 1500
+
+    # 楽天カード金額抽出
+    def test_t_parse_050_rakuten_basic(self):
+        """T-PARSE-050: 楽天金額抽出（基本形式）"""
+        email_body = "利用金額: 4,500円"
+        result = extract_amount(email_body, "楽天")
+        assert result == 4500
+
+    def test_t_parse_051_rakuten_preliminary(self):
+        """T-PARSE-051: 楽天金額抽出（速報版）"""
+        email_body = "利用金額(速報): 1,200円"
+        result = extract_amount(email_body, "楽天")
+        assert result == 1200
+
+    def test_t_parse_052_rakuten_confirmed(self):
+        """T-PARSE-052: 楽天金額抽出（確定版）"""
+        email_body = "利用金額(確定): 1,200円"
+        result = extract_amount(email_body, "楽天")
+        assert result == 1200

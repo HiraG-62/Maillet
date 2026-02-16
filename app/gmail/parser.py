@@ -110,6 +110,13 @@ def extract_amount(email_body: str, card_company: str) -> Optional[int]:
             amount_str = match.group(1).replace(',', '')
             return int(amount_str)
 
+    # 楽天カード: "利用金額: 4,500円" or "利用金額(速報): 1,200円" or "利用金額(確定): 1,200円"
+    elif card_company == "楽天":
+        match = re.search(r'利用金額(?:\((?:速報|確定)\))?[:：]\s*([0-9,]+)円', email_body)
+        if match:
+            amount_str = match.group(1).replace(',', '')
+            return int(amount_str)
+
     return None
 
 
