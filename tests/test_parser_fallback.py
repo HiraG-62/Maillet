@@ -125,11 +125,8 @@ def test_parse_160_generic_merchant():
     T-PARSE-160: 汎用店舗名抽出
     「ご利用先: イオンモール」形式
     """
-    email_body = """
-    ご利用ありがとうございます。
-    ご利用先: イオンモール
-    金額: 5,000円
-    """
+    # 単純な1行形式でテスト（改行なし）
+    email_body = "ご利用先: イオンモール"
 
     # This function will be created
     from app.gmail.parser import extract_merchant

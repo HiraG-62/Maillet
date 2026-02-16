@@ -39,7 +39,7 @@ FALLBACK_DATETIME_PATTERNS = [
     r'(?:ご?利用日時?|利用日)[:：]\s*(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})',  # ISO形式
     r'(?:ご?利用日時?|利用日)[:：]\s*(\d{4})/(\d{2})/(\d{2})\s+(\d{2}):(\d{2})',  # スラッシュ形式
 ]
-FALLBACK_MERCHANT_PATTERN = r'(?:ご?利用先|店舗名|加盟店)[:：]\s*(.+?)(?:\n|$)'
+FALLBACK_MERCHANT_PATTERN = r'(?:ご?利用先|店舗名|加盟店)[:：]\s*(.+?)(?=\n|$)'
 
 
 def is_trusted_domain(from_address: str, company: str) -> bool:
