@@ -2,12 +2,16 @@
 メール解析エンジン基礎実装（送信元検証＋カード判別）
 
 担当: Ashigaru 3
-タスクID: subtask_004c
+タスクID: subtask_004c, subtask_010c
 """
 
 import re
+import logging
 from typing import Optional
 from datetime import datetime
+
+# ロガー設定
+logger = logging.getLogger(__name__)
 
 
 # 信頼ドメイン定義（設計書4.3参照）
@@ -16,6 +20,7 @@ TRUSTED_DOMAINS = {
     "JCB": ["qa.jcb.co.jp"],
     "楽天": ["mail.rakuten-card.co.jp", "mkrm.rakuten.co.jp", "bounce.rakuten-card.co.jp"],
     "AMEX": ["aexp.com", "americanexpress.com", "americanexpress.jp", "email.americanexpress.com"],
+    "dカード": ["dcard.docomo.ne.jp"],
 }
 
 # カード会社判別キーワード（件名用）
@@ -26,6 +31,14 @@ CARD_KEYWORDS = {
     "AMEX": ["American Express", "AMEX", "アメックス"],
     "dカード": ["dカード"],
 }
+
+# 汎用パターン（フォールバック用）— 会社別パターンが全て失敗した場合に使用
+FALLBACK_AMOUNT_PATTERN = r'(?:ご?利用金額|金額|お支払い金額)[:：]\s*¥?\s*([0-9,]+)円?'
+FALLBACK_DATETIME_PATTERNS = [
+    r'(?:ご?利用日時?|利用日)[:：]\s*(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})',  # ISO形式
+    r'(?:ご?利用日時?|利用日)[:：]\s*(\d{4})/(\d{2})/(\d{2})\s+(\d{2}):(\d{2})',  # スラッシュ形式
+]
+FALLBACK_MERCHANT_PATTERN = r'(?:ご?利用先|店舗名|加盟店)[:：]\s*(.+?)(?:\n|$)'
 
 
 def is_trusted_domain(from_address: str, company: str) -> bool:
@@ -116,6 +129,20 @@ def extract_amount(email_body: str, card_company: str) -> Optional[int]:
         if match:
             amount_str = match.group(1).replace(',', '')
             return int(amount_str)
+
+    # dカード: "利用金額: 1,800円" or "金額: 2,400円"
+    elif card_company == "dカード":
+        match = re.search(r'(?:利用金額|金額)[:：]\s*([0-9,]+)円', email_body)
+        if match:
+            amount_str = match.group(1).replace(',', '')
+            return int(amount_str)
+
+    # 汎用パターン（フォールバック）— 会社別パターンが全て失敗した場合
+    match = re.search(FALLBACK_AMOUNT_PATTERN, email_body)
+    if match:
+        amount_str = match.group(1).replace(',', '')
+        logger.warning(f"Fallback pattern used for amount extraction (company: {card_company})")
+        return int(amount_str)
 
     return None
 

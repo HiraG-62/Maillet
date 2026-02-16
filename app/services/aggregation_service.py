@@ -164,3 +164,42 @@ def get_total_by_month(session: Session, year: int, month: int) -> Dict:
 
     result = session.execute(query).one()
     return _format_aggregation_result(result)
+
+
+def get_all_time_summary_by_card(session: Session) -> Dict[str, Dict]:
+    """
+    Get all-time summary grouped by card company.
+
+    Args:
+        session: SQLAlchemy database session
+
+    Returns:
+        Dictionary with card company names as keys, each containing:
+        - total: SUM(amount)
+        - count: COUNT(*)
+        - average: AVG(amount)
+
+    Example:
+        >>> results = get_all_time_summary_by_card(session)
+        >>> # {
+        >>> #   "三井住友": {"total": 10000, "count": 5, "average": 2000},
+        >>> #   "楽天": {"total": 5000, "count": 2, "average": 2500}
+        >>> # }
+    """
+    query = (
+        select(
+            CardTransaction.card_company,
+            func.sum(CardTransaction.amount).label("total"),
+            func.count(CardTransaction.id).label("count"),
+            func.avg(CardTransaction.amount).label("average"),
+        )
+        .where(CardTransaction.is_verified == True)
+        .group_by(CardTransaction.card_company)
+    )
+
+    results = session.execute(query).all()
+
+    return {
+        row.card_company: _format_aggregation_result(row)
+        for row in results
+    }
