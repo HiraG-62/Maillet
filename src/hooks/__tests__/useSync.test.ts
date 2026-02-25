@@ -9,13 +9,13 @@ vi.mock('@/stores/transaction-store', () => ({
   useTransactionStore: vi.fn(),
 }));
 
-vi.mock('@/lib/database', () => ({
-  queryDB: vi.fn(),
+vi.mock('@/lib/transactions', () => ({
+  getTransactions: vi.fn().mockResolvedValue([]),
 }));
 
 import { syncGmailTransactions } from '@/services/gmail/sync';
 import { useTransactionStore } from '@/stores/transaction-store';
-import { queryDB } from '@/lib/database';
+import { getTransactions } from '@/lib/transactions';
 
 describe('useSync hook', () => {
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('useSync hook', () => {
       errors: [],
     });
 
-    (queryDB as any).mockResolvedValue([]);
+    (getTransactions as any).mockResolvedValue([]);
 
     // Import React to use hooks (requires jsdom for actual hook testing)
     // For now, just verify the exports are correct
@@ -65,7 +65,7 @@ describe('useSync hook', () => {
     };
 
     (syncGmailTransactions as any).mockResolvedValue(mockResult);
-    (queryDB as any).mockResolvedValue([]);
+    (getTransactions as any).mockResolvedValue([]);
 
     expect(syncGmailTransactions).not.toHaveBeenCalled();
   });
@@ -82,7 +82,7 @@ describe('useSync hook', () => {
       errors: [],
     });
 
-    (queryDB as any).mockResolvedValue([
+    (getTransactions as any).mockResolvedValue([
       {
         id: 1,
         card_company: 'VISA',
@@ -115,15 +115,15 @@ describe('useSync hook', () => {
       });
     });
 
-    (queryDB as any).mockResolvedValue([]);
+    (getTransactions as any).mockResolvedValue([]);
 
     expect(progressCalls.length).toBe(0);
   });
 
-  it('should have queryDB called with correct SQL', async () => {
-    (queryDB as any).mockResolvedValue([]);
+  it('should have getTransactions available for transaction fetching', async () => {
+    (getTransactions as any).mockResolvedValue([]);
 
-    // Verify queryDB mock is available
+    // Verify getTransactions mock is available
     const module = await import('../useSync');
     expect(module.useSync).toBeDefined();
   });
