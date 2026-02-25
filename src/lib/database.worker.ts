@@ -1,0 +1,106 @@
+/// <reference lib="webworker" />
+// @ts-ignore wa-sqlite has no bundled types
+import SQLiteAsyncESMFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
+// @ts-ignore wa-sqlite has no bundled types
+import * as SQLite from 'wa-sqlite';
+
+let db: number | undefined;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let sqlite3: any;
+
+const DB_NAME = 'card-tracker.db';
+
+const SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS card_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    card_company TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    merchant TEXT NOT NULL,
+    transaction_date TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    category TEXT,
+    email_subject TEXT,
+    email_from TEXT,
+    gmail_message_id TEXT UNIQUE,
+    is_verified INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_transactions_date
+    ON card_transactions(transaction_date);
+  CREATE INDEX IF NOT EXISTS idx_transactions_card_company
+    ON card_transactions(card_company);
+  CREATE INDEX IF NOT EXISTS idx_transactions_date_company
+    ON card_transactions(transaction_date, card_company);
+`;
+
+async function init() {
+  const module = await SQLiteAsyncESMFactory();
+  sqlite3 = SQLite.Factory(module);
+
+  try {
+    const { AccessHandlePoolVFS } = await import(
+      // @ts-expect-error dynamic path
+      'wa-sqlite/src/examples/AccessHandlePoolVFS.js'
+    );
+    const vfs = await AccessHandlePoolVFS.create(DB_NAME, module);
+    sqlite3.vfs_register(vfs, true);
+    db = await sqlite3.open_v2(
+      DB_NAME,
+      SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE,
+      DB_NAME
+    );
+  } catch {
+    // OPFS unavailable (non-secure context, test env, etc.) → in-memory fallback
+    db = await sqlite3.open_v2(':memory:');
+  }
+
+  for await (const stmt of sqlite3.statements(db, SCHEMA_SQL)) {
+    await sqlite3.step(stmt);
+  }
+  return { ok: true };
+}
+
+async function query(sql: string, params: unknown[] = []) {
+  if (!sqlite3 || db === undefined) throw new Error('DB not initialized');
+  const rows: unknown[][] = [];
+  for await (const stmt of sqlite3.statements(db, sql)) {
+    if (params.length) sqlite3.bind_collection(stmt, params);
+    while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+      rows.push(sqlite3.row(stmt));
+    }
+  }
+  return rows;
+}
+
+async function execute(sql: string, params: unknown[] = []) {
+  if (!sqlite3 || db === undefined) throw new Error('DB not initialized');
+  let changes = 0;
+  let lastId: number | undefined;
+  for await (const stmt of sqlite3.statements(db, sql)) {
+    if (params.length) sqlite3.bind_collection(stmt, params);
+    await sqlite3.step(stmt);
+    changes += sqlite3.changes(db);
+    lastId = sqlite3.last_insert_id(db);
+  }
+  return { changes, lastId };
+}
+
+self.addEventListener('message', async (e: MessageEvent) => {
+  const { id, action, args } = e.data as {
+    id: number;
+    action: string;
+    args: unknown[];
+  };
+  try {
+    let result;
+    switch (action) {
+      case 'init':    result = await init(); break;
+      case 'query':   result = await query(args[0] as string, args[1] as unknown[]); break;
+      case 'execute': result = await execute(args[0] as string, args[1] as unknown[]); break;
+      default: throw new Error(`Unknown action: ${action}`);
+    }
+    self.postMessage({ id, result });
+  } catch (error) {
+    self.postMessage({ id, error: String(error) });
+  }
+});
