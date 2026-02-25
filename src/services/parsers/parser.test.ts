@@ -161,6 +161,49 @@ describe('SMBCParser', () => {
       expect(parser.extract_amount('利用金額：-100円')).toBeNull();
     });
   });
+
+  describe('Olive/Vpass ドメイン対応 (statement@vpass.ne.jp)', () => {
+    it('statement@vpass.ne.jp を信頼できるドメインとして認識する', () => {
+      expect(parser.is_trusted_domain('statement@vpass.ne.jp')).toBe(true);
+    });
+
+    it('三井住友Olive メールの件名でパース判定できる', () => {
+      expect(parser.can_parse('statement@vpass.ne.jp', 'ご利用のお知らせ【三井住友カード】')).toBe(true);
+    });
+
+    it('全角数字を含む金額を抽出できる（¥形式）', () => {
+      // ご利用金額：¥１，２３４  (全角数字・全角カンマ・¥)
+      const body = 'ご利用金額：¥１，２３４';
+      expect(parser.extract_amount(body)).toBe(1234);
+    });
+
+    it('全角数字を含む金額を抽出できる（円形式）', () => {
+      const body = 'ご利用金額：５，４００円';
+      expect(parser.extract_amount(body)).toBe(5400);
+    });
+
+    it('全角日付を含む利用日時を抽出できる', () => {
+      const body = 'ご利用日時：２０２６/０２/２５　１４:３０';
+      const date = parser.extract_transaction_date(body);
+      expect(date).not.toBeNull();
+      expect(date!.slice(0, 10)).toBe('2026-02-25');
+    });
+
+    it('Olive形式の完全パースが成功する', () => {
+      const body = [
+        'ひいらぎ　様',
+        'ご利用カード：Ｏｌｉｖｅ／クレジット',
+        'ご利用日時：２０２６/０２/２５　１４:３０',
+        'ご利用先：イオン　フードスタイル',
+        'ご利用金額：¥１，２３４',
+      ].join('\n');
+      const r = parser.parse(body, 'statement@vpass.ne.jp', 'ご利用のお知らせ【三井住友カード】');
+      expect(r).not.toBeNull();
+      expect(r!.amount).toBe(1234);
+      expect(r!.card_company).toBe('三井住友');
+      expect(r!.transaction_date.slice(0, 10)).toBe('2026-02-25');
+    });
+  });
 });
 
 describe('JCBParser', () => {
