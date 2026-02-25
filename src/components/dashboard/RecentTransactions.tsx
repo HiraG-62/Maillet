@@ -14,7 +14,8 @@ const CARD_BADGE_COLORS: Record<string, { bg: string; text: string }> = {
   dcard: { bg: 'bg-orange-500/20', text: 'text-orange-400' },
 };
 
-function getCardBadgeColor(company: string): { bg: string; text: string } {
+function getCardBadgeColor(company: string | null | undefined): { bg: string; text: string } {
+  if (!company) return { bg: 'bg-slate-500/20', text: 'text-slate-400' };
   const lower = company.toLowerCase().replace(/[\s\-_]/g, '');
   for (const [key, val] of Object.entries(CARD_BADGE_COLORS)) {
     if (lower.includes(key)) return val;

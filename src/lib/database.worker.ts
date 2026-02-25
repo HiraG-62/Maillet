@@ -57,6 +57,18 @@ async function init() {
   for await (const stmt of sqlite3.statements(db, SCHEMA_SQL)) {
     await sqlite3.step(stmt);
   }
+
+  // マイグレーション: 旧スキーマで NULL が入った可能性のある行を修正
+  const MIGRATION_SQL = `
+    UPDATE card_transactions SET card_company = '' WHERE card_company IS NULL;
+    UPDATE card_transactions SET merchant = '' WHERE merchant IS NULL;
+    UPDATE card_transactions SET transaction_date = '1970-01-01T00:00:00.000Z' WHERE transaction_date IS NULL;
+    UPDATE card_transactions SET description = '' WHERE description IS NULL;
+  `;
+  for await (const stmt of sqlite3.statements(db, MIGRATION_SQL)) {
+    await sqlite3.step(stmt);
+  }
+
   return { ok: true };
 }
 

@@ -22,7 +22,7 @@ export default function TransactionsPage() {
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const inMerchant = tx.merchant.toLowerCase().includes(q);
+        const inMerchant = (tx.merchant ?? '').toLowerCase().includes(q);
         const inDesc = (tx.description ?? '').toLowerCase().includes(q);
         if (!inMerchant && !inDesc) return false;
       }
