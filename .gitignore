@@ -88,3 +88,7 @@ DEBUG*.md
 SCRATCH*.md
 WIP*.md
 TMP*.md
+
+# Debug files
+debug_*.txt
+scripts/debug_fetch_email.mjs

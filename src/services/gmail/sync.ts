@@ -266,6 +266,22 @@ export async function syncGmailTransactions(
         // Parse using TypeScript parsers
         const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
 
+        // ▼ DEBUG: 問題メールの本文全体をダンプ（cmd_079）
+        if (msg.id === '19c70bc40b6bd310') {
+          console.log(
+            '[DEBUG:19c70bc40b6bd310] body_len=' + body.length + '\n' +
+            '===== BODY START =====\n' +
+            body +
+            '\n===== BODY END ====='
+          );
+          // UI エラーにも追加（コンソールが確認できない場合の代替）
+          result.errors.push(
+            '[DEBUG_BODY:19c70bc40b6bd310]\n' +
+            '=====\n' + body.slice(0, 1500) + '\n====='
+          );
+        }
+        // ▲ DEBUG END
+
         if (!parsed) {
           result.parse_errors++;
           const preview = body.length > 0 ? body.slice(0, 80).replace(/\n/g, ' ') : '(本文空)';
