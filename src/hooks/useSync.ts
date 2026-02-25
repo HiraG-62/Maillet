@@ -1,9 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { syncGmailTransactions } from '@/services/gmail/sync';
 import { useTransactionStore } from '@/stores/transaction-store';
-import { queryDB } from '@/lib/database';
+import { getTransactions } from '@/lib/transactions';
 import type { SyncProgress, SyncResult } from '@/types/gmail';
-import type { CardTransaction } from '@/types/transaction';
 
 interface UseSyncReturn {
   progress: SyncProgress;
@@ -50,9 +49,7 @@ export function useSync(): UseSyncReturn {
 
       // Fetch updated transactions from database
       if (!abortControllerRef.current.signal.aborted) {
-        const transactions = await queryDB<CardTransaction>(
-          'SELECT * FROM card_transactions ORDER BY transaction_date DESC'
-        );
+        const transactions = await getTransactions();
 
         setTransactions(transactions);
       }
