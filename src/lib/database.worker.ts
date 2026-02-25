@@ -34,6 +34,7 @@ const SCHEMA_SQL = `
 `;
 
 async function init() {
+  if (db !== undefined) return { ok: true };
   const module = await SQLiteAsyncESMFactory();
   sqlite3 = SQLite.Factory(module);
 
