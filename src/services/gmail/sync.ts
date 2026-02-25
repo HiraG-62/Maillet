@@ -18,7 +18,7 @@ async function gmailFetch(
   path: string,
   options: RequestInit = {}
 ): Promise<Record<string, unknown>> {
-  const token = sessionStorage.getItem('gmail_access_token');
+  const token = localStorage.getItem('gmail_access_token');
   if (!token) throw new Error('Gmail未認証');
 
   const response = await fetch(`${GMAIL_API_BASE}${path}`, {
@@ -31,8 +31,8 @@ async function gmailFetch(
   });
 
   if (response.status === 401) {
-    sessionStorage.removeItem('gmail_access_token');
-    sessionStorage.removeItem('gmail_refresh_token');
+    localStorage.removeItem('gmail_access_token');
+    localStorage.removeItem('gmail_refresh_token');
     throw new Error('Gmail認証期限切れ。再認証が必要です。');
   }
 
