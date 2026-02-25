@@ -67,6 +67,22 @@ async function gmailFetch(
 }
 
 /**
+ * 当月の Gmail API 日付フィルタ文字列を生成する
+ * 例: "after:2026/02/01 before:2026/03/01"
+ */
+export function getCurrentMonthDateFilter(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-indexed (0=Jan, 1=Feb, ...)
+  const startMonth = String(month + 1).padStart(2, '0');
+  // 翌月の1日 = 当月末の翌日
+  const nextMonth = new Date(year, month + 1, 1);
+  const endYear = nextMonth.getFullYear();
+  const endMonth = String(nextMonth.getMonth() + 1).padStart(2, '0');
+  return `after:${year}/${startMonth}/01 before:${endYear}/${endMonth}/01`;
+}
+
+/**
  * Fetch message list
  */
 async function listMessages(
@@ -237,9 +253,10 @@ export async function syncGmailTransactions(
 
     // Fetch all card notification emails
     const allMessages = [];
+    const dateFilter = getCurrentMonthDateFilter();
     for (const query of CARD_EMAIL_QUERIES) {
       try {
-        const msgs = await listMessages(query, 50);
+        const msgs = await listMessages(`${query} ${dateFilter}`, 500);
         allMessages.push(...msgs);
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);

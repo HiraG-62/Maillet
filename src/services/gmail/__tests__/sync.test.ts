@@ -13,7 +13,7 @@ const localStorageMock = (() => {
 })();
 vi.stubGlobal('localStorage', localStorageMock);
 
-import { syncGmailTransactions } from '../sync';
+import { syncGmailTransactions, getCurrentMonthDateFilter } from '../sync';
 import type { SyncResult, SyncProgress } from '@/types/gmail';
 
 // Mock database functions
@@ -37,6 +37,40 @@ vi.mock('@/services/gmail/auth', () => ({
 import { initDB, queryDB, executeDB } from '@/lib/database';
 import { parse_email_debug } from '@/services/parsers';
 import { refreshToken } from '@/services/gmail/auth';
+
+describe('getCurrentMonthDateFilter', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('当月1日〜翌月1日のフィルタ文字列を返す（2026年2月）', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-15T12:00:00'));
+    const filter = getCurrentMonthDateFilter();
+    expect(filter).toBe('after:2026/02/01 before:2026/03/01');
+  });
+
+  it('12月の場合は翌年1月になる', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-12-20T12:00:00'));
+    const filter = getCurrentMonthDateFilter();
+    expect(filter).toBe('after:2025/12/01 before:2026/01/01');
+  });
+
+  it('1月の場合は翌月が2月になる', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00'));
+    const filter = getCurrentMonthDateFilter();
+    expect(filter).toBe('after:2026/01/01 before:2026/02/01');
+  });
+
+  it('after: と before: のフォーマットが正しい', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-10T09:00:00'));
+    const filter = getCurrentMonthDateFilter();
+    expect(filter).toMatch(/^after:\d{4}\/\d{2}\/01 before:\d{4}\/\d{2}\/01$/);
+  });
+});
 
 describe('Gmail Sync Service', () => {
   beforeEach(() => {
