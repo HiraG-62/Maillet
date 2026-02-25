@@ -315,6 +315,7 @@ export async function syncGmailTransactions(
         }
 
         // Save to database
+        console.log('[DEBUG-091] Saving transaction:', { merchant: parsed.merchant, amount: parsed.amount, date: parsed.transaction_date });
         await saveTransaction(
           msg.id,
           fromAddress,
@@ -324,6 +325,7 @@ export async function syncGmailTransactions(
           parsed.transaction_date,
           parsed.card_company
         );
+        console.log('[DEBUG-091] saveTransaction result: saved successfully');
 
         result.new_transactions++;
 

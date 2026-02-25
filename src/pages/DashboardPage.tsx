@@ -51,6 +51,18 @@ export default function DashboardPage() {
       });
   }, [setTransactions, setLoading]);
 
+  // DEBUG-091: 殿のデバッグ用。本番削除予定
+  useEffect(() => {
+    (window as any).__debugDB = async () => {
+      await initDB();
+      const txs = await getTransactions();
+      console.log('[DEBUG-091] DB transactions count:', txs.length);
+      console.log('[DEBUG-091] DB transactions (first 3):', JSON.stringify(txs.slice(0, 3), null, 2));
+      return txs;
+    };
+    console.log('[DEBUG-091] __debugDB ready. Type window.__debugDB() in console.');
+  }, []);
+
   const monthlyData = useMemo(() => {
     const now = new Date();
     const months: string[] = [];

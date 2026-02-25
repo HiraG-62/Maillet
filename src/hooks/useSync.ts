@@ -50,7 +50,7 @@ export function useSync(): UseSyncReturn {
       // Fetch updated transactions from database
       if (!abortControllerRef.current.signal.aborted) {
         const transactions = await getTransactions();
-
+        console.log('[DEBUG-091] Sync complete. Transactions in store:', transactions.length);
         setTransactions(transactions);
       }
     } catch (err) {
