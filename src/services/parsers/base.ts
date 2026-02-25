@@ -86,10 +86,7 @@ export abstract class BaseCardParser {
     if (amount === null) return null;
     const transaction_date = this.extract_transaction_date(email_body);
     if (!transaction_date) return null;
-    // [DEBUG-086] ④ parse() から extract_merchant を呼び出す
-    console.log('[DEBUG-086] ④ parse() calling extract_merchant, card_company:', this.card_company);
     const merchant = this.extract_merchant(email_body) ?? '';
-    console.log('[DEBUG-086] ④ extract_merchant returned:', JSON.stringify(merchant));
     return {
       amount,
       transaction_date,

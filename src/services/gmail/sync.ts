@@ -280,15 +280,6 @@ export async function syncGmailTransactions(
         // Parse using TypeScript parsers
         const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
 
-        // [DEBUG-086] ⑤ パーサー出力確認
-        if (fromAddress?.includes('vpass.ne.jp')) {
-          console.log('[DEBUG-086] ⑤ SMBC parsed result:', JSON.stringify({
-            merchant: parsed?.merchant,
-            amount: parsed?.amount,
-            transaction_date: parsed?.transaction_date,
-          }));
-        }
-
         if (!parsed) {
           result.parse_errors++;
           const preview = body.length > 0 ? body.slice(0, 80).replace(/\n/g, ' ') : '(本文空)';
