@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { StatGrid, MonthlyBarChart, CategoryPieChart } from '@/components/dashboard';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
+import { initDB } from '@/lib/database';
+import { getTransactions } from '@/lib/transactions';
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -30,11 +32,24 @@ function addMonths(ym: string, delta: number): string {
 }
 
 export default function DashboardPage() {
-  const { transactions, isLoading } = useTransactionStore();
+  const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
   const { authState, isLoading: authLoading, error: authError } = useAuth();
   const { startSync, isSyncing, result } = useSync();
   const navigate = useNavigate();
+
+  // マウント時にDBからデータを読み込む（リロード対応）
+  useEffect(() => {
+    setLoading(true);
+    initDB()
+      .then(() => getTransactions())
+      .then((data) => {
+        setTransactions(data ?? []);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [setTransactions, setLoading]);
 
   const monthlyData = useMemo(() => {
     const now = new Date();
