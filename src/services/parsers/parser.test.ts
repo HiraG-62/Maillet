@@ -304,6 +304,18 @@ describe('SMBCParser', () => {
       expect(r!.transaction_date.slice(0, 10)).toBe('2026-02-25');
     });
   });
+
+  describe('SMBCParser extract_merchant（cmd_085）', () => {
+    it('◇利用先：から店名を抽出する（COKE ON PAYパターン）', () => {
+      const body = '◇利用日：2026/02/10 15:15\n◇利用先：COKE ON PAY\n◇利用取引：買物\n◇利用金額：140円';
+      expect(parser.extract_merchant(body)).toBe('COKE ON PAY');
+    });
+
+    it('◇利用先：から全角店名を抽出する', () => {
+      const body = '◇利用先：ＡＭＡＺＯＮ．ＣＯ．ＪＰ\n◇利用金額：1,234円';
+      expect(parser.extract_merchant(body)).toBe('ＡＭＡＺＯＮ．ＣＯ．ＪＰ');
+    });
+  });
 });
 
 describe('JCBParser', () => {

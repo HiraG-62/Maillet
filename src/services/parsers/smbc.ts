@@ -49,9 +49,9 @@ export class SMBCParser extends BaseCardParser {
 
   override extract_merchant(email_body: string): string | null {
     // SMBC 特有: ◇ご利用先 / ◇利用先
-    // パターン1: コロンあり（テキストメール標準）
-    // 例: ◇利用先：セブンイレブン / ご利用先：イオン
-    const m1 = email_body.match(/◇?ご?利用先[:：]\s*(.+?)(?=\n|$)/);
+    // パターン1: 「利用先：店名」形式（◇/ご の有無に依存しない）
+    // 例: ◇利用先：COKE ON PAY / ご利用先：セブンイレブン / 利用先：イオン
+    const m1 = email_body.match(/利用先[:：]\s*(.+?)(?=\n|$)/);
     if (m1) {
       const s = m1[1].replace(/[\r\n]/g, '').replace(/[ \t]+/g, ' ').trim();
       if (s) return s;

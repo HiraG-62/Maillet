@@ -277,13 +277,6 @@ export async function syncGmailTransactions(
         // Fetch email details
         const { subject, fromAddress, body } = await getMessage(msg.id);
 
-        // [cmd_084 DEBUG] 実メール本文を確認するためのログ
-        if (fromAddress.includes('vpass.ne.jp') || fromAddress.includes('三井住友')) {
-          console.log('[cmd_084 SMBC DEBUG] from:', fromAddress);
-          console.log('[cmd_084 SMBC DEBUG] subject:', subject);
-          console.log('[cmd_084 SMBC DEBUG] body (first 500):', body.slice(0, 500));
-        }
-
         // Parse using TypeScript parsers
         const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
 
@@ -294,12 +287,6 @@ export async function syncGmailTransactions(
             `Could not parse email ${msg.id}: from="${fromAddress}" subj="${subject}" body_len=${body.length} preview="${preview}" [${parseDebug}]`
           );
           continue;
-        }
-
-        // [cmd_084 DEBUG] 抽出結果確認
-        if (fromAddress.includes('vpass.ne.jp') || fromAddress.includes('三井住友')) {
-          console.log('[cmd_084 SMBC DEBUG] parsed.merchant:', parsed.merchant);
-          console.log('[cmd_084 SMBC DEBUG] parsed.amount:', parsed.amount);
         }
 
         if (dupCheck.isDuplicate && dupCheck.needsMerchantUpdate && dupCheck.existingId !== undefined) {
