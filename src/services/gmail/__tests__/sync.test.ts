@@ -25,11 +25,11 @@ vi.mock('@/lib/database', () => ({
 
 // Mock parsers
 vi.mock('@/services/parsers', () => ({
-  parse_email: vi.fn(),
+  parse_email_debug: vi.fn(),
 }));
 
 import { initDB, queryDB, executeDB } from '@/lib/database';
-import { parse_email } from '@/services/parsers';
+import { parse_email_debug } from '@/services/parsers';
 
 describe('Gmail Sync Service', () => {
   beforeEach(() => {
@@ -153,7 +153,7 @@ describe('Gmail Sync Service', () => {
     it('should handle parse errors gracefully', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
       vi.mocked(queryDB).mockResolvedValue([[0]]); // isDuplicate returns false
-      vi.mocked(parse_email).mockReturnValue(null); // Parse fails
+      vi.mocked(parse_email_debug).mockReturnValue({ result: null, debug: 'parser=三井住友 amount=null date=null' }); // Parse fails
 
       global.fetch = vi.fn()
         .mockResolvedValueOnce({
@@ -229,12 +229,15 @@ describe('Gmail Sync Service', () => {
           }),
         });
 
-      vi.mocked(parse_email).mockReturnValue({
-        amount: 1000,
-        merchant: 'Test Merchant',
-        transaction_date: '2026-02-24T00:00:00',
-        card_company: 'SMBC',
-        raw_text: 'test',
+      vi.mocked(parse_email_debug).mockReturnValue({
+        result: {
+          amount: 1000,
+          merchant: 'Test Merchant',
+          transaction_date: '2026-02-24T00:00:00',
+          card_company: 'SMBC',
+          raw_text: 'test',
+        },
+        debug: '',
       });
 
       vi.mocked(executeDB).mockResolvedValue({ changes: 1 });
@@ -330,12 +333,15 @@ describe('Gmail Sync Service', () => {
           }),
         });
 
-      vi.mocked(parse_email).mockReturnValue({
-        amount: 1000,
-        merchant: 'Test Merchant',
-        transaction_date: '2026-02-24T00:00:00',
-        card_company: 'SMBC',
-        raw_text: 'test',
+      vi.mocked(parse_email_debug).mockReturnValue({
+        result: {
+          amount: 1000,
+          merchant: 'Test Merchant',
+          transaction_date: '2026-02-24T00:00:00',
+          card_company: 'SMBC',
+          raw_text: 'test',
+        },
+        debug: '',
       });
 
       vi.mocked(executeDB).mockResolvedValue({ changes: 1 });
@@ -396,12 +402,15 @@ describe('Gmail Sync Service', () => {
           }),
         });
 
-      vi.mocked(parse_email).mockReturnValue({
-        amount: 1000,
-        merchant: 'テスト店舗',
-        transaction_date: '2026-02-25T00:00:00.000Z',
-        card_company: '三井住友',
-        raw_text: '利用金額：1,000円',
+      vi.mocked(parse_email_debug).mockReturnValue({
+        result: {
+          amount: 1000,
+          merchant: 'テスト店舗',
+          transaction_date: '2026-02-25T00:00:00.000Z',
+          card_company: '三井住友',
+          raw_text: '利用金額：1,000円',
+        },
+        debug: '',
       });
       vi.mocked(executeDB).mockResolvedValue({ changes: 1 });
 
@@ -413,8 +422,8 @@ describe('Gmail Sync Service', () => {
       expect(result.parse_errors).toBe(0);
       expect(result.new_transactions).toBe(1);
 
-      // parse_email should have been called with the HTML-stripped body containing 利用金額
-      expect(parse_email).toHaveBeenCalledWith(
+      // parse_email_debug should have been called with the HTML-stripped body containing 利用金額
+      expect(parse_email_debug).toHaveBeenCalledWith(
         'notify@contact.vpass.ne.jp',
         '三井住友カードご利用のお知らせ',
         expect.stringContaining('利用金額')

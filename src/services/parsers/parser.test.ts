@@ -162,6 +162,19 @@ describe('SMBCParser', () => {
     });
   });
 
+  describe('エッジケース対応（税込注記・全角フォールバック）', () => {
+    it('ご利用金額（税込）形式でも金額を抽出できる', () => {
+      const body = 'ご利用金額（税込）：¥5,400';
+      expect(parser.extract_amount(body)).toBe(5400);
+    });
+
+    it('全角金額のフォールバックも動作する', () => {
+      // extract_amount がマッチしない場合に fallback が全角を処理できるか
+      const body = 'ご利用金額：５，４００円';
+      expect(parser.extract_amount(body)).toBe(5400);
+    });
+  });
+
   describe('Olive/Vpass ドメイン対応 (statement@vpass.ne.jp)', () => {
     it('statement@vpass.ne.jp を信頼できるドメインとして認識する', () => {
       expect(parser.is_trusted_domain('statement@vpass.ne.jp')).toBe(true);

@@ -15,10 +15,16 @@ export class SMBCParser extends BaseCardParser {
 
   extract_amount(email_body: string): number | null {
     const normalized = this._normalizeWidthForAmount(email_body);
-    // パターン1: 利用金額: 1,234円 （半角・全角コロン、¥あり/なし）
-    const m = normalized.match(/ご?利用金額[:：]\s*¥?\s*([0-9,]+)\s*円?/);
+    // パターン1: 利用金額（注記あり/なし）: ¥1,234 or 5,400円
+    // 例: ご利用金額：¥1,234 / ご利用金額（税込）：¥5,400
+    const m = normalized.match(/ご?利用金額[^:：\n]*[:：]\s*¥?\s*([0-9,]+)\s*円?/);
     if (m) return this._validate_amount(parseAmountStr(m[1]));
     return null;
+  }
+
+  protected override _extract_amount_fallback(email_body: string): number | null {
+    // 全角正規化してからフォールバックパターンでマッチ
+    return super._extract_amount_fallback(this._normalizeWidthForAmount(email_body));
   }
 
   override extract_transaction_date(email_body: string): string | null {

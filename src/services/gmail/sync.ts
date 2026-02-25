@@ -1,5 +1,5 @@
 import type { GmailMessage, SyncResult, SyncProgress } from '@/types/gmail';
-import { parse_email } from '@/services/parsers';
+import { parse_email_debug } from '@/services/parsers';
 import { initDB, queryDB, executeDB } from '@/lib/database';
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -242,13 +242,13 @@ export async function syncGmailTransactions(
         const { subject, fromAddress, body } = await getMessage(msg.id);
 
         // Parse using TypeScript parsers
-        const parsed = parse_email(fromAddress, subject, body);
+        const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
 
         if (!parsed) {
           result.parse_errors++;
           const preview = body.length > 0 ? body.slice(0, 80).replace(/\n/g, ' ') : '(本文空)';
           result.errors.push(
-            `Could not parse email ${msg.id}: from="${fromAddress}" subj="${subject}" body_len=${body.length} preview="${preview}"`
+            `Could not parse email ${msg.id}: from="${fromAddress}" subj="${subject}" body_len=${body.length} preview="${preview}" [${parseDebug}]`
           );
           continue;
         }

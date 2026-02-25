@@ -38,6 +38,27 @@ export function parse_email(
   return null;
 }
 
+/** parse失敗時の診断情報を返す */
+export function parse_email_debug(
+  from_address: string,
+  subject: string,
+  body: string
+): { result: ParsedTransaction | null; debug: string } {
+  for (const parser of PARSERS) {
+    if (parser.can_parse(from_address, subject)) {
+      const result = parser.parse(body, from_address, subject);
+      if (result === null) {
+        const amount = parser.extract_amount(body);
+        const date = parser.extract_transaction_date(body);
+        const debug = `parser=${parser.card_company} amount=${amount} date=${date}`;
+        return { result: null, debug };
+      }
+      return { result, debug: '' };
+    }
+  }
+  return { result: null, debug: 'no_parser_matched' };
+}
+
 export function detect_card_company(
   subject: string,
   from_address: string
