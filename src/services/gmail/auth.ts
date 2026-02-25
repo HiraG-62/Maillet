@@ -133,32 +133,32 @@ export async function refreshToken(
 }
 
 /**
- * トークンをセッションストレージに保存する
+ * トークンをローカルストレージに保存する
  */
 export function saveToken(token: OAuthToken): void {
-  sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token.access_token);
-  sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, String(Date.now() + token.expires_in * 1000));
-  sessionStorage.setItem(STORAGE_KEYS.TOKEN_TYPE, token.token_type);
-  sessionStorage.setItem(STORAGE_KEYS.SCOPE, token.scope);
+  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token.access_token);
+  localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, String(Date.now() + token.expires_in * 1000));
+  localStorage.setItem(STORAGE_KEYS.TOKEN_TYPE, token.token_type);
+  localStorage.setItem(STORAGE_KEYS.SCOPE, token.scope);
   if (token.refresh_token) {
-    sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token.refresh_token);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token.refresh_token);
   }
 }
 
 /**
- * セッションストレージからアクセストークンを取得する
+ * ローカルストレージからアクセストークンを取得する
  */
 export function getAccessToken(): string | null {
-  return sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 }
 
 /**
  * トークンが有効かどうかを確認する（存在 + 有効期限）
  */
 export function isTokenValid(): boolean {
-  const token = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   if (!token) return false;
-  const expiresAt = sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+  const expiresAt = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
   if (!expiresAt) return false;
   return Date.now() < parseInt(expiresAt, 10);
 }
@@ -168,7 +168,7 @@ export function isTokenValid(): boolean {
  */
 export function getAuthState(): AuthState {
   const accessToken = getAccessToken();
-  const expiresAtStr = sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+  const expiresAtStr = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
   const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : null;
   const authenticated = isTokenValid();
 
@@ -176,12 +176,12 @@ export function getAuthState(): AuthState {
     return { isAuthenticated: false, token: null, expiresAt: null };
   }
 
-  const storedRefreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  const storedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
   const oauthToken: OAuthToken = {
     access_token: accessToken,
     expires_in: expiresAt ? Math.floor((expiresAt - Date.now()) / 1000) : 0,
-    token_type: sessionStorage.getItem(STORAGE_KEYS.TOKEN_TYPE) ?? 'Bearer',
-    scope: sessionStorage.getItem(STORAGE_KEYS.SCOPE) ?? '',
+    token_type: localStorage.getItem(STORAGE_KEYS.TOKEN_TYPE) ?? 'Bearer',
+    scope: localStorage.getItem(STORAGE_KEYS.SCOPE) ?? '',
     ...(storedRefreshToken ? { refresh_token: storedRefreshToken } : {}),
   };
 
@@ -192,11 +192,11 @@ export function getAuthState(): AuthState {
  * ログアウト（全トークン削除）
  */
 export function logout(): void {
-  sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-  sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-  sessionStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
-  sessionStorage.removeItem(STORAGE_KEYS.TOKEN_TYPE);
-  sessionStorage.removeItem(STORAGE_KEYS.SCOPE);
+  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+  localStorage.removeItem(STORAGE_KEYS.TOKEN_TYPE);
+  localStorage.removeItem(STORAGE_KEYS.SCOPE);
   sessionStorage.removeItem(STORAGE_KEYS.PKCE_VERIFIER);
 }
 

@@ -32,7 +32,7 @@ function addMonths(ym: string, delta: number): string {
 export default function DashboardPage() {
   const { transactions, isLoading } = useTransactionStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
-  const { authState } = useAuth();
+  const { authState, isLoading: authLoading, error: authError } = useAuth();
   const { startSync, isSyncing, result } = useSync();
   const navigate = useNavigate();
 
@@ -71,6 +71,11 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
+      {authError && (
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+          認証エラー: {authError}
+        </div>
+      )}
       {/* Header row */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -96,8 +101,9 @@ export default function DashboardPage() {
         <div className="flex flex-col items-end gap-1">
           <button
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-slate-300 text-sm hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSyncing}
+            disabled={isSyncing || authLoading}
             onClick={() => {
+              if (authLoading) return;
               if (!authState.isAuthenticated) {
                 navigate('/settings');
                 return;
@@ -106,7 +112,7 @@ export default function DashboardPage() {
             }}
           >
             <svg
-              className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`}
+              className={`w-4 h-4 ${isSyncing || authLoading ? 'animate-spin' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -118,7 +124,7 @@ export default function DashboardPage() {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            {isSyncing ? '同期中...' : '同期'}
+            {isSyncing ? '同期中...' : authLoading ? '認証中...' : '同期'}
           </button>
           {result && !isSyncing && (
             <span className="text-xs text-slate-500">

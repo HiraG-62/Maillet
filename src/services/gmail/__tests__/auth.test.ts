@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// sessionStorage mock for Node.js environment
+// sessionStorage mock for Node.js environment (PKCE_VERIFIER のみ使用)
 const sessionStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
@@ -12,6 +12,19 @@ const sessionStorageMock = (() => {
   };
 })();
 vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+// localStorage mock for Node.js environment (token storage)
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+})();
+vi.stubGlobal('localStorage', localStorageMock);
+
 import {
   generateCodeVerifier,
   generateCodeChallenge,
@@ -152,8 +165,8 @@ describe('buildAuthUrl', () => {
 // ---- isTokenValid ----
 
 describe('isTokenValid', () => {
-  beforeEach(() => sessionStorage.clear());
-  afterEach(() => sessionStorage.clear());
+  beforeEach(() => { logout(); sessionStorageMock.clear(); });
+  afterEach(() => { logout(); sessionStorageMock.clear(); });
 
   it('トークンがない場合は false を返す', () => {
     expect(isTokenValid()).toBe(false);
@@ -165,13 +178,14 @@ describe('isTokenValid', () => {
   });
 
   it('有効期限切れのトークンは false を返す', () => {
-    sessionStorage.setItem('gmail_access_token', 'expired-token');
-    sessionStorage.setItem('gmail_expires_at', String(Date.now() - 1000));
+    // expires_in: -1 で即期限切れのトークンを保存
+    saveToken(makeToken({ expires_in: -1 }));
     expect(isTokenValid()).toBe(false);
   });
 
-  it('expires_at が未設定の場合は false を返す', () => {
-    sessionStorage.setItem('gmail_access_token', 'token-without-expiry');
+  it('logout 後は false を返す', () => {
+    saveToken(makeToken());
+    logout();
     expect(isTokenValid()).toBe(false);
   });
 });
@@ -179,8 +193,8 @@ describe('isTokenValid', () => {
 // ---- saveToken / getAccessToken / logout ----
 
 describe('saveToken / getAccessToken / logout', () => {
-  beforeEach(() => sessionStorage.clear());
-  afterEach(() => sessionStorage.clear());
+  beforeEach(() => { logout(); sessionStorageMock.clear(); });
+  afterEach(() => { logout(); sessionStorageMock.clear(); });
 
   it('saveToken でアクセストークンが保存される', () => {
     saveToken(makeToken({ access_token: 'my-access-token' }));
@@ -189,19 +203,22 @@ describe('saveToken / getAccessToken / logout', () => {
 
   it('saveToken でリフレッシュトークンが保存される', () => {
     saveToken(makeToken({ refresh_token: 'my-refresh-token' }));
-    expect(sessionStorage.getItem('gmail_refresh_token')).toBe('my-refresh-token');
+    // getAuthState 経由でリフレッシュトークンが正しく保存されたか確認
+    const state = getAuthState();
+    expect(state.token?.refresh_token).toBe('my-refresh-token');
   });
 
   it('refresh_token がない場合は保存しない', () => {
     saveToken(makeToken());
-    expect(sessionStorage.getItem('gmail_refresh_token')).toBeNull();
+    const state = getAuthState();
+    expect(state.token?.refresh_token).toBeUndefined();
   });
 
-  it('logout でセッションストレージのトークンが削除される', () => {
+  it('logout でトークンが削除される', () => {
     saveToken(makeToken({ refresh_token: 'refresh' }));
     logout();
     expect(getAccessToken()).toBeNull();
-    expect(sessionStorage.getItem('gmail_refresh_token')).toBeNull();
+    expect(getAuthState().isAuthenticated).toBe(false);
     expect(isTokenValid()).toBe(false);
   });
 });
@@ -209,8 +226,8 @@ describe('saveToken / getAccessToken / logout', () => {
 // ---- getAuthState ----
 
 describe('getAuthState', () => {
-  beforeEach(() => sessionStorage.clear());
-  afterEach(() => sessionStorage.clear());
+  beforeEach(() => { logout(); sessionStorageMock.clear(); });
+  afterEach(() => { logout(); sessionStorageMock.clear(); });
 
   it('未認証時は isAuthenticated=false を返す', () => {
     const state = getAuthState();

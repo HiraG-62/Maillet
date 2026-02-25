@@ -40,10 +40,17 @@ export function useAuth(): UseAuthReturn {
       if (params.has('code')) {
         setIsLoading(true);
         try {
-          await handleAuthCallback(GMAIL_CONFIG);
-          window.history.replaceState({}, '', window.location.pathname);
+          const token = await handleAuthCallback(GMAIL_CONFIG);
+          if (token !== null) {
+            // コールバック成功時のみURLをクリア
+            window.history.replaceState({}, '', window.location.pathname);
+          }
         } catch (err) {
-          setError(err instanceof Error ? err.message : String(err));
+          setError(err instanceof Error ? err.message : '認証に失敗しました');
+          // コードはもう使えないのでURLをクリア
+          if (new URLSearchParams(window.location.search).has('code')) {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
         } finally {
           setIsLoading(false);
         }
