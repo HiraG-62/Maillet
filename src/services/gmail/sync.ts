@@ -68,19 +68,46 @@ function decodeBase64Url(data: string): string {
 }
 
 /**
+ * Strip HTML tags and decode common HTML entities for text extraction
+ */
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(?:p|div|tr|li|h[1-6])>/gi, '\n')
+    .replace(/<\/td>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&yen;/g, '¥')
+    .replace(/&#165;/g, '¥')
+    .replace(/\r\n|\r/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
  * Extract email body recursively from MIME parts
  */
-function extractBody(part: Record<string, unknown>, body: string[]): void {
-  if (part.mimeType === 'text/plain' && typeof part.body === 'object' && part.body !== null) {
-    const bodyObj = part.body as Record<string, unknown>;
-    if (typeof bodyObj.data === 'string') {
-      body.push(decodeBase64Url(bodyObj.data));
-    }
+function extractBody(
+  part: Record<string, unknown>,
+  textParts: string[],
+  htmlParts: string[]
+): void {
+  const mimeType = part.mimeType as string | undefined;
+  const bodyObj = part.body as Record<string, unknown> | undefined;
+
+  if (mimeType === 'text/plain' && bodyObj && typeof bodyObj.data === 'string') {
+    textParts.push(decodeBase64Url(bodyObj.data));
+  } else if (mimeType === 'text/html' && bodyObj && typeof bodyObj.data === 'string') {
+    htmlParts.push(decodeBase64Url(bodyObj.data));
   }
+
   if (Array.isArray(part.parts)) {
     for (const subpart of part.parts) {
       if (typeof subpart === 'object' && subpart !== null) {
-        extractBody(subpart as Record<string, unknown>, body);
+        extractBody(subpart as Record<string, unknown>, textParts, htmlParts);
       }
     }
   }
@@ -96,14 +123,20 @@ async function getMessage(
 
   let subject = '';
   let fromAddress = '';
-  const bodyParts: string[] = [];
+  const textParts: string[] = [];
+  const htmlParts: string[] = [];
 
   const headers = data.payload?.headers || [];
   subject = headers.find(h => h.name === 'Subject')?.value || '';
   fromAddress = headers.find(h => h.name === 'From')?.value || '';
 
-  extractBody(data.payload, bodyParts);
-  const body = bodyParts.join('\n');
+  extractBody(data.payload as unknown as Record<string, unknown>, textParts, htmlParts);
+  // Prefer text/plain; fallback to stripped text/html (many Japanese card emails are HTML-only)
+  const body = textParts.length > 0
+    ? textParts.join('\n')
+    : htmlParts.length > 0
+      ? stripHtml(htmlParts.join('\n'))
+      : '';
 
   return { messageId, subject, fromAddress, body };
 }
@@ -213,7 +246,10 @@ export async function syncGmailTransactions(
 
         if (!parsed) {
           result.parse_errors++;
-          result.errors.push(`Could not parse email ${msg.id}`);
+          const preview = body.length > 0 ? body.slice(0, 80).replace(/\n/g, ' ') : '(本文空)';
+          result.errors.push(
+            `Could not parse email ${msg.id}: from="${fromAddress}" subj="${subject}" body_len=${body.length} preview="${preview}"`
+          );
           continue;
         }
 

@@ -347,5 +347,78 @@ describe('Gmail Sync Service', () => {
       expect(result.total_fetched).toBe(2);
       expect(result.new_transactions).toBe(2);
     });
+
+    it('should extract body from HTML-only emails (no text/plain part)', async () => {
+      vi.mocked(initDB).mockResolvedValue(undefined);
+      vi.mocked(queryDB).mockResolvedValue([[0]]); // not duplicate
+
+      // HTML-only email body in base64 (Node.js Buffer)
+      // Content: "<p>利用金額：1,000円</p>"
+      const htmlBody = '<p>利用金額：1,000円</p>';
+      const htmlBase64 = Buffer.from(htmlBody, 'utf-8').toString('base64');
+
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            messages: [{ id: 'msg_html_only', threadId: 'thread_html' }],
+          }),
+        })
+        // Other CARD_EMAIL_QUERIES return empty
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // getMessage for msg_html_only — HTML-only, no text/plain
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            payload: {
+              mimeType: 'multipart/alternative',
+              headers: [
+                { name: 'Subject', value: '三井住友カードご利用のお知らせ' },
+                { name: 'From', value: 'notify@contact.vpass.ne.jp' },
+              ],
+              body: { size: 0 },
+              parts: [
+                {
+                  mimeType: 'text/html',
+                  body: { data: htmlBase64 },
+                },
+              ],
+            },
+          }),
+        });
+
+      vi.mocked(parse_email).mockReturnValue({
+        amount: 1000,
+        merchant: 'テスト店舗',
+        transaction_date: '2026-02-25T00:00:00.000Z',
+        card_company: '三井住友',
+        raw_text: '利用金額：1,000円',
+      });
+      vi.mocked(executeDB).mockResolvedValue({ changes: 1 });
+
+      const p = syncGmailTransactions();
+      await vi.runAllTimersAsync();
+      const result = await p;
+
+      // HTML body was extracted → parse_email called with non-empty body → transaction saved
+      expect(result.parse_errors).toBe(0);
+      expect(result.new_transactions).toBe(1);
+
+      // parse_email should have been called with the HTML-stripped body containing 利用金額
+      expect(parse_email).toHaveBeenCalledWith(
+        'notify@contact.vpass.ne.jp',
+        '三井住友カードご利用のお知らせ',
+        expect.stringContaining('利用金額')
+      );
+    });
   });
 });
