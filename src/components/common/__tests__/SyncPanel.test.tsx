@@ -85,11 +85,13 @@ describe('SyncPanel', () => {
     });
 
     it('shows unconfigured message when Google Client ID is not set', () => {
+      vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '');
       render(<SyncPanel />);
       expect(screen.getByText(/Gmail連携は設定が必要です/)).toBeInTheDocument();
     });
 
     it('disables login button when Google Client ID is not configured', () => {
+      vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '');
       render(<SyncPanel />);
       expect(screen.getByRole('button', { name: /Google でログイン/ })).toBeDisabled();
     });
