@@ -212,3 +212,14 @@ export async function getTransactionCount(): Promise<number> {
   );
   return (rows[0] as [number])?.[0] ?? 0;
 }
+
+/**
+ * 既存の gmail_message_id 一覧を取得（差分同期用）
+ */
+export async function getSyncedMessageIds(): Promise<string[]> {
+  const result = await queryDB<[string]>(
+    'SELECT gmail_message_id FROM card_transactions WHERE gmail_message_id IS NOT NULL',
+    []
+  );
+  return result.map(r => r[0]);
+}

@@ -1,7 +1,7 @@
 import type { GmailMessage, SyncResult, SyncProgress, GmailAuthConfig } from '@/types/gmail';
 import { parse_email_debug } from '@/services/parsers';
-import { initDB, queryDB, executeDB } from '@/lib/database';
-import { updateTransactionMerchant } from '@/lib/transactions';
+import { initDB, executeDB } from '@/lib/database';
+import { getSyncedMessageIds } from '@/lib/transactions';
 import { refreshToken } from './auth';
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -181,29 +181,6 @@ async function getMessage(
 }
 
 /**
- * Check if transaction already exists (by gmail_message_id).
- * Returns needsMerchantUpdate=true when the existing record has an empty merchant field.
- */
-async function isDuplicateWithMerchant(gmailMessageId: string): Promise<{
-  isDuplicate: boolean;
-  needsMerchantUpdate: boolean;
-  existingId?: number;
-}> {
-  const results = await queryDB<[number, string]>(
-    'SELECT id, merchant FROM card_transactions WHERE gmail_message_id = ?',
-    [gmailMessageId]
-  );
-  if (results.length === 0) return { isDuplicate: false, needsMerchantUpdate: false };
-  const [id, merchant] = results[0];
-  const isEmpty = !merchant || merchant.trim() === '';
-  return {
-    isDuplicate: true,
-    needsMerchantUpdate: isEmpty,
-    existingId: id,
-  };
-}
-
-/**
  * Save transaction to database
  */
 async function saveTransaction(
@@ -232,6 +209,48 @@ async function saveTransaction(
       0,
     ]
   );
+}
+
+interface ProcessResult {
+  saved: boolean;
+  parseError: boolean;
+  errorMsg?: string;
+}
+
+/**
+ * Fetch, parse, and save a single message
+ */
+async function processMessage(msg: { id: string }): Promise<ProcessResult> {
+  try {
+    const { subject, fromAddress, body } = await getMessage(msg.id);
+    const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
+
+    if (!parsed) {
+      const preview = body.length > 0 ? body.slice(0, 80).replace(/\n/g, ' ') : '(本文空)';
+      return {
+        saved: false,
+        parseError: true,
+        errorMsg: `Could not parse email ${msg.id}: from="${fromAddress}" subj="${subject}" body_len=${body.length} preview="${preview}" [${parseDebug}]`,
+      };
+    }
+
+    console.log('[DEBUG-091] Saving transaction:', { merchant: parsed.merchant, amount: parsed.amount, date: parsed.transaction_date });
+    await saveTransaction(
+      msg.id,
+      fromAddress,
+      subject,
+      parsed.amount,
+      parsed.merchant,
+      parsed.transaction_date,
+      parsed.card_company
+    );
+    console.log('[DEBUG-091] saveTransaction result: saved successfully');
+
+    return { saved: true, parseError: false };
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return { saved: false, parseError: false, errorMsg: `Failed to process email ${msg.id}: ${errMsg}` };
+  }
 }
 
 /**
@@ -270,70 +289,47 @@ export async function syncGmailTransactions(
     );
     result.total_fetched = uniqueMessages.length;
 
-    // Process each message
-    for (let i = 0; i < uniqueMessages.length; i++) {
-      const msg = uniqueMessages[i];
-      const percentage = Math.round(((i + 1) / uniqueMessages.length) * 100);
+    // Diff sync: pre-filter already-synced messages (1 DB query)
+    const syncedIds = new Set(await getSyncedMessageIds());
+    const newMessages = uniqueMessages.filter(msg => !syncedIds.has(msg.id));
+    result.duplicates_skipped = uniqueMessages.length - newMessages.length;
+
+    // Parallel fetch: process in batches of 5 (Gmail API rate limit)
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < newMessages.length; i += BATCH_SIZE) {
+      const batch = newMessages.slice(i, i + BATCH_SIZE);
+      const processed = Math.min(i + BATCH_SIZE, newMessages.length);
 
       onProgress({
-        current: i + 1,
-        total: uniqueMessages.length,
-        percentage,
+        current: processed,
+        total: newMessages.length,
+        percentage: Math.round((processed / newMessages.length) * 100),
         status: 'syncing',
-        message: `メール処理中: ${i + 1}/${uniqueMessages.length}`,
+        message: `メール処理中: ${processed}/${newMessages.length}`,
       });
 
-      try {
-        // Check if already in DB (merchant='' records are re-processed)
-        const dupCheck = await isDuplicateWithMerchant(msg.id);
-        if (dupCheck.isDuplicate && !dupCheck.needsMerchantUpdate) {
-          result.duplicates_skipped++;
-          continue;
+      const batchResults = await Promise.allSettled(batch.map(msg => processMessage(msg)));
+
+      for (const r of batchResults) {
+        if (r.status === 'fulfilled') {
+          const { saved, parseError, errorMsg } = r.value;
+          if (saved) {
+            result.new_transactions++;
+          } else if (parseError) {
+            result.parse_errors++;
+            if (errorMsg) result.errors.push(errorMsg);
+          } else if (errorMsg) {
+            result.errors.push(errorMsg);
+          }
+        } else {
+          const errMsg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+          result.errors.push(`Failed to process batch item: ${errMsg}`);
         }
+      }
 
-        // Fetch email details
-        const { subject, fromAddress, body } = await getMessage(msg.id);
-
-        // Parse using TypeScript parsers
-        const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
-
-        if (!parsed) {
-          result.parse_errors++;
-          const preview = body.length > 0 ? body.slice(0, 80).replace(/\n/g, ' ') : '(本文空)';
-          result.errors.push(
-            `Could not parse email ${msg.id}: from="${fromAddress}" subj="${subject}" body_len=${body.length} preview="${preview}" [${parseDebug}]`
-          );
-          continue;
-        }
-
-        if (dupCheck.isDuplicate && dupCheck.needsMerchantUpdate && dupCheck.existingId !== undefined) {
-          // merchant のみ UPDATE（既存レコードの再処理）
-          await updateTransactionMerchant(dupCheck.existingId, parsed.merchant);
-          result.new_transactions++;
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
-        }
-
-        // Save to database
-        console.log('[DEBUG-091] Saving transaction:', { merchant: parsed.merchant, amount: parsed.amount, date: parsed.transaction_date });
-        await saveTransaction(
-          msg.id,
-          fromAddress,
-          subject,
-          parsed.amount,
-          parsed.merchant,
-          parsed.transaction_date,
-          parsed.card_company
-        );
-        console.log('[DEBUG-091] saveTransaction result: saved successfully');
-
-        result.new_transactions++;
-
-        // Rate limiting (1 second per email)
+      // Rate limit between batches (1 second per batch of 5)
+      if (i + BATCH_SIZE < newMessages.length) {
         await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        result.errors.push(`Failed to process email ${msg.id}: ${errMsg}`);
       }
     }
 

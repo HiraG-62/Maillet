@@ -174,7 +174,7 @@ describe('Gmail Sync Service', () => {
 
     it('should skip duplicate transactions', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
-      vi.mocked(queryDB).mockResolvedValue([[1, 'SomeStore']]); // isDuplicateWithMerchant: exists with non-empty merchant
+      vi.mocked(queryDB).mockResolvedValue([['msg_001']]); // getSyncedMessageIds: msg_001 already synced
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,

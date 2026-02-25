@@ -15,6 +15,7 @@ import {
   updateTransactionCategory,
   deleteTransaction,
   getTransactionCount,
+  getSyncedMessageIds,
 } from './transactions';
 
 const mockQueryDB = vi.mocked(queryDB);
@@ -203,5 +204,25 @@ describe('getTransactionCount', () => {
     mockQueryDB.mockResolvedValueOnce([[0]] as never);
     const count = await getTransactionCount();
     expect(count).toBe(0);
+  });
+});
+
+describe('getSyncedMessageIds', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('既存の gmail_message_id リストを返す', async () => {
+    mockQueryDB.mockResolvedValueOnce([['msg_001'], ['msg_002']] as never);
+    const ids = await getSyncedMessageIds();
+    expect(ids).toEqual(['msg_001', 'msg_002']);
+    expect(mockQueryDB).toHaveBeenCalledWith(
+      'SELECT gmail_message_id FROM card_transactions WHERE gmail_message_id IS NOT NULL',
+      []
+    );
+  });
+
+  it('データなし時は空配列を返す', async () => {
+    mockQueryDB.mockResolvedValueOnce([] as never);
+    const ids = await getSyncedMessageIds();
+    expect(ids).toEqual([]);
   });
 });
