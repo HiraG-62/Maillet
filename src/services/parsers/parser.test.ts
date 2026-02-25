@@ -175,6 +175,28 @@ describe('SMBCParser', () => {
     });
   });
 
+  describe('多パターン金額抽出（cmd_078-A）', () => {
+    it('ご請求金額ラベルでも金額を抽出できる', () => {
+      const body = 'ご請求金額：¥5,400';
+      expect(parser.extract_amount(body)).toBe(5400);
+    });
+
+    it('お支払い金額ラベルでも金額を抽出できる', () => {
+      const body = 'お支払い金額：5,400円';
+      expect(parser.extract_amount(body)).toBe(5400);
+    });
+
+    it('スペース区切り（コロンなし）でも金額を抽出できる', () => {
+      const body = 'ご利用金額  ¥5,400';
+      expect(parser.extract_amount(body)).toBe(5400);
+    });
+
+    it('全角スペースを含む形式でも金額を抽出できる', () => {
+      const body = 'ご利用金額\u3000：\u3000５，４００円';
+      expect(parser.extract_amount(body)).toBe(5400);
+    });
+  });
+
   describe('Olive/Vpass ドメイン対応 (statement@vpass.ne.jp)', () => {
     it('statement@vpass.ne.jp を信頼できるドメインとして認識する', () => {
       expect(parser.is_trusted_domain('statement@vpass.ne.jp')).toBe(true);
