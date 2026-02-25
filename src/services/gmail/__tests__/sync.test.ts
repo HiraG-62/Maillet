@@ -140,7 +140,7 @@ describe('Gmail Sync Service', () => {
 
     it('should skip duplicate transactions', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
-      vi.mocked(queryDB).mockResolvedValue([[1]]); // isDuplicate returns true
+      vi.mocked(queryDB).mockResolvedValue([[1, 'SomeStore']]); // isDuplicateWithMerchant: exists with non-empty merchant
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -159,7 +159,7 @@ describe('Gmail Sync Service', () => {
 
     it('should handle parse errors gracefully', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
-      vi.mocked(queryDB).mockResolvedValue([[0]]); // isDuplicate returns false
+      vi.mocked(queryDB).mockResolvedValue([]); // isDuplicateWithMerchant: no record found
       vi.mocked(parse_email_debug).mockReturnValue({ result: null, debug: 'parser=三井住友 amount=null date=null' }); // Parse fails
 
       global.fetch = vi.fn()
@@ -202,7 +202,7 @@ describe('Gmail Sync Service', () => {
 
     it('should call progress callback with correct status updates', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
-      vi.mocked(queryDB).mockResolvedValue([[0]]); // isDuplicate returns false
+      vi.mocked(queryDB).mockResolvedValue([]); // isDuplicateWithMerchant: no record found
 
       global.fetch = vi.fn()
         .mockResolvedValueOnce({
@@ -290,7 +290,7 @@ describe('Gmail Sync Service', () => {
 
     it('should auto-refresh token and retry when 401 with valid refresh_token', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
-      vi.mocked(queryDB).mockResolvedValue([[0]]); // not duplicate
+      vi.mocked(queryDB).mockResolvedValue([]); // isDuplicateWithMerchant: no record found
 
       localStorage.setItem('gmail_refresh_token', 'valid_refresh_token');
 
@@ -357,7 +357,7 @@ describe('Gmail Sync Service', () => {
 
     it('should accumulate transaction counts correctly', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
-      vi.mocked(queryDB).mockResolvedValue([[0]]); // All are new
+      vi.mocked(queryDB).mockResolvedValue([]); // isDuplicateWithMerchant: no record found
 
       global.fetch = vi.fn()
         .mockResolvedValueOnce({
@@ -430,7 +430,7 @@ describe('Gmail Sync Service', () => {
 
     it('should extract body from HTML-only emails (no text/plain part)', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
-      vi.mocked(queryDB).mockResolvedValue([[0]]); // not duplicate
+      vi.mocked(queryDB).mockResolvedValue([]); // isDuplicateWithMerchant: no record found
 
       // HTML-only email body in base64 (Node.js Buffer)
       // Content: "<p>利用金額：1,000円</p>"

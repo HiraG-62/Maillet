@@ -191,6 +191,16 @@ export async function updateTransactionCategory(
   );
 }
 
+export async function updateTransactionMerchant(
+  id: number,
+  merchant: string
+): Promise<void> {
+  await executeDB(
+    'UPDATE card_transactions SET merchant = ? WHERE id = ?',
+    [merchant, id]
+  );
+}
+
 export async function deleteTransaction(id: number): Promise<void> {
   await executeDB('DELETE FROM card_transactions WHERE id = ?', [id]);
 }

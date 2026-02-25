@@ -249,6 +249,17 @@ describe('SMBCParser', () => {
       const body = 'ご利用先：セブンイレブン渋谷店\n利用金額：980円';
       expect(parser.extract_merchant(body)).toBe('セブンイレブン渋谷店');
     });
+
+    it('コロンなし（HTML stripHtml後）パターンから店舗名を抽出する', () => {
+      // HTMLの</td>→スペース変換後: "◇利用先 セブンイレブン渋谷店"
+      const body = '◇利用先 セブンイレブン渋谷店\n◇利用金額：980円';
+      expect(parser.extract_merchant(body)).toBe('セブンイレブン渋谷店');
+    });
+
+    it('全角スペース区切りパターンから店舗名を抽出する', () => {
+      const body = '◇利用先\u3000セブンイレブン渋谷店\n◇利用金額：980円';
+      expect(parser.extract_merchant(body)).toBe('セブンイレブン渋谷店');
+    });
   });
 
   describe('Olive/Vpass ドメイン対応 (statement@vpass.ne.jp)', () => {

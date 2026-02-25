@@ -49,12 +49,22 @@ export class SMBCParser extends BaseCardParser {
 
   override extract_merchant(email_body: string): string | null {
     // SMBC 特有: ◇ご利用先 / ◇利用先
-    const m = email_body.match(/◇?ご?利用先[:：]\s*(.+?)(?=\n|$)/);
-    if (m) {
-      // \r\n を除去、ASCII スペース/タブの連続を1つにまとめる（全角スペースは保持）
-      const s = m[1].replace(/[\r\n]/g, '').replace(/[ \t]+/g, ' ').trim();
-      return s || null;
+    // パターン1: コロンあり（テキストメール標準）
+    // 例: ◇利用先：セブンイレブン / ご利用先：イオン
+    const m1 = email_body.match(/◇?ご?利用先[:：]\s*(.+?)(?=\n|$)/);
+    if (m1) {
+      const s = m1[1].replace(/[\r\n]/g, '').replace(/[ \t]+/g, ' ').trim();
+      if (s) return s;
     }
+
+    // パターン2: コロンなし + スペース区切り（HTMLメールのstripHtml後）
+    // 例: ◇利用先 セブンイレブン / ◇ご利用先　イオン（全角スペース）
+    const m2 = email_body.match(/◇ご?利用先[　 ]+(.+?)(?=\n|◇|$)/);
+    if (m2) {
+      const s = m2[1].replace(/[\r\n]/g, '').replace(/[ \t]+/g, ' ').trim();
+      if (s) return s;
+    }
+
     return super.extract_merchant(email_body);
   }
 

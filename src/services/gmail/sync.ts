@@ -1,6 +1,7 @@
 import type { GmailMessage, SyncResult, SyncProgress, GmailAuthConfig } from '@/types/gmail';
 import { parse_email_debug } from '@/services/parsers';
 import { initDB, queryDB, executeDB } from '@/lib/database';
+import { updateTransactionMerchant } from '@/lib/transactions';
 import { refreshToken } from './auth';
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -164,14 +165,26 @@ async function getMessage(
 }
 
 /**
- * Check if transaction already exists (by gmail_message_id)
+ * Check if transaction already exists (by gmail_message_id).
+ * Returns needsMerchantUpdate=true when the existing record has an empty merchant field.
  */
-async function isDuplicate(gmailMessageId: string): Promise<boolean> {
-  const results = await queryDB<[number]>(
-    'SELECT COUNT(*) as cnt FROM card_transactions WHERE gmail_message_id = ?',
+async function isDuplicateWithMerchant(gmailMessageId: string): Promise<{
+  isDuplicate: boolean;
+  needsMerchantUpdate: boolean;
+  existingId?: number;
+}> {
+  const results = await queryDB<[number, string]>(
+    'SELECT id, merchant FROM card_transactions WHERE gmail_message_id = ?',
     [gmailMessageId]
   );
-  return results.length > 0 && results[0][0] > 0;
+  if (results.length === 0) return { isDuplicate: false, needsMerchantUpdate: false };
+  const [id, merchant] = results[0];
+  const isEmpty = !merchant || merchant.trim() === '';
+  return {
+    isDuplicate: true,
+    needsMerchantUpdate: isEmpty,
+    existingId: id,
+  };
 }
 
 /**
@@ -254,14 +267,22 @@ export async function syncGmailTransactions(
       });
 
       try {
-        // Check if already in DB
-        if (await isDuplicate(msg.id)) {
+        // Check if already in DB (merchant='' records are re-processed)
+        const dupCheck = await isDuplicateWithMerchant(msg.id);
+        if (dupCheck.isDuplicate && !dupCheck.needsMerchantUpdate) {
           result.duplicates_skipped++;
           continue;
         }
 
         // Fetch email details
         const { subject, fromAddress, body } = await getMessage(msg.id);
+
+        // [cmd_084 DEBUG] 実メール本文を確認するためのログ
+        if (fromAddress.includes('vpass.ne.jp') || fromAddress.includes('三井住友')) {
+          console.log('[cmd_084 SMBC DEBUG] from:', fromAddress);
+          console.log('[cmd_084 SMBC DEBUG] subject:', subject);
+          console.log('[cmd_084 SMBC DEBUG] body (first 500):', body.slice(0, 500));
+        }
 
         // Parse using TypeScript parsers
         const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
@@ -272,6 +293,20 @@ export async function syncGmailTransactions(
           result.errors.push(
             `Could not parse email ${msg.id}: from="${fromAddress}" subj="${subject}" body_len=${body.length} preview="${preview}" [${parseDebug}]`
           );
+          continue;
+        }
+
+        // [cmd_084 DEBUG] 抽出結果確認
+        if (fromAddress.includes('vpass.ne.jp') || fromAddress.includes('三井住友')) {
+          console.log('[cmd_084 SMBC DEBUG] parsed.merchant:', parsed.merchant);
+          console.log('[cmd_084 SMBC DEBUG] parsed.amount:', parsed.amount);
+        }
+
+        if (dupCheck.isDuplicate && dupCheck.needsMerchantUpdate && dupCheck.existingId !== undefined) {
+          // merchant のみ UPDATE（既存レコードの再処理）
+          await updateTransactionMerchant(dupCheck.existingId, parsed.merchant);
+          result.new_transactions++;
+          await new Promise(resolve => setTimeout(resolve, 1000));
           continue;
         }
 
