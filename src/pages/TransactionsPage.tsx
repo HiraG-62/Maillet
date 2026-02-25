@@ -1,11 +1,26 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { FilterBar } from '@/components/transactions/FilterBar';
 import { TransactionCard } from '@/components/transactions/TransactionCard';
 import { TransactionTable } from '@/components/transactions/TransactionTable';
+import { initDB } from '@/lib/database';
+import { getTransactions } from '@/lib/transactions';
 
 export default function TransactionsPage() {
-  const { transactions } = useTransactionStore();
+  const { transactions, setTransactions, setLoading } = useTransactionStore();
+
+  // マウント時にDBからデータを読み込む（ページ遷移後もデータを保持）
+  useEffect(() => {
+    setLoading(true);
+    initDB()
+      .then(() => getTransactions())
+      .then((data) => {
+        setTransactions(data ?? []);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [setTransactions, setLoading]);
 
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedCard, setSelectedCard] = useState<string>('all');
