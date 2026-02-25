@@ -7,7 +7,9 @@ const routesWithLayout = routes.map((route) => ({
   element: <Layout>{route.element}</Layout>,
 }));
 
-const router = createBrowserRouter(routesWithLayout);
+const router = createBrowserRouter(routesWithLayout, {
+  basename: import.meta.env.BASE_URL,
+});
 
 export function App() {
   return <RouterProvider router={router} />;
