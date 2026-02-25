@@ -1,0 +1,12 @@
+# litestream.yml — SQLite 継続レプリケーション設定
+dbs:
+  - path: /data/card_transactions.db   # fly.toml の /data マウントと一致
+    replicas:
+      - type: s3
+        endpoint: https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+        bucket: card-spending-tracker-db
+        path: card_transactions
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+        retention: 24h
+        sync-interval: 10s

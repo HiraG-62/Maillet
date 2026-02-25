@@ -1,0 +1,77 @@
+{
+  "smbc": [
+    {
+      "input": {
+        "email_body": "利用日：2024/01/15 10:30\n利用金額：1,500円\nご利用先：セブンイレブン渋谷店",
+        "from_address": "notify@contact.vpass.ne.jp",
+        "subject": "【三井住友カード】ご利用のお知らせ"
+      },
+      "expected": {
+        "amount": 1500,
+        "transaction_date": "2024-01-15T10:30:00",
+        "merchant": "セブンイレブン渋谷店",
+        "card_company": "三井住友"
+      }
+    }
+  ],
+  "jcb": [
+    {
+      "input": {
+        "email_body": "ご利用日時：2024/02/20 14:45\nご利用金額：2,200円\nご利用先：マクドナルド新宿店",
+        "from_address": "info@qa.jcb.co.jp",
+        "subject": "【JCB】カードご利用のお知らせ"
+      },
+      "expected": {
+        "amount": 2200,
+        "transaction_date": "2024-02-20T14:45:00",
+        "merchant": "マクドナルド新宿店",
+        "card_company": "JCB"
+      }
+    }
+  ],
+  "rakuten": [
+    {
+      "input": {
+        "email_body": "利用日：2024/03/10 09:15\n利用金額：3,800円\nご利用先：イオンモール",
+        "from_address": "notify@mail.rakuten-card.co.jp",
+        "subject": "【楽天カード】カード利用のお知らせ"
+      },
+      "expected": {
+        "amount": 3800,
+        "transaction_date": "2024-03-10T09:15:00",
+        "merchant": "イオンモール",
+        "card_company": "楽天"
+      }
+    }
+  ],
+  "amex": [
+    {
+      "input": {
+        "email_body": "ご利用日時：2024/04/05 16:00\nご利用金額：8,900円\nご利用先：高島屋",
+        "from_address": "notify@aexp.com",
+        "subject": "【American Express】カードご利用のお知らせ"
+      },
+      "expected": {
+        "amount": 8900,
+        "transaction_date": "2024-04-05T16:00:00",
+        "merchant": "高島屋",
+        "card_company": "AMEX"
+      }
+    }
+  ],
+  "dcard": [
+    {
+      "input": {
+        "email_body": "利用日：2024/05/12 12:30\n利用金額：1,800円\nご利用先：ローソン",
+        "from_address": "notify@dcard.docomo.ne.jp",
+        "subject": "【dカード】カードご利用速報"
+      },
+      "expected": {
+        "amount": 1800,
+        "transaction_date": "2024-05-12T12:30:00",
+        "merchant": "ローソン",
+        "card_company": "dカード"
+      }
+    }
+  ]
+}

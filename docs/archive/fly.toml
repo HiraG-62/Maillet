@@ -1,0 +1,49 @@
+# fly.toml — Fly.io アプリ設定
+# 参照: docs/architecture.md § 4.1
+app = "card-spending-tracker"   # 実際のアプリ名は殿が fly launch 時に変更可能
+primary_region = "nrt"           # 東京リージョン
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  DATABASE_PATH = "/data/card_transactions.db"
+  LOG_LEVEL = "INFO"
+  # 以下はシークレット（fly secrets set で設定）:
+  # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, TOKEN_ENCRYPTION_KEY
+  # APP_PIN, SESSION_SECRET, NTFY_TOPIC
+  # LITESTREAM_ACCESS_KEY_ID, LITESTREAM_SECRET_ACCESS_KEY, R2_ACCOUNT_ID
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true   # コスト最適化: 非アクセス時はマシン停止
+  auto_start_machines = true  # アクセス時に自動起動
+  min_machines_running = 0    # 完全停止可（個人利用なのでコスト優先）
+
+[http_service.concurrency]
+  type = "requests"
+  hard_limit = 250
+  soft_limit = 200
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[mounts]
+  source = "card_data"
+  destination = "/data"   # SQLite永続ボリューム（fly volumes create card_data）
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 8000
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[statics]]
+  guest_path = "/app/app/static"
+  url_prefix = "/static"
