@@ -47,6 +47,17 @@ export class SMBCParser extends BaseCardParser {
     return /(?:◇)?利用取引[:：\s]+返品/.test(email_body);
   }
 
+  override extract_merchant(email_body: string): string | null {
+    // SMBC 特有: ◇ご利用先 / ◇利用先
+    const m = email_body.match(/◇?ご?利用先[:：]\s*(.+?)(?=\n|$)/);
+    if (m) {
+      // \r\n を除去、ASCII スペース/タブの連続を1つにまとめる（全角スペースは保持）
+      const s = m[1].replace(/[\r\n]/g, '').replace(/[ \t]+/g, ' ').trim();
+      return s || null;
+    }
+    return super.extract_merchant(email_body);
+  }
+
   override parse(
     email_body: string,
     from_address: string,

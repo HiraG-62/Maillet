@@ -33,6 +33,7 @@ describe('Golden test: TS パーサー出力 vs Python 版出力', () => {
           );
           expect(result).not.toBeNull();
           expect(result!.amount).toBe(c.expected.amount);
+          expect(result!.merchant).toBe(c.expected.merchant);
           // transaction_date: ISO 文字列の先頭部分（日付）が一致すればOK
           expect(result!.transaction_date.slice(0, 10)).toBe(
             c.expected.transaction_date.slice(0, 10)
@@ -230,6 +231,23 @@ describe('SMBCParser', () => {
       // 負の金額（返品）も有効値として扱う
       expect(parser['_validate_amount'](-16280)).toBe(-16280);
       expect(parser['_validate_amount'](-1)).toBe(-1);
+    });
+  });
+
+  describe('Merchant Extraction', () => {
+    it('◇利用先ラベルから店舗名を抽出する', () => {
+      const body = '◇利用先：テスト店舗\n◇利用金額：5,400円';
+      expect(parser.extract_merchant(body)).toBe('テスト店舗');
+    });
+
+    it('◇ご利用先ラベルから店舗名を抽出する', () => {
+      const body = '◇ご利用先：イオン　フードスタイル\n◇利用金額：5,400円';
+      expect(parser.extract_merchant(body)).toBe('イオン　フードスタイル');
+    });
+
+    it('ご利用先（◇なし）から店舗名を抽出する', () => {
+      const body = 'ご利用先：セブンイレブン渋谷店\n利用金額：980円';
+      expect(parser.extract_merchant(body)).toBe('セブンイレブン渋谷店');
     });
   });
 
