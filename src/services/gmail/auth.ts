@@ -87,6 +87,7 @@ export async function exchangeCodeForToken(
       redirect_uri: config.redirectUri,
       code_verifier: verifier,
       grant_type: 'authorization_code',
+      ...(config.clientSecret ? { client_secret: config.clientSecret } : {}),
     }),
   });
 
@@ -115,6 +116,7 @@ export async function refreshToken(
       refresh_token: refreshTokenStr,
       client_id: config.clientId,
       grant_type: 'refresh_token',
+      ...(config.clientSecret ? { client_secret: config.clientSecret } : {}),
     }),
   });
 

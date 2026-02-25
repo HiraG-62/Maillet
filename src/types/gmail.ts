@@ -30,6 +30,7 @@ export interface SyncProgress {
 
 export interface GmailAuthConfig {
   clientId: string;
+  clientSecret?: string;
   redirectUri: string;
   scope: string[];
 }
