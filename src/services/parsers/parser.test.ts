@@ -156,10 +156,6 @@ describe('SMBCParser', () => {
       expect(parser.extract_amount(body)).toBeNull();
     });
 
-    it('負の金額は null', () => {
-      // 負の金額は正規表現にマッチしないため null
-      expect(parser.extract_amount('利用金額：-100円')).toBeNull();
-    });
   });
 
   describe('エッジケース対応（税込注記・全角フォールバック）', () => {
@@ -194,6 +190,46 @@ describe('SMBCParser', () => {
     it('全角スペースを含む形式でも金額を抽出できる', () => {
       const body = 'ご利用金額\u3000：\u3000５，４００円';
       expect(parser.extract_amount(body)).toBe(5400);
+    });
+  });
+
+  describe('返品メール対応（cmd_079）', () => {
+    // 返品メール: マイナス金額の抽出
+    it('SMBCParser: 返品取引（マイナス金額）を正しく抽出する', () => {
+      const body = `ひいらぎ　様
+
+いつも三井住友カードをご利用頂きありがとうございます。
+お客様のカードご利用内容をお知らせいたします。
+
+◇ご利用カード：Olive／クレジット払い
+◇利用日時：2026/02/18 12:30
+◇利用先：テスト店舗
+◇利用金額：-16,280円
+◇利用取引：返品
+
+`;
+      const parser = new SMBCParser();
+      const amount = parser.extract_amount(body);
+      expect(amount).toBe(-16280);
+    });
+
+    it('SMBCParser: 返品フラグ（is_return）を検出する', () => {
+      const body = `◇利用金額：-16,280円\n◇利用取引：返品`;
+      const parser = new SMBCParser();
+      expect(parser.extract_is_return(body)).toBe(true);
+    });
+
+    it('SMBCParser: 通常取引は is_return=false', () => {
+      const body = `◇利用金額：5,400円\n◇利用取引：ショッピング`;
+      const parser = new SMBCParser();
+      expect(parser.extract_is_return(body)).toBe(false);
+    });
+
+    it('SMBCParser: 負の金額は _validate_amount を通過する', () => {
+      const parser = new SMBCParser();
+      // 負の金額（返品）も有効値として扱う
+      expect(parser['_validate_amount'](-16280)).toBe(-16280);
+      expect(parser['_validate_amount'](-1)).toBe(-1);
     });
   });
 

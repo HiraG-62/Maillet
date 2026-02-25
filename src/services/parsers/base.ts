@@ -4,6 +4,7 @@ export interface ParsedTransaction {
   merchant: string;
   card_company: string;
   raw_text: string;
+  is_return?: boolean;
 }
 
 export const INT_MAX = 2_147_483_647;
@@ -105,7 +106,7 @@ export abstract class BaseCardParser {
   }
 
   protected _validate_amount(value: number): number | null {
-    if (isNaN(value) || value < 0 || value > INT_MAX) return null;
+    if (isNaN(value) || Math.abs(value) > INT_MAX) return null;
     return value;
   }
 
