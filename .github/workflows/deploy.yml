@@ -41,6 +41,8 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_REDIRECT_URI: ${{ secrets.VITE_GOOGLE_REDIRECT_URI }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
