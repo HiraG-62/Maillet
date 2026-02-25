@@ -6,10 +6,18 @@ interface TransactionCardProps {
   transaction: CardTransaction;
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = d.getHours();
+  const min = d.getMinutes();
+  const date = `${yyyy}/${mm}/${dd}`;
+  if (hh === 0 && min === 0) return date;
+  return `${date} ${String(hh).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
 export function TransactionCard({ transaction }: TransactionCardProps) {

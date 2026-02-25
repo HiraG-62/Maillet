@@ -25,12 +25,15 @@ function getCardBadgeColor(company: string | null | undefined): { bg: string; te
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
-  const d = dateStr.slice(0, 10);
-  const parts = d.split('-');
-  if (parts.length === 3) {
-    return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
-  }
-  return d;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = d.getHours();
+  const min = d.getMinutes();
+  const date = `${mm}/${dd}`;
+  if (hh === 0 && min === 0) return date;
+  return `${date} ${String(hh).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
 export function RecentTransactions({ transactions, limit = 10 }: RecentTransactionsProps) {
@@ -51,7 +54,7 @@ export function RecentTransactions({ transactions, limit = 10 }: RecentTransacti
             key={tx.id ?? `${tx.transaction_date}-${index}`}
             className="flex items-center gap-3 py-3 border-b border-white/5 last:border-b-0"
           >
-            <span className="text-slate-400 text-sm w-10 shrink-0">
+            <span className="text-slate-400 text-sm w-auto shrink-0">
               {formatDate(tx.transaction_date)}
             </span>
             <span
