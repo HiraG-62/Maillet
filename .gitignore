@@ -81,3 +81,10 @@ vite.config.js
 # Compiled JavaScript (TypeScript source exists for all these)
 src/**/*.js
 src/**/*.js.map
+
+# Development temporary documents
+QUICKSTART*.md
+DEBUG*.md
+SCRATCH*.md
+WIP*.md
+TMP*.md
