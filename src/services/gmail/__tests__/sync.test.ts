@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-// sessionStorage mock for Node.js environment
-const sessionStorageMock = (() => {
+// localStorage mock for Node.js environment
+const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] ?? null,
@@ -11,7 +11,7 @@ const sessionStorageMock = (() => {
     clear: () => { store = {}; },
   };
 })();
-vi.stubGlobal('sessionStorage', sessionStorageMock);
+vi.stubGlobal('localStorage', localStorageMock);
 
 import { syncGmailTransactions } from '../sync';
 import type { SyncResult, SyncProgress } from '@/types/gmail';
@@ -35,12 +35,12 @@ describe('Gmail Sync Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    sessionStorage.setItem('gmail_access_token', 'mock-token');
+    localStorage.setItem('gmail_access_token', 'mock-token');
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    sessionStorage.clear();
+    localStorage.removeItem('gmail_access_token');
   });
 
   describe('decodeEmailBody', () => {
@@ -254,7 +254,7 @@ describe('Gmail Sync Service', () => {
     });
 
     it('should handle authentication errors', async () => {
-      sessionStorage.clear(); // No token
+      localStorage.removeItem('gmail_access_token'); // No token
       vi.mocked(initDB).mockResolvedValue(undefined);
 
       const result = await syncGmailTransactions();
