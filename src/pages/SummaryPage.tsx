@@ -4,7 +4,7 @@ import MonthlyBarChart from '@/components/dashboard/MonthlyBarChart';
 import CategoryPieChart from '@/components/dashboard/CategoryPieChart';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 
-const toYearMonth = (dateStr: string) => dateStr.slice(0, 7);
+const toYearMonth = (dateStr: string | null | undefined) => (dateStr ?? '').slice(0, 7);
 
 const getLastNMonths = (fromMonth: string, n: number): string[] => {
   const [yearStr, monthStr] = fromMonth.split('-');

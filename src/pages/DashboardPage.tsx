@@ -47,7 +47,7 @@ export default function DashboardPage() {
     }
     const map: Record<string, number> = {};
     for (const tx of transactions) {
-      const month = tx.transaction_date.slice(0, 7);
+      const month = (tx.transaction_date ?? '').slice(0, 7);
       if (months.includes(month)) {
         map[month] = (map[month] ?? 0) + tx.amount;
       }
@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
   const categoryData = useMemo(() => {
     const filtered = transactions.filter(
-      (tx) => tx.transaction_date.slice(0, 7) === selectedMonth
+      (tx) => (tx.transaction_date ?? '').slice(0, 7) === selectedMonth
     );
     const map: Record<string, number> = {};
     for (const tx of filtered) {

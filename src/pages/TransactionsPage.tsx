@@ -14,7 +14,7 @@ export default function TransactionsPage() {
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (selectedMonth !== 'all') {
-        const txMonth = tx.transaction_date.slice(0, 7); // "YYYY-MM"
+        const txMonth = (tx.transaction_date ?? '').slice(0, 7); // "YYYY-MM"
         if (txMonth !== selectedMonth) return false;
       }
       if (selectedCard !== 'all') {
