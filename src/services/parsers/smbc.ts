@@ -48,13 +48,21 @@ export class SMBCParser extends BaseCardParser {
   }
 
   override extract_merchant(email_body: string): string | null {
+    // [DEBUG-086] ① extract_merchant 呼び出し確認
+    console.log('[DEBUG-086] ① extract_merchant CALLED, body.length:', email_body.length);
+    console.log('[DEBUG-086] ① body first 200:', JSON.stringify(email_body.substring(0, 200)));
     // SMBC 特有: ◇ご利用先 / ◇利用先
     // パターン1: 「利用先：店名」形式（◇/ご の有無に依存しない）
     // 例: ◇利用先：COKE ON PAY / ご利用先：セブンイレブン / 利用先：イオン
     const m1 = email_body.match(/利用先[:：]\s*(.+?)(?=\n|$)/);
+    // [DEBUG-086] ② パターン1マッチ結果
+    console.log('[DEBUG-086] ② pattern1 match:', m1 ? JSON.stringify(m1[0]) : 'null');
     if (m1) {
       const s = m1[1].replace(/[\r\n]/g, '').replace(/[ \t]+/g, ' ').trim();
-      if (s) return s;
+      if (s) {
+        console.log('[DEBUG-086] ③ returning from pattern1:', JSON.stringify(s));
+        return s;
+      }
     }
 
     // パターン2: コロンなし + スペース区切り（HTMLメールのstripHtml後）
@@ -62,9 +70,13 @@ export class SMBCParser extends BaseCardParser {
     const m2 = email_body.match(/◇ご?利用先[　 ]+(.+?)(?=\n|◇|$)/);
     if (m2) {
       const s = m2[1].replace(/[\r\n]/g, '').replace(/[ \t]+/g, ' ').trim();
-      if (s) return s;
+      if (s) {
+        console.log('[DEBUG-086] ③ returning from pattern2:', JSON.stringify(s));
+        return s;
+      }
     }
 
+    console.log('[DEBUG-086] ③ falling through to super.extract_merchant');
     return super.extract_merchant(email_body);
   }
 
