@@ -75,12 +75,23 @@ async function query(sql: string, params: unknown[] = []) {
 async function execute(sql: string, params: unknown[] = []) {
   if (!sqlite3 || db === undefined) throw new Error('DB not initialized');
   let changes = 0;
-  let lastId: number | undefined;
   for await (const stmt of sqlite3.statements(db, sql)) {
     if (params.length) sqlite3.bind_collection(stmt, params);
     await sqlite3.step(stmt);
     changes += sqlite3.changes(db);
-    lastId = sqlite3.last_insert_id(db);
+  }
+  // wa-sqlite は last_insert_rowid を JS メソッドとして expose しないため
+  // SQL で取得する（changes > 0 の場合のみ = INSERT が成功した場合のみ）
+  let lastId: number | undefined;
+  if (changes > 0) {
+    const rows: unknown[][] = [];
+    for await (const stmt of sqlite3.statements(db, 'SELECT last_insert_rowid()')) {
+      while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+        rows.push(sqlite3.row(stmt));
+      }
+    }
+    const rowid = rows[0]?.[0] as number;
+    lastId = rowid > 0 ? rowid : undefined;
   }
   return { changes, lastId };
 }
