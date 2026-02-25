@@ -48,6 +48,8 @@ export class SMBCParser extends BaseCardParser {
   }
 
   override extract_merchant(email_body: string): string | null {
+    // CRLF正規化（Gmail APIのメール本文は\r\n改行）
+    email_body = email_body.replace(/\r\n/g, '\n');
     // [DEBUG-086] ① extract_merchant 呼び出し確認
     console.log('[DEBUG-086] ① extract_merchant CALLED, body.length:', email_body.length);
     console.log('[DEBUG-086] ① body first 200:', JSON.stringify(email_body.substring(0, 200)));
@@ -85,6 +87,8 @@ export class SMBCParser extends BaseCardParser {
     from_address: string,
     subject: string
   ): ParsedTransaction | null {
+    // CRLF正規化（super.parse呼び出し前に正規化）
+    email_body = email_body.replace(/\r\n/g, '\n');
     const result = super.parse(email_body, from_address, subject);
     if (!result) return null;
     return { ...result, is_return: this.extract_is_return(email_body) };

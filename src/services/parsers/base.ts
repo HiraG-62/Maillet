@@ -77,6 +77,8 @@ export abstract class BaseCardParser {
     from_address: string,
     subject: string
   ): ParsedTransaction | null {
+    // CRLF正規化（Gmail APIのメール本文は\r\n改行）
+    email_body = email_body.replace(/\r\n/g, '\n');
     if (!this.can_parse(from_address, subject)) return null;
     const amount =
       this.extract_amount(email_body) ??

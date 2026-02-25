@@ -316,6 +316,23 @@ describe('SMBCParser', () => {
       expect(parser.extract_merchant(body)).toBe('ＡＭＡＺＯＮ．ＣＯ．ＪＰ');
     });
   });
+
+  describe('SMBCParser CRLF対応', () => {
+    it('CRLF改行メールからmerchantを正しく抽出する', () => {
+      const body = '◇利用日：2026/02/10 15:15\r\n◇利用先：COKE ON PAY\r\n◇利用取引：買物\r\n◇利用金額：140円';
+      expect(parser.extract_merchant(body)).toBe('COKE ON PAY');
+    });
+
+    it('CRLF改行メールからamountを正しく抽出する', () => {
+      const body = '◇利用日：2026/02/10 15:15\r\n◇利用先：COKE ON PAY\r\n◇利用取引：買物\r\n◇利用金額：140円';
+      expect(parser.extract_amount(body)).toBe(140);
+    });
+
+    it('CRLF改行メールからtransaction_dateを正しく抽出する', () => {
+      const body = '◇利用日：2026/02/10 15:15\r\n◇利用先：COKE ON PAY\r\n◇利用取引：買物\r\n◇利用金額：140円';
+      expect(parser.extract_transaction_date(body)).not.toBeNull();
+    });
+  });
 });
 
 describe('JCBParser', () => {
