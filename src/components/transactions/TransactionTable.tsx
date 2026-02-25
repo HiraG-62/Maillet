@@ -14,7 +14,8 @@ interface TransactionTableProps {
   transactions: CardTransaction[];
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
@@ -22,7 +23,7 @@ function formatDate(dateStr: string): string {
 
 export function TransactionTable({ transactions }: TransactionTableProps) {
   const sorted = [...transactions].sort(
-    (a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()
+    (a, b) => new Date(b.transaction_date ?? '').getTime() - new Date(a.transaction_date ?? '').getTime()
   );
 
   return (

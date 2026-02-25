@@ -23,7 +23,7 @@ export default function TransactionsPage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const inMerchant = tx.merchant.toLowerCase().includes(q);
-        const inDesc = tx.description.toLowerCase().includes(q);
+        const inDesc = (tx.description ?? '').toLowerCase().includes(q);
         if (!inMerchant && !inDesc) return false;
       }
       return true;
@@ -53,8 +53,8 @@ export default function TransactionsPage() {
               .slice()
               .sort(
                 (a, b) =>
-                  new Date(b.transaction_date).getTime() -
-                  new Date(a.transaction_date).getTime()
+                  new Date(b.transaction_date ?? '').getTime() -
+                  new Date(a.transaction_date ?? '').getTime()
               )
               .map((tx, idx) => (
                 <TransactionCard key={tx.id ?? idx} transaction={tx} />

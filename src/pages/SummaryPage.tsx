@@ -34,7 +34,7 @@ export default function SummaryPage() {
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
     transactions.forEach((t) => months.add(toYearMonth(t.transaction_date)));
-    return Array.from(months).sort((a, b) => b.localeCompare(a));
+    return Array.from(months).filter(m => m.length > 0).sort((a, b) => b.localeCompare(a));
   }, [transactions]);
 
   const monthlyData = useMemo(() => {

@@ -22,7 +22,8 @@ function getCardBadgeColor(company: string): { bg: string; text: string } {
   return { bg: 'bg-slate-500/20', text: 'text-slate-400' };
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
   const d = dateStr.slice(0, 10);
   const parts = d.split('-');
   if (parts.length === 3) {
@@ -33,7 +34,7 @@ function formatDate(dateStr: string): string {
 
 export function RecentTransactions({ transactions, limit = 10 }: RecentTransactionsProps) {
   const sorted = [...transactions]
-    .sort((a, b) => b.transaction_date.localeCompare(a.transaction_date))
+    .sort((a, b) => (b.transaction_date ?? '').localeCompare(a.transaction_date ?? ''))
     .slice(0, limit);
 
   if (sorted.length === 0) {
