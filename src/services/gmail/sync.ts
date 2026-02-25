@@ -1,8 +1,18 @@
-import type { GmailMessage, SyncResult, SyncProgress } from '@/types/gmail';
+import type { GmailMessage, SyncResult, SyncProgress, GmailAuthConfig } from '@/types/gmail';
 import { parse_email_debug } from '@/services/parsers';
 import { initDB, queryDB, executeDB } from '@/lib/database';
+import { refreshToken } from './auth';
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
+
+function getGmailConfig(): GmailAuthConfig {
+  return {
+    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
+    clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+    redirectUri: import.meta.env.VITE_GOOGLE_REDIRECT_URI ?? '',
+    scope: ['https://www.googleapis.com/auth/gmail.readonly'],
+  };
+}
 
 // Card notification email subjects
 const CARD_EMAIL_QUERIES = [
@@ -12,11 +22,12 @@ const CARD_EMAIL_QUERIES = [
 ];
 
 /**
- * Gmail API request with authentication
+ * Gmail API request with authentication and automatic token refresh on 401
  */
 async function gmailFetch(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  _retry = false
 ): Promise<Record<string, unknown>> {
   const token = localStorage.getItem('gmail_access_token');
   if (!token) throw new Error('Gmail未認証');
@@ -31,6 +42,17 @@ async function gmailFetch(
   });
 
   if (response.status === 401) {
+    if (!_retry) {
+      const storedRefreshToken = localStorage.getItem('gmail_refresh_token');
+      if (storedRefreshToken) {
+        try {
+          await refreshToken(storedRefreshToken, getGmailConfig());
+          return gmailFetch(path, options, true);
+        } catch {
+          // リフレッシュ失敗 → トークン削除して再認証要求
+        }
+      }
+    }
     localStorage.removeItem('gmail_access_token');
     localStorage.removeItem('gmail_refresh_token');
     throw new Error('Gmail認証期限切れ。再認証が必要です。');

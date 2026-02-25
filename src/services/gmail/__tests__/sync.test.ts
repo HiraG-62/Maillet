@@ -28,8 +28,15 @@ vi.mock('@/services/parsers', () => ({
   parse_email_debug: vi.fn(),
 }));
 
+// Mock auth functions
+vi.mock('@/services/gmail/auth', () => ({
+  refreshToken: vi.fn(),
+  saveToken: vi.fn(),
+}));
+
 import { initDB, queryDB, executeDB } from '@/lib/database';
 import { parse_email_debug } from '@/services/parsers';
+import { refreshToken } from '@/services/gmail/auth';
 
 describe('Gmail Sync Service', () => {
   beforeEach(() => {
@@ -266,7 +273,7 @@ describe('Gmail Sync Service', () => {
       expect(result.errors[0]).toContain('未認証');
     });
 
-    it('should handle API 401 errors', async () => {
+    it('should handle API 401 errors when no refresh token', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -279,6 +286,73 @@ describe('Gmail Sync Service', () => {
 
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain('期限切れ');
+    });
+
+    it('should auto-refresh token and retry when 401 with valid refresh_token', async () => {
+      vi.mocked(initDB).mockResolvedValue(undefined);
+      vi.mocked(queryDB).mockResolvedValue([[0]]); // not duplicate
+
+      localStorage.setItem('gmail_refresh_token', 'valid_refresh_token');
+
+      vi.mocked(refreshToken).mockImplementation(async () => {
+        localStorage.setItem('gmail_access_token', 'new_access_token');
+        return {
+          access_token: 'new_access_token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+          scope: 'https://www.googleapis.com/auth/gmail.readonly',
+          refresh_token: 'valid_refresh_token',
+        };
+      });
+
+      global.fetch = vi.fn()
+        // listMessages: query 1 → 1 message
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [{ id: 'msg_001', threadId: 'thread_001' }] }),
+        })
+        // listMessages: query 2 → empty
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 3 → empty
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // getMessage → 401 (triggers auto-refresh)
+        .mockResolvedValueOnce({
+          ok: false, status: 401,
+        })
+        // getMessage retry after refresh → success
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({
+            payload: {
+              headers: [
+                { name: 'Subject', value: 'Test Subject' },
+                { name: 'From', value: 'test@example.com' },
+              ],
+              body: { data: '' },
+            },
+          }),
+        });
+
+      vi.mocked(parse_email_debug).mockReturnValue({
+        result: null,
+        debug: 'parser failed',
+      });
+
+      const result = await syncGmailTransactions();
+
+      expect(refreshToken).toHaveBeenCalledWith('valid_refresh_token', expect.any(Object));
+      // 認証エラーは発生していない（parse_error になる）
+      expect(result.errors.every(e => !e.includes('期限切れ'))).toBe(true);
+      // refresh_token は削除されていない
+      expect(localStorage.getItem('gmail_refresh_token')).toBe('valid_refresh_token');
+
+      localStorage.removeItem('gmail_refresh_token');
     });
 
     it('should accumulate transaction counts correctly', async () => {
