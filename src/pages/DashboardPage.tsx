@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronLeft, ChevronRight, BarChart2, Settings, RefreshCw, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BarChart2, RefreshCw, ArrowRight } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useAuth } from '@/hooks/useAuth';
@@ -253,13 +253,6 @@ export default function DashboardPage() {
             <BarChart2 size={24} />
           </div>
           <span className="service-icon-label">サマリー</span>
-        </button>
-
-        <button onClick={() => navigate('/settings')} className="service-icon">
-          <div className="service-icon-circle">
-            <Settings size={24} />
-          </div>
-          <span className="service-icon-label">設定</span>
         </button>
 
         <button
