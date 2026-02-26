@@ -8,7 +8,101 @@ let db: number | undefined;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let sqlite3: any;
 
-const DB_NAME = 'card-tracker.db';
+/* ── IndexedDB helpers (persistence layer) ── */
+
+const IDB_NAME = 'maillet-db';
+const IDB_STORE = 'data';
+const IDB_KEY = 'sqlite-db';
+
+async function idbSave(bytes: Uint8Array): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => {
+      const tx = req.result.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(bytes, IDB_KEY);
+      tx.oncomplete = () => { req.result.close(); resolve(); };
+      tx.onerror = () => { req.result.close(); reject(tx.error); };
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbLoad(): Promise<Uint8Array | null> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => {
+      const tx = req.result.transaction(IDB_STORE, 'readonly');
+      const getReq = tx.objectStore(IDB_STORE).get(IDB_KEY);
+      getReq.onsuccess = () => { req.result.close(); resolve(getReq.result ?? null); };
+      getReq.onerror = () => { req.result.close(); reject(getReq.error); };
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/* ── Legacy IDB cleanup ── */
+
+async function cleanupLegacyIDB(): Promise<void> {
+  const legacyNames = ['card-tracker.db', '/card-tracker.db'];
+  for (const name of legacyNames) {
+    try {
+      await new Promise<void>((resolve) => {
+        const req = indexedDB.deleteDatabase(name);
+        req.onsuccess = () => resolve();
+        req.onerror = () => resolve();
+      });
+      console.log('[DEBUG-098] Cleaned up legacy IDB:', name);
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/* ── SQL dump serialization (no sqlite3_serialize in wa-sqlite) ── */
+
+const COLUMNS =
+  'id, card_company, amount, merchant, transaction_date, ' +
+  'description, category, email_subject, email_from, ' +
+  'gmail_message_id, is_verified, created_at';
+
+async function saveToIDB(): Promise<void> {
+  if (db === undefined || !sqlite3) return;
+  const rows: unknown[][] = [];
+  for await (const stmt of sqlite3.statements(
+    db,
+    `SELECT ${COLUMNS} FROM card_transactions`
+  )) {
+    while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+      rows.push(sqlite3.row(stmt));
+    }
+  }
+  const encoder = new TextEncoder();
+  await idbSave(encoder.encode(JSON.stringify(rows)));
+  console.log('[DEBUG-098] save: serialized', rows.length, 'rows to IDB');
+}
+
+async function loadFromIDB(): Promise<void> {
+  if (db === undefined || !sqlite3) return;
+  const bytes = await idbLoad();
+  if (!bytes) return;
+  const rows = JSON.parse(new TextDecoder().decode(bytes)) as unknown[][];
+  if (rows.length === 0) return;
+  console.log('[DEBUG-098] init: loading', rows.length, 'rows from IDB...');
+  for (const row of rows) {
+    for await (const stmt of sqlite3.statements(
+      db,
+      `INSERT OR REPLACE INTO card_transactions (${COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+    )) {
+      sqlite3.bind_collection(stmt, row);
+      await sqlite3.step(stmt);
+    }
+  }
+  console.log('[DEBUG-098] init: rows loaded:', rows.length);
+}
+
+/* ── Schema & migration ── */
 
 const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS card_transactions (
@@ -33,69 +127,52 @@ const SCHEMA_SQL = `
     ON card_transactions(transaction_date, card_company);
 `;
 
+const MIGRATION_SQL = `
+  UPDATE card_transactions SET card_company = '' WHERE card_company IS NULL;
+  UPDATE card_transactions SET merchant = '' WHERE merchant IS NULL;
+  UPDATE card_transactions SET transaction_date = '1970-01-01T00:00:00.000Z' WHERE transaction_date IS NULL;
+  UPDATE card_transactions SET description = '' WHERE description IS NULL;
+`;
+
+/* ── Core functions ── */
+
 async function init(): Promise<{ ok: true; warning?: string }> {
-  console.log('[DEBUG-096] init() called');
-  console.log('[DEBUG-096] current db state:', db !== undefined ? 'already initialized' : 'not initialized');
+  console.log('[DEBUG-098] init() called');
   if (db !== undefined) return { ok: true };
   const module = await SQLiteAsyncESMFactory();
   sqlite3 = SQLite.Factory(module);
 
-  // IDBBatchAtomicVFS: IndexedDB-based VFS (no COOP/COEP headers required, works on GitHub Pages)
-  console.log('[DEBUG-096] Attempting IDBBatchAtomicVFS...');
-  let warning: string | undefined;
-  try {
-    const { IDBBatchAtomicVFS } = await import(
-      // @ts-expect-error dynamic path
-      'wa-sqlite/src/examples/IDBBatchAtomicVFS.js'
-    );
-    const vfs = new IDBBatchAtomicVFS(DB_NAME, { durability: 'relaxed' });
-    sqlite3.vfs_register(vfs, true);
-    db = await sqlite3.open_v2(
-      DB_NAME,
-      SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE,
-      DB_NAME
-    );
-    console.log('[DEBUG-096] IDBBatchAtomicVFS created successfully');
+  // Memory DB (VFS-free: avoids journal file xOpen trap)
+  db = await sqlite3.open_v2(':memory:');
+  console.log('[DEBUG-098] Opened :memory: DB');
 
-    // WAL mode prevents journal file errors (IDBBatchAtomicVFS + default rollback journal
-    // causes "file not found: /xxx-journal" because xOpen lacks SQLITE_OPEN_CREATE for journals)
-    for await (const stmt of sqlite3.statements(db, 'PRAGMA journal_mode=WAL')) {
-      while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
-        const mode = sqlite3.row(stmt);
-        console.log('[DEBUG-096] journal_mode set to:', mode[0]);
-      }
-    }
-  } catch (error) {
-    // IDB unavailable (test env, etc.) → in-memory fallback
-    console.error('[DEBUG-096] IDBBatchAtomicVFS FAILED:', error);
-    db = await sqlite3.open_v2(':memory:');
-    warning = 'DB永続化失敗。データはセッション終了時に消えます。';
-    console.warn('[DEBUG-096] Using :memory: fallback —', warning);
-  }
-
+  // Schema
   for await (const stmt of sqlite3.statements(db, SCHEMA_SQL)) {
     await sqlite3.step(stmt);
   }
-
-  // マイグレーション: 旧スキーマで NULL が入った可能性のある行を修正
-  const MIGRATION_SQL = `
-    UPDATE card_transactions SET card_company = '' WHERE card_company IS NULL;
-    UPDATE card_transactions SET merchant = '' WHERE merchant IS NULL;
-    UPDATE card_transactions SET transaction_date = '1970-01-01T00:00:00.000Z' WHERE transaction_date IS NULL;
-    UPDATE card_transactions SET description = '' WHERE description IS NULL;
-  `;
+  // Migration
   for await (const stmt of sqlite3.statements(db, MIGRATION_SQL)) {
     await sqlite3.step(stmt);
   }
 
-  // DB open後のテーブル行数確認ログ
-  const tableCountRows: unknown[][] = [];
+  // Restore data from IndexedDB
+  let warning: string | undefined;
+  try {
+    await cleanupLegacyIDB();
+    await loadFromIDB();
+  } catch (error) {
+    console.warn('[DEBUG-098] IDB load failed, starting fresh:', error);
+    warning = 'DB復元失敗。新規DBとして開始します。';
+  }
+
+  // Row count log
+  const countRows: unknown[][] = [];
   for await (const stmt of sqlite3.statements(db, 'SELECT count(*) FROM card_transactions')) {
     while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
-      tableCountRows.push(sqlite3.row(stmt));
+      countRows.push(sqlite3.row(stmt));
     }
   }
-  console.log('[DEBUG-096] DB opened. Table count (card_transactions rows):', tableCountRows[0]?.[0]);
+  console.log('[DEBUG-098] DB ready. Rows:', countRows[0]?.[0]);
 
   return warning ? { ok: true, warning } : { ok: true };
 }
@@ -120,8 +197,6 @@ async function execute(sql: string, params: unknown[] = []) {
     await sqlite3.step(stmt);
     changes += sqlite3.changes(db);
   }
-  // wa-sqlite は last_insert_rowid を JS メソッドとして expose しないため
-  // SQL で取得する（changes > 0 の場合のみ = INSERT が成功した場合のみ）
   let lastId: number | undefined;
   if (changes > 0) {
     const rows: unknown[][] = [];
@@ -136,6 +211,8 @@ async function execute(sql: string, params: unknown[] = []) {
   return { changes, lastId };
 }
 
+/* ── Worker message handler ── */
+
 self.addEventListener('message', async (e: MessageEvent) => {
   const { id, action, args } = e.data as {
     id: number;
@@ -148,6 +225,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
       case 'init':    result = await init(); break;
       case 'query':   result = await query(args[0] as string, args[1] as unknown[]); break;
       case 'execute': result = await execute(args[0] as string, args[1] as unknown[]); break;
+      case 'save':    await saveToIDB(); result = { ok: true }; break;
       default: throw new Error(`Unknown action: ${action}`);
     }
     self.postMessage({ id, result });

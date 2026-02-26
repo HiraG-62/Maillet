@@ -13,6 +13,10 @@ vi.mock('@/lib/transactions', () => ({
   getTransactions: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('@/lib/database', () => ({
+  saveDB: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { syncGmailTransactions } from '@/services/gmail/sync';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { getTransactions } from '@/lib/transactions';

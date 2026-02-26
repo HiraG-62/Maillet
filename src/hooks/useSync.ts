@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { syncGmailTransactions } from '@/services/gmail/sync';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { getTransactions } from '@/lib/transactions';
+import { saveDB } from '@/lib/database';
 import type { SyncProgress, SyncResult } from '@/types/gmail';
 
 interface UseSyncReturn {
@@ -46,6 +47,10 @@ export function useSync(): UseSyncReturn {
       });
 
       setResult(syncResult);
+
+      // Persist memory DB to IndexedDB after sync
+      await saveDB();
+      console.log('[DEBUG-098] DB saved to IndexedDB after sync');
 
       // Fetch updated transactions from database
       if (!abortControllerRef.current.signal.aborted) {

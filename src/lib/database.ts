@@ -61,3 +61,7 @@ export async function executeDB(
     lastId?: number;
   }>;
 }
+
+export async function saveDB(): Promise<void> {
+  await call('save', []);
+}
