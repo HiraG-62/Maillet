@@ -34,32 +34,31 @@ const SCHEMA_SQL = `
 `;
 
 async function init() {
-  console.log('[DEBUG-093] init() called');
-  console.log('[DEBUG-093] current db state:', db !== undefined ? 'already initialized' : 'not initialized');
+  console.log('[DEBUG-095] init() called');
+  console.log('[DEBUG-095] current db state:', db !== undefined ? 'already initialized' : 'not initialized');
   if (db !== undefined) return { ok: true };
   const module = await SQLiteAsyncESMFactory();
   sqlite3 = SQLite.Factory(module);
 
-  // Attempting OPFS (AccessHandlePoolVFS)
-  console.log('[DEBUG-093] Attempting OPFS (AccessHandlePoolVFS)...');
+  // IDBBatchAtomicVFS: IndexedDB-based VFS (no COOP/COEP headers required, works on GitHub Pages)
+  console.log('[DEBUG-095] Attempting IDBBatchAtomicVFS...');
   try {
-    const { AccessHandlePoolVFS } = await import(
+    const { IDBBatchAtomicVFS } = await import(
       // @ts-expect-error dynamic path
-      'wa-sqlite/src/examples/AccessHandlePoolVFS.js'
+      'wa-sqlite/src/examples/IDBBatchAtomicVFS.js'
     );
-    const vfs = new AccessHandlePoolVFS(DB_NAME);
-    await vfs.isReady;
+    const vfs = new IDBBatchAtomicVFS(DB_NAME);
     sqlite3.vfs_register(vfs, true);
     db = await sqlite3.open_v2(
       DB_NAME,
       SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE,
-      'AccessHandlePool'
+      DB_NAME
     );
-    console.log('[DEBUG-093] OPFS VFS created successfully (AccessHandlePool)');
-    console.log('[DEBUG-093] DB file:', DB_NAME);
+    console.log('[DEBUG-095] IDBBatchAtomicVFS created successfully');
+    console.log('[DEBUG-095] DB name:', DB_NAME);
   } catch (error) {
-    // OPFS unavailable (non-secure context, test env, etc.) → in-memory fallback
-    console.log('[DEBUG-093] OPFS FAILED, falling back to :memory:', error);
+    // IDB unavailable (test env, etc.) → in-memory fallback
+    console.log('[DEBUG-095] IDBBatchAtomicVFS FAILED, falling back to :memory:', error);
     db = await sqlite3.open_v2(':memory:');
   }
 
@@ -85,7 +84,7 @@ async function init() {
       tableCountRows.push(sqlite3.row(stmt));
     }
   }
-  console.log('[DEBUG-093] DB opened. Table count (card_transactions rows):', tableCountRows[0]?.[0]);
+  console.log('[DEBUG-095] DB opened. Table count (card_transactions rows):', tableCountRows[0]?.[0]);
 
   return { ok: true };
 }
