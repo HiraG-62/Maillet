@@ -26,6 +26,7 @@ vi.mock('@/lib/database', () => ({
 // Mock parsers
 vi.mock('@/services/parsers', () => ({
   parse_email_debug: vi.fn(),
+  detect_card_company: vi.fn(),
 }));
 
 // Mock auth functions
@@ -35,7 +36,7 @@ vi.mock('@/services/gmail/auth', () => ({
 }));
 
 import { initDB, queryDB, executeDB } from '@/lib/database';
-import { parse_email_debug } from '@/services/parsers';
+import { parse_email_debug, detect_card_company } from '@/services/parsers';
 import { refreshToken } from '@/services/gmail/auth';
 
 describe('getCurrentMonthDateFilter', () => {
@@ -77,6 +78,8 @@ describe('Gmail Sync Service', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     localStorage.setItem('gmail_access_token', 'mock-token');
+    // Default: all emails pass the card notification pre-filter
+    vi.mocked(detect_card_company).mockReturnValue('SMBC');
   });
 
   afterEach(() => {
@@ -214,6 +217,21 @@ describe('Gmail Sync Service', () => {
           status: 200,
           json: async () => ({ messages: [] }),
         })
+        // getMessageMetadata(msg_001)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: 'msg_001',
+            payload: {
+              headers: [
+                { name: 'Subject', value: 'Test' },
+                { name: 'From', value: 'test@example.com' },
+              ],
+            },
+          }),
+        })
+        // getMessageBody(msg_001)
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -256,6 +274,21 @@ describe('Gmail Sync Service', () => {
           status: 200,
           json: async () => ({ messages: [] }),
         })
+        // getMessageMetadata(msg_001)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: 'msg_001',
+            payload: {
+              headers: [
+                { name: 'Subject', value: 'Test' },
+                { name: 'From', value: 'test@example.com' },
+              ],
+            },
+          }),
+        })
+        // getMessageBody(msg_001)
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -355,11 +388,24 @@ describe('Gmail Sync Service', () => {
           ok: true, status: 200,
           json: async () => ({ messages: [] }),
         })
-        // getMessage → 401 (triggers auto-refresh)
+        // getMessageMetadata(msg_001) → success
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({
+            id: 'msg_001',
+            payload: {
+              headers: [
+                { name: 'Subject', value: 'Test Subject' },
+                { name: 'From', value: 'test@example.com' },
+              ],
+            },
+          }),
+        })
+        // getMessageBody → 401 (triggers auto-refresh)
         .mockResolvedValueOnce({
           ok: false, status: 401,
         })
-        // getMessage retry after refresh → success
+        // getMessageBody retry after refresh → success
         .mockResolvedValueOnce({
           ok: true, status: 200,
           json: async () => ({
@@ -414,6 +460,35 @@ describe('Gmail Sync Service', () => {
           status: 200,
           json: async () => ({ messages: [] }),
         })
+        // getMessageMetadata(msg_001) — parallel batch
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: 'msg_001',
+            payload: {
+              headers: [
+                { name: 'Subject', value: 'Test 1' },
+                { name: 'From', value: 'test1@example.com' },
+              ],
+            },
+          }),
+        })
+        // getMessageMetadata(msg_002) — parallel batch
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: 'msg_002',
+            payload: {
+              headers: [
+                { name: 'Subject', value: 'Test 2' },
+                { name: 'From', value: 'test2@example.com' },
+              ],
+            },
+          }),
+        })
+        // getMessageBody(msg_001)
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -427,6 +502,7 @@ describe('Gmail Sync Service', () => {
             },
           }),
         })
+        // getMessageBody(msg_002)
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -488,7 +564,20 @@ describe('Gmail Sync Service', () => {
           ok: true, status: 200,
           json: async () => ({ messages: [] }),
         })
-        // getMessage for msg_html_only — HTML-only, no text/plain
+        // getMessageMetadata for msg_html_only
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({
+            id: 'msg_html_only',
+            payload: {
+              headers: [
+                { name: 'Subject', value: '三井住友カードご利用のお知らせ' },
+                { name: 'From', value: 'notify@contact.vpass.ne.jp' },
+              ],
+            },
+          }),
+        })
+        // getMessageBody for msg_html_only — HTML-only, no text/plain
         .mockResolvedValueOnce({
           ok: true,
           status: 200,

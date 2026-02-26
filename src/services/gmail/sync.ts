@@ -1,5 +1,5 @@
 import type { GmailMessage, SyncResult, SyncProgress, GmailAuthConfig } from '@/types/gmail';
-import { parse_email_debug } from '@/services/parsers';
+import { parse_email_debug, detect_card_company } from '@/services/parsers';
 import { initDB, executeDB } from '@/lib/database';
 import { getSyncedMessageIds } from '@/lib/transactions';
 import { refreshToken } from './auth';
@@ -153,31 +153,38 @@ function extractBody(
 }
 
 /**
- * Fetch message details (subject, from, body)
+ * Fetch message metadata only (subject and from address) — lightweight, no body
  */
-async function getMessage(
+async function getMessageMetadata(
   messageId: string
-): Promise<{ messageId: string; subject: string; fromAddress: string; body: string }> {
-  const data = (await gmailFetch(`/messages/${messageId}?format=full`)) as unknown as GmailMessage;
-
-  let subject = '';
-  let fromAddress = '';
-  const textParts: string[] = [];
-  const htmlParts: string[] = [];
+): Promise<{ subject: string; fromAddress: string }> {
+  const data = (await gmailFetch(
+    `/messages/${messageId}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&fields=id,payload/headers`
+  )) as unknown as GmailMessage;
 
   const headers = data.payload?.headers || [];
-  subject = headers.find(h => h.name === 'Subject')?.value || '';
-  fromAddress = headers.find(h => h.name === 'From')?.value || '';
+  const subject = headers.find(h => h.name === 'Subject')?.value || '';
+  const fromAddress = headers.find(h => h.name === 'From')?.value || '';
+  return { subject, fromAddress };
+}
 
+/**
+ * Fetch full message body (fields restricted to payload for efficiency)
+ */
+async function getMessageBody(messageId: string): Promise<string> {
+  const data = (await gmailFetch(
+    `/messages/${messageId}?format=full&fields=id,payload`
+  )) as unknown as GmailMessage;
+
+  const textParts: string[] = [];
+  const htmlParts: string[] = [];
   extractBody(data.payload as unknown as Record<string, unknown>, textParts, htmlParts);
   // Prefer text/plain; fallback to stripped text/html (many Japanese card emails are HTML-only)
-  const body = textParts.length > 0
+  return textParts.length > 0
     ? textParts.join('\n')
     : htmlParts.length > 0
       ? stripHtml(htmlParts.join('\n'))
       : '';
-
-  return { messageId, subject, fromAddress, body };
 }
 
 /**
@@ -222,7 +229,16 @@ interface ProcessResult {
  */
 async function processMessage(msg: { id: string }): Promise<ProcessResult> {
   try {
-    const { subject, fromAddress, body } = await getMessage(msg.id);
+    // Step 1: Lightweight metadata fetch (subject + from only)
+    const { subject, fromAddress } = await getMessageMetadata(msg.id);
+
+    // Step 2: Pre-filter — skip emails not recognized as card notifications
+    if (!detect_card_company(subject, fromAddress)) {
+      return { saved: false, parseError: false };
+    }
+
+    // Step 3: Full body fetch (only for confirmed card notification emails)
+    const body = await getMessageBody(msg.id);
     const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
 
     if (!parsed) {
@@ -294,8 +310,8 @@ export async function syncGmailTransactions(
     const newMessages = uniqueMessages.filter(msg => !syncedIds.has(msg.id));
     result.duplicates_skipped = uniqueMessages.length - newMessages.length;
 
-    // Parallel fetch: process in batches of 5 (Gmail API rate limit)
-    const BATCH_SIZE = 5;
+    // Parallel fetch: process in batches of 10 (Gmail API rate limit: 250 queries/sec/user)
+    const BATCH_SIZE = 10;
     for (let i = 0; i < newMessages.length; i += BATCH_SIZE) {
       const batch = newMessages.slice(i, i + BATCH_SIZE);
       const processed = Math.min(i + BATCH_SIZE, newMessages.length);
