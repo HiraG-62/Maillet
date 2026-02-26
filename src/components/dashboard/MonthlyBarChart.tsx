@@ -31,14 +31,14 @@ const formatYAxis = (value: number) => {
   return `${value}`;
 };
 
-// Gradient from muted → vivid cyan: oldest month = darkest, most recent = brightest
+// Gradient from muted → vivid teal: oldest month = darkest, most recent = brightest
 const BAR_COLORS = [
-  '#155e75', // 5 months ago
-  '#0e7490', // 4 months ago
-  '#0891b2', // 3 months ago
-  '#06b6d4', // 2 months ago (base cyan)
-  '#22d3ee', // 1 month ago
-  '#67e8f9', // current (vivid)
+  '#134e4a', // brand-900 (5 months ago)
+  '#0f766e', // brand-700 (4 months ago)
+  '#0d9488', // brand-600 (3 months ago)
+  '#14b8a6', // brand-500 (2 months ago)
+  '#2dd4bf', // brand-400 (1 month ago)
+  '#5eead4', // brand-300 (current, vivid)
 ];
 
 const CustomTooltip = ({
@@ -63,7 +63,7 @@ const CustomTooltip = ({
         <p style={{ color: '#94a3b8', marginBottom: '4px', fontSize: '12px' }}>
           {label ? formatMonth(label) : ''}
         </p>
-        <p style={{ color: '#22d3ee', fontWeight: 'bold', fontSize: '14px' }}>
+        <p style={{ color: '#0d9488', fontWeight: 'bold', fontSize: '14px' }}>
           ¥{payload[0].value.toLocaleString('ja-JP')}
         </p>
       </div>
@@ -91,7 +91,7 @@ export default function MonthlyBarChart({ data, height = 200 }: MonthlyBarChartP
           tickLine={false}
           width={40}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(6, 182, 212, 0.08)' }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(13, 148, 136, 0.08)' }} />
         <Bar dataKey="total_amount" radius={[6, 6, 0, 0]} isAnimationActive={true}>
           {data.map((_, index) => (
             <Cell

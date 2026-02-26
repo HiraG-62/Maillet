@@ -21,14 +21,14 @@ interface CategoryPieChartProps {
 }
 
 const PALETTE = [
-  '#06b6d4', // cyan-500
-  '#a855f7', // purple-500
-  '#f97316', // orange-500
-  '#10b981', // emerald-500
-  '#f59e0b', // amber-500
-  '#ef4444', // red-500
-  '#3b82f6', // blue-500
-  '#ec4899', // pink-500
+  '#0d9488', // brand-600
+  '#14b8a6', // brand-500
+  '#2dd4bf', // brand-400
+  '#5eead4', // brand-300
+  '#99f6e4', // brand-200
+  '#0f766e', // brand-700
+  '#115e59', // brand-800
+  '#134e4a', // brand-900
 ];
 
 const CustomTooltip = ({
@@ -51,7 +51,7 @@ const CustomTooltip = ({
         <p style={{ color: '#94a3b8', marginBottom: '4px', fontSize: '12px' }}>
           {payload[0].name}
         </p>
-        <p style={{ color: '#22d3ee', fontWeight: 'bold', fontSize: '14px' }}>
+        <p style={{ color: '#0d9488', fontWeight: 'bold', fontSize: '14px' }}>
           ¥{payload[0].value.toLocaleString('ja-JP')}
         </p>
       </div>
@@ -144,7 +144,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
                       textAnchor="middle"
                       fontSize={12}
                       fontWeight="bold"
-                      fill="#22d3ee"
+                      fill="#0d9488"
                     >
                       {totalStr}
                     </tspan>
