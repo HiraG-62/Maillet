@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import { BarChart2, PieChart, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { StatGrid, MonthlyBarChart, CategoryPieChart } from '@/components/dashboard';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
@@ -117,22 +118,24 @@ export default function DashboardPage() {
       {/* Header row */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">ダッシュボード</h1>
-          <div className="flex items-center gap-2 mt-1">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            ダッシュボード
+          </h1>
+          <div className="flex items-center gap-1 mt-1">
             <button
               onClick={() => setSelectedMonth((m) => addMonths(m, -1))}
-              className="text-slate-500 hover:text-slate-300 transition-colors p-0.5"
+              className="text-slate-500 hover:text-slate-200 hover:bg-white/10 transition-colors p-1 rounded"
               aria-label="前の月"
             >
-              ‹
+              <ChevronLeft size={14} />
             </button>
-            <span className="text-slate-400 text-sm">{formatMonthLabel(selectedMonth)}</span>
+            <span className="text-slate-400 text-sm px-1">{formatMonthLabel(selectedMonth)}</span>
             <button
               onClick={() => setSelectedMonth((m) => addMonths(m, 1))}
-              className="text-slate-500 hover:text-slate-300 transition-colors p-0.5"
+              className="text-slate-500 hover:text-slate-200 hover:bg-white/10 transition-colors p-1 rounded"
               aria-label="次の月"
             >
-              ›
+              <ChevronRight size={14} />
             </button>
           </div>
         </div>
@@ -194,18 +197,27 @@ export default function DashboardPage() {
           {/* Graph row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="md:col-span-2 rounded-lg border border-white/10 bg-[#12121a]/80 backdrop-blur-xl p-4">
-              <p className="text-slate-200 font-semibold mb-3">月次推移</p>
+              <div className="flex items-center gap-2 mb-3">
+                <BarChart2 className="text-cyan-400" size={16} />
+                <p className="text-slate-200 font-semibold">月次推移</p>
+              </div>
               <MonthlyBarChart data={monthlyData} height={200} />
             </div>
             <div className="md:col-span-1 rounded-lg border border-white/10 bg-[#12121a]/80 backdrop-blur-xl p-4">
-              <p className="text-slate-200 font-semibold mb-3">カテゴリ別</p>
+              <div className="flex items-center gap-2 mb-3">
+                <PieChart className="text-purple-400" size={16} />
+                <p className="text-slate-200 font-semibold">カテゴリ別</p>
+              </div>
               <CategoryPieChart data={categoryData} height={200} />
             </div>
           </div>
 
           {/* Recent transactions */}
           <div className="rounded-lg border border-white/10 bg-[#12121a]/80 backdrop-blur-xl p-4">
-            <p className="text-slate-200 font-semibold mb-3">直近の取引</p>
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="text-cyan-400" size={16} />
+              <p className="text-slate-200 font-semibold">直近の取引</p>
+            </div>
             <RecentTransactions transactions={transactions} limit={10} />
           </div>
         </>

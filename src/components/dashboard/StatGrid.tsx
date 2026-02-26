@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { TrendingUp, ShoppingCart, BarChart2, Wallet } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { StatCard } from './StatCard';
@@ -32,7 +33,8 @@ export function StatGrid() {
       <StatCard
         title="月間合計"
         value={<CurrencyDisplay amount={aggregation.total} size="md" />}
-        variant="default"
+        variant="cyan"
+        icon={<TrendingUp size={18} />}
       />
 
       {/* 利用件数 */}
@@ -40,14 +42,16 @@ export function StatGrid() {
         title="利用件数"
         value={aggregation.count}
         unit="件"
-        variant="default"
+        variant="purple"
+        icon={<ShoppingCart size={18} />}
       />
 
       {/* 平均利用額 */}
       <StatCard
         title="平均利用額"
         value={<CurrencyDisplay amount={aggregation.average} size="md" />}
-        variant="default"
+        variant="orange"
+        icon={<BarChart2 size={18} />}
       />
 
       {/* 月間目安額 */}
@@ -60,7 +64,8 @@ export function StatGrid() {
             '未設定'
           )
         }
-        variant="default"
+        variant="green"
+        icon={<Wallet size={18} />}
       />
     </div>
   );
