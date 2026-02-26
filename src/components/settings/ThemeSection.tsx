@@ -8,6 +8,12 @@ export function ThemeSection() {
 
   useEffect(() => {
     setIsDark(theme === 'dark');
+    // DOM も同期
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [theme]);
 
   const handleToggle = (checked: boolean) => {
