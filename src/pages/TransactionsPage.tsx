@@ -5,6 +5,7 @@ import { TransactionCard } from '@/components/transactions/TransactionCard';
 import { TransactionTable } from '@/components/transactions/TransactionTable';
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
+import { Receipt } from 'lucide-react';
 
 export default function TransactionsPage() {
   const { transactions, setTransactions, setLoading } = useTransactionStore();
@@ -45,9 +46,22 @@ export default function TransactionsPage() {
     });
   }, [transactions, selectedMonth, selectedCard, searchQuery]);
 
+  function handleReset() {
+    setSelectedMonth('all');
+    setSelectedCard('all');
+    setSearchQuery('');
+  }
+
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <h1 className="text-2xl font-bold text-cyan-400">取引一覧</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+          取引一覧
+        </h1>
+        <span className="bg-cyan-500/20 text-cyan-400 text-xs px-2 py-0.5 rounded-full border border-cyan-500/30">
+          {filtered.length}件
+        </span>
+      </div>
 
       <FilterBar
         selectedMonth={selectedMonth}
@@ -56,10 +70,19 @@ export default function TransactionsPage() {
         onMonthChange={setSelectedMonth}
         onCardChange={setSelectedCard}
         onSearchChange={setSearchQuery}
+        onReset={handleReset}
       />
 
       {filtered.length === 0 ? (
-        <div className="text-slate-400 text-center py-12">取引データがありません</div>
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
+          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+            <Receipt className="w-8 h-8 text-slate-500" />
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 font-medium">取引データがありません</p>
+            <p className="text-slate-500 text-sm mt-1">フィルターを変更するか、メールを同期してください</p>
+          </div>
+        </div>
       ) : (
         <>
           {/* Mobile: card list */}
