@@ -68,10 +68,10 @@ export default function SummaryPage() {
     <div className="p-6">
       {/* Page header with gradient title */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500/20 to-teal-400/20 border border-teal-500/20">
+        <div className="p-2 rounded-lg bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-primary-hover)]/20 border border-[var(--color-primary)]/20">
           <TrendingUp className="w-5 h-5 text-[var(--color-primary)]" />
         </div>
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-teal-300 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] bg-clip-text text-transparent">
           集計
         </h1>
       </div>

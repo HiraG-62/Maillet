@@ -115,7 +115,7 @@ export function SyncPanel() {
                 progress.status === 'error'
                   ? 'bg-red-500'
                   : progress.status === 'done'
-                    ? 'bg-emerald-500'
+                    ? 'bg-[var(--color-success)]'
                     : 'bg-cyan-500'
               }`}
               style={{ width: `${progress.percentage}%` }}
@@ -140,7 +140,7 @@ export function SyncPanel() {
       {/* Sync result summary */}
       {result && !isSyncing && (
         <div className="dark:bg-white/5 bg-black/5 rounded-lg p-3 space-y-1.5 text-sm">
-          <div className="flex items-center gap-2 text-emerald-400 font-medium">
+          <div className="flex items-center gap-2 text-[var(--color-success)] font-medium">
             <CheckCircle size={15} />
             <span>同期完了</span>
           </div>

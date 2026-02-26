@@ -31,7 +31,7 @@ export default function SettingsPage() {
     <div className="p-6 max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-8">
         <Settings className="w-7 h-7 text-[var(--color-primary)]" />
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-teal-300 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] bg-clip-text text-transparent">
           設定
         </h1>
       </div>
