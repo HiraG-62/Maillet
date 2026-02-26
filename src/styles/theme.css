@@ -16,26 +16,26 @@
   --color-info: #3b82f6;
 }
 
-/* ライトモード（デフォルト） */
+/* ライトモード（デフォルト） — ベージュ/ウォーム系 */
 :root {
-  --color-background: #ffffff;
-  --color-surface: #f8fafc;
-  --color-surface-elevated: #f1f5f9;
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
+  --color-background: #faf8f5;
+  --color-surface: #f3ede6;
+  --color-surface-elevated: #ebe4da;
+  --color-border: #d4cbbf;
+  --color-border-subtle: #ede8e2;
 
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
+  --color-text-primary: #1c1714;
+  --color-text-secondary: #6b5e52;
+  --color-text-muted: #9c8f82;
   --color-text-inverse: #ffffff;
 
   --color-primary: #0891b2;
   --color-primary-hover: #0e7490;
   --color-primary-foreground: #ffffff;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 2px rgba(101, 76, 57, 0.06);
+  --shadow-md: 0 4px 6px rgba(101, 76, 57, 0.09);
+  --shadow-lg: 0 10px 15px rgba(101, 76, 57, 0.12);
   --shadow-glow: 0 0 20px rgba(8, 145, 178, 0.1);
 }
 
