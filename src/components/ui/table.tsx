@@ -12,7 +12,7 @@ Table.displayName = 'Table';
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
   ({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn('[&_tr]:border-b [&_tr]:border-slate-700', className)} {...props} />
+    <thead ref={ref} className={cn('[&_tr]:border-b [&_tr]:border-[var(--color-border)]', className)} {...props} />
   )
 );
 TableHeader.displayName = 'TableHeader';
@@ -28,7 +28,7 @@ const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttribut
   ({ className, ...props }, ref) => (
     <tfoot
       ref={ref}
-      className={cn('border-t border-slate-700 bg-slate-800/50 font-medium', className)}
+      className={cn('border-t border-[var(--color-border)] bg-[var(--color-surface)]/50 font-medium', className)}
       {...props}
     />
   )
@@ -40,7 +40,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        'border-b border-slate-700/50 transition-colors hover:bg-slate-800/50 data-[state=selected]:bg-slate-700',
+        'border-b border-[var(--color-border)]/50 transition-colors hover:bg-[var(--color-surface)]/50 data-[state=selected]:bg-[var(--color-surface-elevated)]',
         className
       )}
       {...props}
@@ -54,7 +54,7 @@ const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<
     <th
       ref={ref}
       className={cn(
-        'h-12 px-4 text-left align-middle text-xs font-medium text-slate-400 [&:has([role=checkbox])]:pr-0',
+        'h-12 px-4 text-left align-middle text-xs font-medium text-[var(--color-text-secondary)] [&:has([role=checkbox])]:pr-0',
         className
       )}
       {...props}
@@ -67,7 +67,7 @@ const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<
   ({ className, ...props }, ref) => (
     <td
       ref={ref}
-      className={cn('p-4 align-middle text-slate-100 [&:has([role=checkbox])]:pr-0', className)}
+      className={cn('p-4 align-middle text-[var(--color-text-primary)] [&:has([role=checkbox])]:pr-0', className)}
       {...props}
     />
   )
@@ -76,7 +76,7 @@ TableCell.displayName = 'TableCell';
 
 const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttributes<HTMLTableCaptionElement>>(
   ({ className, ...props }, ref) => (
-    <caption ref={ref} className={cn('mt-4 text-sm text-slate-400', className)} {...props} />
+    <caption ref={ref} className={cn('mt-4 text-sm text-[var(--color-text-secondary)]', className)} {...props} />
   )
 );
 TableCaption.displayName = 'TableCaption';
