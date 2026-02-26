@@ -37,8 +37,12 @@ function call(action: string, args: unknown[] = []): Promise<unknown> {
   });
 }
 
-export async function initDB(): Promise<void> {
-  await call('init');
+export async function initDB(): Promise<{ warning?: string }> {
+  const result = (await call('init')) as { ok: true; warning?: string };
+  if (result.warning) {
+    console.warn('[DB] initDB warning:', result.warning);
+  }
+  return { warning: result.warning };
 }
 
 export async function queryDB<T = unknown[]>(

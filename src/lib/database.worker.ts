@@ -33,33 +33,44 @@ const SCHEMA_SQL = `
     ON card_transactions(transaction_date, card_company);
 `;
 
-async function init() {
-  console.log('[DEBUG-095] init() called');
-  console.log('[DEBUG-095] current db state:', db !== undefined ? 'already initialized' : 'not initialized');
+async function init(): Promise<{ ok: true; warning?: string }> {
+  console.log('[DEBUG-096] init() called');
+  console.log('[DEBUG-096] current db state:', db !== undefined ? 'already initialized' : 'not initialized');
   if (db !== undefined) return { ok: true };
   const module = await SQLiteAsyncESMFactory();
   sqlite3 = SQLite.Factory(module);
 
   // IDBBatchAtomicVFS: IndexedDB-based VFS (no COOP/COEP headers required, works on GitHub Pages)
-  console.log('[DEBUG-095] Attempting IDBBatchAtomicVFS...');
+  console.log('[DEBUG-096] Attempting IDBBatchAtomicVFS...');
+  let warning: string | undefined;
   try {
     const { IDBBatchAtomicVFS } = await import(
       // @ts-expect-error dynamic path
       'wa-sqlite/src/examples/IDBBatchAtomicVFS.js'
     );
-    const vfs = new IDBBatchAtomicVFS(DB_NAME);
+    const vfs = new IDBBatchAtomicVFS(DB_NAME, { durability: 'relaxed' });
     sqlite3.vfs_register(vfs, true);
     db = await sqlite3.open_v2(
       DB_NAME,
       SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE,
       DB_NAME
     );
-    console.log('[DEBUG-095] IDBBatchAtomicVFS created successfully');
-    console.log('[DEBUG-095] DB name:', DB_NAME);
+    console.log('[DEBUG-096] IDBBatchAtomicVFS created successfully');
+
+    // WAL mode prevents journal file errors (IDBBatchAtomicVFS + default rollback journal
+    // causes "file not found: /xxx-journal" because xOpen lacks SQLITE_OPEN_CREATE for journals)
+    for await (const stmt of sqlite3.statements(db, 'PRAGMA journal_mode=WAL')) {
+      while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+        const mode = sqlite3.row(stmt);
+        console.log('[DEBUG-096] journal_mode set to:', mode[0]);
+      }
+    }
   } catch (error) {
     // IDB unavailable (test env, etc.) → in-memory fallback
-    console.log('[DEBUG-095] IDBBatchAtomicVFS FAILED, falling back to :memory:', error);
+    console.error('[DEBUG-096] IDBBatchAtomicVFS FAILED:', error);
     db = await sqlite3.open_v2(':memory:');
+    warning = 'DB永続化失敗。データはセッション終了時に消えます。';
+    console.warn('[DEBUG-096] Using :memory: fallback —', warning);
   }
 
   for await (const stmt of sqlite3.statements(db, SCHEMA_SQL)) {
@@ -84,9 +95,9 @@ async function init() {
       tableCountRows.push(sqlite3.row(stmt));
     }
   }
-  console.log('[DEBUG-095] DB opened. Table count (card_transactions rows):', tableCountRows[0]?.[0]);
+  console.log('[DEBUG-096] DB opened. Table count (card_transactions rows):', tableCountRows[0]?.[0]);
 
-  return { ok: true };
+  return warning ? { ok: true, warning } : { ok: true };
 }
 
 async function query(sql: string, params: unknown[] = []) {
