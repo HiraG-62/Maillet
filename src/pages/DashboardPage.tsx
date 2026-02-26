@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronLeft, ChevronRight, BarChart2, RefreshCw, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useAuth } from '@/hooks/useAuth';
@@ -66,8 +66,8 @@ export default function DashboardPage() {
   const monthlyBudget = useSettingsStore((s) => s.monthly_budget);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
   const [dbWarning, setDbWarning] = useState<string | null>(null);
-  const { authState, isLoading: authLoading, error: authError } = useAuth();
-  const { startSync, isSyncing, result, progress } = useSync();
+  const { error: authError } = useAuth();
+  const { isSyncing, result, progress } = useSync();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -245,36 +245,6 @@ export default function DashboardPage() {
           </p>
         </div>
       )}
-
-      {/* ===== Service Icons (丸型) ===== */}
-      <div className="flex justify-center gap-8 mb-10 slide-up" style={{ animationDelay: '0.2s' }}>
-        <button onClick={() => navigate('/summary')} className="service-icon">
-          <div className="service-icon-circle">
-            <BarChart2 size={24} />
-          </div>
-          <span className="service-icon-label">サマリー</span>
-        </button>
-
-        <button
-          onClick={() => {
-            if (authLoading) return;
-            if (!authState.isAuthenticated) {
-              navigate('/settings');
-              return;
-            }
-            startSync();
-          }}
-          disabled={isSyncing || authLoading}
-          className="service-icon disabled:opacity-50"
-        >
-          <div className="service-icon-circle">
-            <RefreshCw size={24} className={isSyncing ? 'animate-spin' : ''} />
-          </div>
-          <span className="service-icon-label">
-            {isSyncing ? '同期中...' : '同期'}
-          </span>
-        </button>
-      </div>
 
       {/* Sync status */}
       {isSyncing && progress.total > 0 && (
