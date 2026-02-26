@@ -35,7 +35,7 @@ export default function DashboardPage() {
   const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
   const { authState, isLoading: authLoading, error: authError } = useAuth();
-  const { startSync, isSyncing, result } = useSync();
+  const { startSync, isSyncing, result, progress } = useSync();
   const navigate = useNavigate();
 
   // マウント時にDBからデータを読み込む（リロード対応）
@@ -153,6 +153,11 @@ export default function DashboardPage() {
             </svg>
             {isSyncing ? '同期中...' : authLoading ? '認証中...' : '同期'}
           </button>
+          {isSyncing && progress.total > 0 && (
+            <span className="text-xs text-cyan-400">
+              {progress.current}/{progress.total}件 処理中
+            </span>
+          )}
           {result && !isSyncing && (
             <span className="text-xs text-slate-500">
               新規 {result.new_transactions}件 取得
