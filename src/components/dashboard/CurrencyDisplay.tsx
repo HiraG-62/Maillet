@@ -14,10 +14,10 @@ const sizeConfig = {
 };
 
 const variantColors = {
-  default: 'text-slate-100',
+  default: 'text-[var(--color-text-primary)]',
   positive: 'text-emerald-400',
   negative: 'text-orange-400',
-  muted: 'text-slate-400',
+  muted: 'text-[var(--color-text-secondary)]',
 };
 
 export function CurrencyDisplay({ amount, size = 'md', variant, className }: CurrencyDisplayProps) {

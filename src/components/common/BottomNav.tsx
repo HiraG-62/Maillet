@@ -10,7 +10,7 @@ const navItems = [
 
 export function BottomNav() {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16 flex bg-[#12121a] border-t border-white/10">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16 flex bg-[var(--color-background)] border-t dark:border-white/10 border-black/10">
       {navItems.map(({ path, label, icon: Icon }) => (
         <NavLink
           key={path}
@@ -20,7 +20,7 @@ export function BottomNav() {
             `flex-1 flex flex-col items-center justify-center gap-1 text-xs transition-colors ${
               isActive
                 ? 'text-cyan-400 border-t-2 border-cyan-400'
-                : 'text-slate-400'
+                : 'text-[var(--color-text-secondary)]'
             }`
           }
         >

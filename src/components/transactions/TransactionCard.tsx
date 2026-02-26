@@ -66,7 +66,7 @@ function getCategoryStyle(category: string | null | undefined): CategoryStyle {
   if (c.includes('通信') || c.includes('サブスク')) {
     return { bg: 'bg-cyan-500/20', text: 'text-cyan-300' };
   }
-  return { bg: 'bg-white/10', text: 'text-slate-300' };
+  return { bg: 'dark:bg-white/10 bg-black/10', text: 'text-[var(--color-text-secondary)]' };
 }
 
 function getCategoryIcon(category: string | null | undefined) {
@@ -99,14 +99,14 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
   return (
     <div
-      className={`md:hidden bg-white/5 backdrop-blur-sm border border-white/10 border-l-4 ${borderClass} rounded-xl p-4 hover:scale-[1.01] hover:shadow-md hover:bg-white/[0.07] transition-all duration-200`}
+      className={`md:hidden dark:bg-white/5 bg-black/5 backdrop-blur-sm border dark:border-white/10 border-black/10 border-l-4 ${borderClass} rounded-xl p-4 hover:scale-[1.01] hover:shadow-md dark:hover:bg-white/[0.07] hover:bg-black/[0.07] transition-all duration-200`}
     >
       <div className="flex items-start justify-between gap-3">
         {/* Left: date + card + merchant */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-slate-400 mb-1">{formatDate(transaction.transaction_date)}</p>
-          <p className="text-sm font-medium text-slate-200 truncate">{transaction.merchant}</p>
-          <p className="text-xs text-slate-500 mt-0.5">{transaction.card_company}</p>
+          <p className="text-xs text-[var(--color-text-secondary)] mb-1">{formatDate(transaction.transaction_date)}</p>
+          <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{transaction.merchant}</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{transaction.card_company}</p>
         </div>
 
         {/* Right: amount + category */}

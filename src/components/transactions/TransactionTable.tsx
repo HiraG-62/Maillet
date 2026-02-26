@@ -63,29 +63,29 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
   );
 
   return (
-    <div className="hidden md:block bg-[#12121a] border border-white/10 rounded-lg overflow-hidden">
+    <div className="hidden md:block bg-[var(--color-background)] border dark:border-white/10 border-black/10 rounded-lg overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="border-white/10 hover:bg-transparent">
-            <TableHead className="text-slate-300 uppercase text-xs tracking-wide font-semibold">
+          <TableRow className="dark:border-white/10 border-black/10 hover:bg-transparent">
+            <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold">
               <span className="flex items-center gap-1">
                 日付
                 <ChevronUp className="h-3 w-3 opacity-40" />
               </span>
             </TableHead>
-            <TableHead className="text-slate-300 uppercase text-xs tracking-wide font-semibold">
+            <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold">
               カード
             </TableHead>
-            <TableHead className="text-slate-300 uppercase text-xs tracking-wide font-semibold text-right">
+            <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold text-right">
               <span className="flex items-center justify-end gap-1">
                 金額
                 <ChevronUp className="h-3 w-3 opacity-40" />
               </span>
             </TableHead>
-            <TableHead className="text-slate-300 uppercase text-xs tracking-wide font-semibold">
+            <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold">
               加盟店
             </TableHead>
-            <TableHead className="text-slate-300 uppercase text-xs tracking-wide font-semibold">
+            <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold">
               カテゴリ
             </TableHead>
           </TableRow>
@@ -97,9 +97,9 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
             return (
               <TableRow
                 key={tx.id ?? idx}
-                className="border-white/5 hover:bg-white/5 transition-colors"
+                className="dark:border-white/5 border-black/5 dark:hover:bg-white/5 hover:bg-black/5 transition-colors"
               >
-                <TableCell className="text-slate-300 text-sm whitespace-nowrap">
+                <TableCell className="text-[var(--color-text-secondary)] text-sm whitespace-nowrap">
                   {formatDate(tx.transaction_date)}
                 </TableCell>
                 <TableCell>
@@ -110,7 +110,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                       {tx.card_company}
                     </span>
                   ) : (
-                    <span className="text-slate-600 text-xs">—</span>
+                    <span className="text-[var(--color-text-muted)] text-xs">—</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
@@ -120,14 +120,14 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                     className={isLarge ? 'text-orange-300' : undefined}
                   />
                 </TableCell>
-                <TableCell className="text-slate-200 text-sm font-medium">{tx.merchant}</TableCell>
+                <TableCell className="text-[var(--color-text-primary)] text-sm font-medium">{tx.merchant}</TableCell>
                 <TableCell>
                   {tx.category ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/8 text-slate-300 border border-white/10">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs dark:bg-white/8 bg-black/[8%] text-[var(--color-text-secondary)] border dark:border-white/10 border-black/10">
                       {tx.category}
                     </span>
                   ) : (
-                    <span className="text-slate-600 text-xs">—</span>
+                    <span className="text-[var(--color-text-muted)] text-xs">—</span>
                   )}
                 </TableCell>
               </TableRow>

@@ -39,9 +39,9 @@ export function StatCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-white/10',
+        'rounded-lg border dark:border-white/10 border-black/10',
         config.borderLeft,
-        'bg-[#12121a]/80 backdrop-blur-xl',
+        'bg-[var(--color-background)]/80 backdrop-blur-xl',
         'shadow-lg shadow-black/20',
         'transition-all duration-200 hover:scale-[1.02] hover:shadow-lg',
         config.glowHover,
@@ -49,23 +49,23 @@ export function StatCard({
       )}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-white/50 tracking-wider uppercase">{title}</span>
+        <span className="text-xs dark:text-white/50 text-black/50 tracking-wider uppercase">{title}</span>
         {icon && <span className={cn('opacity-80', config.text)}>{icon}</span>}
       </div>
 
       {isLoading ? (
         <div className="space-y-2 mt-1">
-          <div className="h-7 w-3/4 rounded bg-white/10 animate-pulse" />
-          <div className="h-3 w-1/2 rounded bg-white/5 animate-pulse" />
+          <div className="h-7 w-3/4 rounded dark:bg-white/10 bg-black/10 animate-pulse" />
+          <div className="h-3 w-1/2 rounded dark:bg-white/5 bg-black/5 animate-pulse" />
         </div>
       ) : (
         <>
           <div className={cn('font-mono tracking-tight font-bold text-2xl', config.text)}>
             {value}
-            {unit && <span className="text-sm font-normal ml-1 text-white/60">{unit}</span>}
+            {unit && <span className="text-sm font-normal ml-1 dark:text-white/60 text-black/60">{unit}</span>}
           </div>
           {subtext && (
-            <p className="text-xs text-white/40 mt-1">{subtext}</p>
+            <p className="text-xs dark:text-white/40 text-black/40 mt-1">{subtext}</p>
           )}
         </>
       )}

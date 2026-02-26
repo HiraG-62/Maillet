@@ -15,7 +15,7 @@ const CARD_COLORS: Record<string, { bg: string; text: string; border: string }> 
   dcard: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: '#f97316' },
 };
 
-const DEFAULT_CARD = { bg: 'bg-slate-500/20', text: 'text-slate-400', border: '#64748b' };
+const DEFAULT_CARD = { bg: 'bg-slate-500/20', text: 'text-[var(--color-text-secondary)]', border: '#64748b' };
 
 function getCardColor(company: string | null | undefined) {
   if (!company) return DEFAULT_CARD;
@@ -27,7 +27,7 @@ function getCardColor(company: string | null | undefined) {
 }
 
 function getCategoryIcon(category: string | null | undefined) {
-  if (!category) return <CreditCard size={14} className="text-slate-500 shrink-0" />;
+  if (!category) return <CreditCard size={14} className="text-[var(--color-text-muted)] shrink-0" />;
   const lower = category.toLowerCase();
   if (lower.includes('食') || lower.includes('飲食') || lower.includes('restaurant') || lower.includes('グルメ')) {
     return <Utensils size={14} className="text-orange-400 shrink-0" />;
@@ -41,7 +41,7 @@ function getCategoryIcon(category: string | null | undefined) {
   if (lower.includes('光熱') || lower.includes('電気') || lower.includes('utility') || lower.includes('水道')) {
     return <Zap size={14} className="text-yellow-400 shrink-0" />;
   }
-  return <CreditCard size={14} className="text-slate-400 shrink-0" />;
+  return <CreditCard size={14} className="text-[var(--color-text-secondary)] shrink-0" />;
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -63,7 +63,7 @@ export function RecentTransactions({ transactions, limit = 10 }: RecentTransacti
     .slice(0, limit);
 
   if (sorted.length === 0) {
-    return <p className="text-slate-500 text-sm py-4 text-center">取引データなし</p>;
+    return <p className="text-[var(--color-text-muted)] text-sm py-4 text-center">取引データなし</p>;
   }
 
   return (
@@ -73,11 +73,11 @@ export function RecentTransactions({ transactions, limit = 10 }: RecentTransacti
         return (
           <li
             key={tx.id ?? `${tx.transaction_date}-${index}`}
-            className="flex items-center gap-3 py-3 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors cursor-pointer rounded-r-md pl-2"
+            className="flex items-center gap-3 py-3 border-b dark:border-white/5 border-black/5 last:border-b-0 dark:hover:bg-white/5 hover:bg-black/5 transition-colors cursor-pointer rounded-r-md pl-2"
             style={{ borderLeft: `3px solid ${card.border}` }}
           >
             {getCategoryIcon(tx.category)}
-            <span className="text-slate-400 text-xs w-auto shrink-0">
+            <span className="text-[var(--color-text-secondary)] text-xs w-auto shrink-0">
               {formatDate(tx.transaction_date)}
             </span>
             <span
@@ -85,7 +85,7 @@ export function RecentTransactions({ transactions, limit = 10 }: RecentTransacti
             >
               {tx.card_company}
             </span>
-            <span className="flex-1 text-slate-200 text-sm truncate">
+            <span className="flex-1 text-[var(--color-text-primary)] text-sm truncate">
               {tx.merchant}
             </span>
             <CurrencyDisplay amount={tx.amount} size="md" className="shrink-0" />

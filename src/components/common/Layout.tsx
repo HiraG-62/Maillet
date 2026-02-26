@@ -8,7 +8,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-slate-100">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)]">
       {/* Mobile: top navbar */}
       <Navbar />
 

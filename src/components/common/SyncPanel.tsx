@@ -11,17 +11,17 @@ export function SyncPanel() {
   // Not authenticated: show Google login button
   if (!authState.isAuthenticated) {
     return (
-      <div className="bg-[#12121a] border border-white/10 rounded-xl p-6 space-y-4">
-        <div className="flex items-center gap-2 text-slate-300">
+      <div className="bg-[var(--color-background)] border dark:border-white/10 border-black/10 rounded-xl p-6 space-y-4">
+        <div className="flex items-center gap-2 text-[var(--color-text-secondary)]">
           <LogIn size={18} className="text-cyan-400" />
           <span className="font-medium">Gmail 同期</span>
         </div>
         {isGoogleConfigured ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-[var(--color-text-muted)]">
             Gmail からカード利用明細を自動取得するには、Google アカウントでログインしてください。
           </p>
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-[var(--color-text-muted)]">
             Gmail連携は設定が必要です。管理者にお問い合わせください。
           </p>
         )}
@@ -66,16 +66,16 @@ export function SyncPanel() {
 
   // Authenticated: show sync controls
   return (
-    <div className="bg-[#12121a] border border-white/10 rounded-xl p-6 space-y-4">
+    <div className="bg-[var(--color-background)] border dark:border-white/10 border-black/10 rounded-xl p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-300">
+        <div className="flex items-center gap-2 text-[var(--color-text-secondary)]">
           <RefreshCw size={18} className="text-cyan-400" />
           <span className="font-medium">Gmail 同期</span>
         </div>
         {result && (
           <button
             onClick={reset}
-            className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
           >
             クリア
           </button>
@@ -95,7 +95,7 @@ export function SyncPanel() {
       ) : (
         <button
           onClick={cancelSync}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-700 text-slate-200 font-medium text-sm hover:bg-slate-600 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--color-surface-elevated)] text-[var(--color-text-primary)] font-medium text-sm hover:bg-slate-600 transition-colors"
         >
           <XCircle size={16} />
           キャンセル
@@ -105,11 +105,11 @@ export function SyncPanel() {
       {/* Progress bar */}
       {(isSyncing || progress.status === 'done' || progress.status === 'error') && (
         <div className="space-y-2">
-          <div className="flex justify-between text-xs text-slate-400">
+          <div className="flex justify-between text-xs text-[var(--color-text-secondary)]">
             <span>{progress.message ?? ''}</span>
             <span>{progress.percentage}%</span>
           </div>
-          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 dark:bg-white/10 bg-black/10 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-300 ${
                 progress.status === 'error'
@@ -122,7 +122,7 @@ export function SyncPanel() {
             />
           </div>
           {progress.total > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[var(--color-text-muted)]">
               {progress.current} / {progress.total} 件処理済み
             </p>
           )}
@@ -139,18 +139,18 @@ export function SyncPanel() {
 
       {/* Sync result summary */}
       {result && !isSyncing && (
-        <div className="bg-white/5 rounded-lg p-3 space-y-1.5 text-sm">
+        <div className="dark:bg-white/5 bg-black/5 rounded-lg p-3 space-y-1.5 text-sm">
           <div className="flex items-center gap-2 text-emerald-400 font-medium">
             <CheckCircle size={15} />
             <span>同期完了</span>
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-400 pt-1">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-[var(--color-text-secondary)] pt-1">
             <span>取得メール数</span>
-            <span className="text-slate-200 text-right">{result.total_fetched}</span>
+            <span className="text-[var(--color-text-primary)] text-right">{result.total_fetched}</span>
             <span>新規取引</span>
             <span className="text-cyan-400 text-right font-medium">{result.new_transactions}</span>
             <span>重複スキップ</span>
-            <span className="text-slate-200 text-right">{result.duplicates_skipped}</span>
+            <span className="text-[var(--color-text-primary)] text-right">{result.duplicates_skipped}</span>
             {result.parse_errors > 0 && (
               <>
                 <span className="text-amber-400">解析エラー</span>
@@ -163,7 +163,7 @@ export function SyncPanel() {
               <summary className="text-xs text-amber-500 cursor-pointer hover:text-amber-400">
                 エラー詳細 ({result.errors.length})
               </summary>
-              <ul className="mt-1 space-y-0.5 text-xs text-slate-500">
+              <ul className="mt-1 space-y-0.5 text-xs text-[var(--color-text-muted)]">
                 {result.errors.map((e, i) => (
                   <li key={i} className="truncate">
                     {e}
