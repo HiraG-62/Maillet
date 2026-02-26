@@ -30,11 +30,11 @@ function formatDate(dateStr: string | null | undefined): string {
 
 function getCardBorderClass(cardCompany: string | null | undefined): string {
   const c = (cardCompany ?? '').toLowerCase();
-  if (c.includes('smbc') || c.includes('三井住友')) return 'border-l-teal-500';
+  if (c.includes('smbc') || c.includes('三井住友')) return 'border-l-[var(--color-primary)]';
   if (c.includes('楽天')) return 'border-l-rose-500';
   if (c.includes('amex') || c.includes('アメックス')) return 'border-l-amber-500';
   if (c.includes('jcb')) return 'border-l-blue-500';
-  if (c.includes('dcard') || c.includes('d card')) return 'border-l-green-500';
+  if (c.includes('dcard') || c.includes('d card')) return 'border-l-[var(--color-primary)]';
   return 'border-l-purple-500';
 }
 
@@ -61,7 +61,7 @@ function getCategoryStyle(category: string | null | undefined): CategoryStyle {
     return { bg: 'bg-purple-500/20', text: 'text-purple-300' };
   }
   if (c.includes('健康') || c.includes('医療') || c.includes('病院')) {
-    return { bg: 'bg-green-500/20', text: 'text-green-300' };
+    return { bg: 'bg-[var(--color-primary)]/20', text: 'text-[var(--color-primary)]' };
   }
   if (c.includes('通信') || c.includes('サブスク')) {
     return { bg: 'bg-cyan-500/20', text: 'text-cyan-300' };

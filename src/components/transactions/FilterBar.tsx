@@ -60,7 +60,7 @@ export function FilterBar({
           <SelectTrigger
             className={`w-full md:w-40 bg-transparent text-[var(--color-text-primary)] transition-colors ${
               selectedMonth !== 'all'
-                ? 'border-teal-500/50 bg-teal-500/5 text-teal-500'
+                ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
                 : 'dark:border-white/10 border-black/10'
             }`}
           >
@@ -81,7 +81,7 @@ export function FilterBar({
           <SelectTrigger
             className={`w-full md:w-36 bg-transparent text-[var(--color-text-primary)] transition-colors ${
               selectedCard !== 'all'
-                ? 'border-teal-500/50 bg-teal-500/5 text-teal-500'
+                ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
                 : 'dark:border-white/10 border-black/10'
             }`}
           >
@@ -104,7 +104,7 @@ export function FilterBar({
             placeholder="加盟店・説明で検索..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 bg-transparent dark:border-white/10 border-black/10 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/30"
+            className="pl-9 bg-transparent dark:border-white/10 border-black/10 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)]/50 focus:ring-1 focus:ring-[var(--color-primary)]/30"
           />
         </div>
 

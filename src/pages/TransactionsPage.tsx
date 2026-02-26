@@ -55,10 +55,10 @@ export default function TransactionsPage() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-teal-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] bg-clip-text text-transparent">
           取引一覧
         </h1>
-        <span className="bg-teal-500/20 text-teal-500 text-xs px-2 py-0.5 rounded-full border border-teal-500/30">
+        <span className="bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs px-2 py-0.5 rounded-full border border-[var(--color-primary)]/30">
           {filtered.length}件
         </span>
       </div>
