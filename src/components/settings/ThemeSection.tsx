@@ -30,10 +30,10 @@ export function ThemeSection() {
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#12121a]/80 p-4 mb-4">
-      <h3 className="text-slate-200 font-semibold mb-3">テーマ</h3>
+    <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4 mb-4">
+      <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">テーマ</h3>
       <div className="flex items-center justify-between">
-        <span className="text-slate-300">ダークモード</span>
+        <span className="text-[var(--color-text-secondary)]">ダークモード</span>
         <Switch checked={isDark} onCheckedChange={handleToggle} />
       </div>
     </div>

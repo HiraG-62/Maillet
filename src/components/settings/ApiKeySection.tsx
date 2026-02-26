@@ -106,11 +106,11 @@ export function ApiKeySection() {
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#12121a]/80 p-4 mb-4">
-      <h3 className="text-slate-200 font-semibold mb-3">APIキー管理（BYOK）</h3>
+    <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4 mb-4">
+      <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">APIキー管理（BYOK）</h3>
       <div className="space-y-3">
         <div>
-          <label className="block text-sm text-slate-400 mb-2">
+          <label className="block text-sm text-[var(--color-text-secondary)] mb-2">
             プロバイダー
           </label>
           <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as LLMProvider)}>
@@ -127,8 +127,8 @@ export function ApiKeySection() {
           </Select>
         </div>
 
-        <div className="flex items-center justify-between p-2 bg-slate-700/30 rounded">
-          <span className="text-sm text-slate-300">
+        <div className="flex items-center justify-between p-2 bg-[var(--color-surface-elevated)]/30 rounded">
+          <span className="text-sm text-[var(--color-text-secondary)]">
             {keyExists ? '✅ 設定済み' : '手動分類モード（APIキー未設定）'}
           </span>
           {keyExists && (
@@ -152,7 +152,7 @@ export function ApiKeySection() {
         </div>
 
         {showForm && (
-          <div className="space-y-3 p-3 bg-slate-700/20 rounded">
+          <div className="space-y-3 p-3 bg-[var(--color-surface-elevated)]/20 rounded">
             <Input
               type="password"
               placeholder="APIキー"

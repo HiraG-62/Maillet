@@ -33,8 +33,8 @@ export function BudgetSection() {
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#12121a]/80 p-4 mb-4">
-      <h3 className="text-slate-200 font-semibold mb-3">月間予算</h3>
+    <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4 mb-4">
+      <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">月間予算</h3>
       <div className="space-y-3">
         <Input
           type="number"

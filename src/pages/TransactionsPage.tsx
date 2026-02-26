@@ -75,12 +75,12 @@ export default function TransactionsPage() {
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-            <Receipt className="w-8 h-8 text-slate-500" />
+          <div className="w-16 h-16 rounded-full dark:bg-white/5 bg-black/5 flex items-center justify-center border dark:border-white/10 border-black/10">
+            <Receipt className="w-8 h-8 text-[var(--color-text-muted)]" />
           </div>
           <div className="text-center">
-            <p className="text-slate-300 font-medium">取引データがありません</p>
-            <p className="text-slate-500 text-sm mt-1">フィルターを変更するか、メールを同期してください</p>
+            <p className="text-[var(--color-text-secondary)] font-medium">取引データがありません</p>
+            <p className="text-[var(--color-text-muted)] text-sm mt-1">フィルターを変更するか、メールを同期してください</p>
           </div>
         </div>
       ) : (

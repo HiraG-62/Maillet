@@ -18,10 +18,10 @@ export function ExportSection() {
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#12121a]/80 p-4 mb-4">
-      <h3 className="text-slate-200 font-semibold mb-3">データエクスポート</h3>
+    <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4 mb-4">
+      <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">データエクスポート</h3>
       <div className="space-y-3">
-        <p className="text-slate-400 text-sm">
+        <p className="text-[var(--color-text-secondary)] text-sm">
           現在の取引データをCSVファイルとしてダウンロードします。
         </p>
         <Button
@@ -33,7 +33,7 @@ export function ExportSection() {
         </Button>
         {exported && <p className="text-green-500 text-sm">ダウンロードを開始しました</p>}
         {transactions.length === 0 && (
-          <p className="text-slate-500 text-sm">エクスポートするデータがありません</p>
+          <p className="text-[var(--color-text-muted)] text-sm">エクスポートするデータがありません</p>
         )}
       </div>
     </div>

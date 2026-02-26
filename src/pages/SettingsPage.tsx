@@ -16,10 +16,10 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
+    <div className="backdrop-blur-sm dark:bg-white/5 bg-black/5 border dark:border-white/10 border-black/10 rounded-xl p-4 mb-4">
       <div className="flex items-center gap-2 mb-3">
         {icon}
-        <span className="text-sm font-semibold text-slate-300">{label}</span>
+        <span className="text-sm font-semibold text-[var(--color-text-secondary)]">{label}</span>
       </div>
       {children}
     </div>

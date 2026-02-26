@@ -78,11 +78,11 @@ export default function SummaryPage() {
 
       {/* Month selector */}
       <div className="mb-6">
-        <label className="text-sm text-slate-400 mr-2">表示月:</label>
+        <label className="text-sm text-[var(--color-text-secondary)] mr-2">表示月:</label>
         <select
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
-          className="bg-[#12121a] border border-white/10 text-slate-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-purple-500 transition-colors"
+          className="bg-[var(--color-background)] border dark:border-white/10 border-black/10 text-[var(--color-text-primary)] rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-purple-500 transition-colors"
         >
           {availableMonths.length > 0 ? (
             availableMonths.map((m) => (
@@ -97,10 +97,10 @@ export default function SummaryPage() {
       </div>
 
       {/* Monthly bar chart — glassmorphism card */}
-      <div className="mb-6 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5 hover:border-white/20 transition-all duration-300">
+      <div className="mb-6 rounded-xl border dark:border-white/10 border-black/10 bg-white/[0.03] backdrop-blur-sm p-5 hover:border-white/20 transition-all duration-300">
         <div className="flex items-center gap-2 mb-4">
           <BarChart2 className="w-4 h-4 text-cyan-400" />
-          <h2 className="text-sm font-semibold text-slate-200">月次推移（過去6ヶ月）</h2>
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">月次推移（過去6ヶ月）</h2>
         </div>
         {monthlyData.some((d) => d.total_amount > 0) ? (
           <MonthlyBarChart data={monthlyData} height={200} />
@@ -113,10 +113,10 @@ export default function SummaryPage() {
       </div>
 
       {/* Category pie chart — glassmorphism card */}
-      <div className="mb-6 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5 hover:border-white/20 transition-all duration-300">
+      <div className="mb-6 rounded-xl border dark:border-white/10 border-black/10 bg-white/[0.03] backdrop-blur-sm p-5 hover:border-white/20 transition-all duration-300">
         <div className="flex items-center gap-2 mb-4">
           <PieChartIcon className="w-4 h-4 text-purple-400" />
-          <h2 className="text-sm font-semibold text-slate-200">
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
             カテゴリ別支出（{formatMonthLabel(selectedMonth)}）
           </h2>
         </div>
@@ -131,23 +131,23 @@ export default function SummaryPage() {
       </div>
 
       {/* Category breakdown table — glassmorphism card */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5">
+      <div className="rounded-xl border dark:border-white/10 border-black/10 bg-white/[0.03] backdrop-blur-sm p-5">
         <div className="flex items-center gap-2 mb-4">
           <Layers className="w-4 h-4 text-emerald-400" />
-          <h2 className="text-sm font-semibold text-slate-200">カテゴリ別内訳</h2>
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">カテゴリ別内訳</h2>
         </div>
         {categoryData.length > 0 ? (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-2 text-slate-400 font-medium">カテゴリ</th>
-                <th className="text-right py-2 text-slate-400 font-medium">金額</th>
+              <tr className="border-b dark:border-white/10 border-black/10">
+                <th className="text-left py-2 text-[var(--color-text-secondary)] font-medium">カテゴリ</th>
+                <th className="text-right py-2 text-[var(--color-text-secondary)] font-medium">金額</th>
               </tr>
             </thead>
             <tbody>
               {categoryData.map((item, i) => (
                 <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                  <td className="py-2.5 text-slate-200">{item.name}</td>
+                  <td className="py-2.5 text-[var(--color-text-primary)]">{item.name}</td>
                   <td className="py-2.5 text-right">
                     <CurrencyDisplay amount={item.value} size="sm" className="text-cyan-300" />
                   </td>

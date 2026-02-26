@@ -124,15 +124,15 @@ export default function DashboardPage() {
           <div className="flex items-center gap-1 mt-1">
             <button
               onClick={() => setSelectedMonth((m) => addMonths(m, -1))}
-              className="text-slate-500 hover:text-slate-200 hover:bg-white/10 transition-colors p-1 rounded"
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-white/10 transition-colors p-1 rounded"
               aria-label="前の月"
             >
               <ChevronLeft size={14} />
             </button>
-            <span className="text-slate-400 text-sm px-1">{formatMonthLabel(selectedMonth)}</span>
+            <span className="text-[var(--color-text-secondary)] text-sm px-1">{formatMonthLabel(selectedMonth)}</span>
             <button
               onClick={() => setSelectedMonth((m) => addMonths(m, 1))}
-              className="text-slate-500 hover:text-slate-200 hover:bg-white/10 transition-colors p-1 rounded"
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-white/10 transition-colors p-1 rounded"
               aria-label="次の月"
             >
               <ChevronRight size={14} />
@@ -141,7 +141,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-col items-end gap-1">
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-slate-300 text-sm hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border dark:border-white/10 border-black/10 dark:bg-white/5 bg-black/5 text-[var(--color-text-secondary)] text-sm hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSyncing || authLoading}
             onClick={() => {
               if (authLoading) return;
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             </span>
           )}
           {result && !isSyncing && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-[var(--color-text-muted)]">
               新規 {result.new_transactions}件 取得
             </span>
           )}
@@ -186,9 +186,9 @@ export default function DashboardPage() {
       </div>
 
       {isEmpty ? (
-        <div className="rounded-lg border border-white/10 bg-[#12121a]/80 backdrop-blur-xl p-12 text-center">
-          <p className="text-slate-400 text-lg mb-2">データがありません</p>
-          <p className="text-slate-500 text-sm">
+        <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 backdrop-blur-xl p-12 text-center">
+          <p className="text-[var(--color-text-secondary)] text-lg mb-2">データがありません</p>
+          <p className="text-[var(--color-text-muted)] text-sm">
             右上の「同期」ボタンでGmailから取引データを取得してください
           </p>
         </div>
@@ -196,27 +196,27 @@ export default function DashboardPage() {
         <>
           {/* Graph row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="md:col-span-2 rounded-lg border border-white/10 bg-[#12121a]/80 backdrop-blur-xl p-4">
+            <div className="md:col-span-2 rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 backdrop-blur-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <BarChart2 className="text-cyan-400" size={16} />
-                <p className="text-slate-200 font-semibold">月次推移</p>
+                <p className="text-[var(--color-text-primary)] font-semibold">月次推移</p>
               </div>
               <MonthlyBarChart data={monthlyData} height={200} />
             </div>
-            <div className="md:col-span-1 rounded-lg border border-white/10 bg-[#12121a]/80 backdrop-blur-xl p-4">
+            <div className="md:col-span-1 rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 backdrop-blur-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <PieChart className="text-purple-400" size={16} />
-                <p className="text-slate-200 font-semibold">カテゴリ別</p>
+                <p className="text-[var(--color-text-primary)] font-semibold">カテゴリ別</p>
               </div>
               <CategoryPieChart data={categoryData} height={200} />
             </div>
           </div>
 
           {/* Recent transactions */}
-          <div className="rounded-lg border border-white/10 bg-[#12121a]/80 backdrop-blur-xl p-4">
+          <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 backdrop-blur-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Clock className="text-cyan-400" size={16} />
-              <p className="text-slate-200 font-semibold">直近の取引</p>
+              <p className="text-[var(--color-text-primary)] font-semibold">直近の取引</p>
             </div>
             <RecentTransactions transactions={transactions} limit={10} />
           </div>
