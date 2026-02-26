@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { TrendingUp, BarChart2, PieChart as PieChartIcon, Layers } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import MonthlyBarChart from '@/components/dashboard/MonthlyBarChart';
 import CategoryPieChart from '@/components/dashboard/CategoryPieChart';
@@ -65,15 +66,23 @@ export default function SummaryPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-cyan-400 mb-6">集計</h1>
+      {/* Page header with gradient title */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/20">
+          <TrendingUp className="w-5 h-5 text-purple-400" />
+        </div>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+          集計
+        </h1>
+      </div>
 
-      {/* 月選択 */}
+      {/* Month selector */}
       <div className="mb-6">
         <label className="text-sm text-slate-400 mr-2">表示月:</label>
         <select
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
-          className="bg-[#12121a] border border-white/10 text-slate-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-cyan-500"
+          className="bg-[#12121a] border border-white/10 text-slate-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-purple-500 transition-colors"
         >
           {availableMonths.length > 0 ? (
             availableMonths.map((m) => (
@@ -87,35 +96,46 @@ export default function SummaryPage() {
         </select>
       </div>
 
-      {/* 月次推移グラフ */}
-      <div className="mb-6 rounded-lg border border-white/10 bg-[#12121a]/80 p-4">
-        <h2 className="text-sm font-medium text-slate-400 mb-3">月次推移（過去6ヶ月）</h2>
+      {/* Monthly bar chart — glassmorphism card */}
+      <div className="mb-6 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5 hover:border-white/20 transition-all duration-300">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart2 className="w-4 h-4 text-cyan-400" />
+          <h2 className="text-sm font-semibold text-slate-200">月次推移（過去6ヶ月）</h2>
+        </div>
         {monthlyData.some((d) => d.total_amount > 0) ? (
           <MonthlyBarChart data={monthlyData} height={200} />
         ) : (
-          <div className="h-[200px] flex items-center justify-center text-slate-500 text-sm">
-            データなし
+          <div className="h-[200px] flex flex-col items-center justify-center gap-2 text-slate-600">
+            <BarChart2 className="w-10 h-10 opacity-40" />
+            <span className="text-sm">データなし</span>
           </div>
         )}
       </div>
 
-      {/* カテゴリ別支出グラフ */}
-      <div className="mb-6 rounded-lg border border-white/10 bg-[#12121a]/80 p-4">
-        <h2 className="text-sm font-medium text-slate-400 mb-3">
-          カテゴリ別支出（{formatMonthLabel(selectedMonth)}）
-        </h2>
+      {/* Category pie chart — glassmorphism card */}
+      <div className="mb-6 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5 hover:border-white/20 transition-all duration-300">
+        <div className="flex items-center gap-2 mb-4">
+          <PieChartIcon className="w-4 h-4 text-purple-400" />
+          <h2 className="text-sm font-semibold text-slate-200">
+            カテゴリ別支出（{formatMonthLabel(selectedMonth)}）
+          </h2>
+        </div>
         {categoryData.length > 0 ? (
           <CategoryPieChart data={categoryData} height={250} />
         ) : (
-          <div className="h-[250px] flex items-center justify-center text-slate-500 text-sm">
-            データなし
+          <div className="h-[250px] flex flex-col items-center justify-center gap-2 text-slate-600">
+            <PieChartIcon className="w-10 h-10 opacity-40" />
+            <span className="text-sm">この月はデータがありません</span>
           </div>
         )}
       </div>
 
-      {/* カテゴリ明細テーブル */}
-      <div className="rounded-lg border border-white/10 bg-[#12121a]/80 p-4">
-        <h2 className="text-sm font-medium text-slate-400 mb-3">カテゴリ別内訳</h2>
+      {/* Category breakdown table — glassmorphism card */}
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Layers className="w-4 h-4 text-emerald-400" />
+          <h2 className="text-sm font-semibold text-slate-200">カテゴリ別内訳</h2>
+        </div>
         {categoryData.length > 0 ? (
           <table className="w-full text-sm">
             <thead>
@@ -126,9 +146,9 @@ export default function SummaryPage() {
             </thead>
             <tbody>
               {categoryData.map((item, i) => (
-                <tr key={i} className="border-b border-white/5 last:border-0">
-                  <td className="py-2 text-slate-200">{item.name}</td>
-                  <td className="py-2 text-right">
+                <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <td className="py-2.5 text-slate-200">{item.name}</td>
+                  <td className="py-2.5 text-right">
                     <CurrencyDisplay amount={item.value} size="sm" className="text-cyan-300" />
                   </td>
                 </tr>
@@ -136,7 +156,10 @@ export default function SummaryPage() {
             </tbody>
           </table>
         ) : (
-          <div className="py-8 text-center text-slate-500 text-sm">データなし</div>
+          <div className="py-10 flex flex-col items-center gap-2 text-slate-600">
+            <Layers className="w-10 h-10 opacity-40" />
+            <span className="text-sm">この月のデータがありません</span>
+          </div>
         )}
       </div>
     </div>
