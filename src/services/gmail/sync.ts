@@ -310,8 +310,8 @@ export async function syncGmailTransactions(
     const newMessages = uniqueMessages.filter(msg => !syncedIds.has(msg.id));
     result.duplicates_skipped = uniqueMessages.length - newMessages.length;
 
-    // Parallel fetch: process in batches of 10 (Gmail API rate limit: 250 queries/sec/user)
-    const BATCH_SIZE = 10;
+    // Parallel fetch: process in batches of 25 (Gmail API rate limit: 250 queries/sec/user)
+    const BATCH_SIZE = 25;
     for (let i = 0; i < newMessages.length; i += BATCH_SIZE) {
       const batch = newMessages.slice(i, i + BATCH_SIZE);
       const processed = Math.min(i + BATCH_SIZE, newMessages.length);
