@@ -34,6 +34,7 @@ function addMonths(ym: string, delta: number): string {
 export default function DashboardPage() {
   const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
+  const [dbWarning, setDbWarning] = useState<string | null>(null);
   const { authState, isLoading: authLoading, error: authError } = useAuth();
   const { startSync, isSyncing, result, progress } = useSync();
   const navigate = useNavigate();
@@ -42,7 +43,12 @@ export default function DashboardPage() {
   useEffect(() => {
     setLoading(true);
     initDB()
-      .then(() => getTransactions())
+      .then((res) => {
+        if (res?.warning) {
+          setDbWarning(res.warning);
+        }
+        return getTransactions();
+      })
       .then((data) => {
         setTransactions(data ?? []);
       })
@@ -101,6 +107,11 @@ export default function DashboardPage() {
       {authError && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
           認証エラー: {authError}
+        </div>
+      )}
+      {dbWarning && (
+        <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-400">
+          ⚠️ {dbWarning}
         </div>
       )}
       {/* Header row */}
