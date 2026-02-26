@@ -34,10 +34,14 @@ const SCHEMA_SQL = `
 `;
 
 async function init() {
+  console.log('[DEBUG-093] init() called');
+  console.log('[DEBUG-093] current db state:', db !== undefined ? 'already initialized' : 'not initialized');
   if (db !== undefined) return { ok: true };
   const module = await SQLiteAsyncESMFactory();
   sqlite3 = SQLite.Factory(module);
 
+  // Attempting OPFS (AccessHandlePoolVFS)
+  console.log('[DEBUG-093] Attempting OPFS (AccessHandlePoolVFS)...');
   try {
     const { AccessHandlePoolVFS } = await import(
       // @ts-expect-error dynamic path
@@ -50,8 +54,11 @@ async function init() {
       SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE,
       DB_NAME
     );
-  } catch {
+    console.log('[DEBUG-093] OPFS VFS created successfully');
+    console.log('[DEBUG-093] DB file:', DB_NAME);
+  } catch (error) {
     // OPFS unavailable (non-secure context, test env, etc.) → in-memory fallback
+    console.log('[DEBUG-093] OPFS FAILED, falling back to :memory:', error);
     db = await sqlite3.open_v2(':memory:');
   }
 
@@ -69,6 +76,15 @@ async function init() {
   for await (const stmt of sqlite3.statements(db, MIGRATION_SQL)) {
     await sqlite3.step(stmt);
   }
+
+  // DB open後のテーブル行数確認ログ
+  const tableCountRows: unknown[][] = [];
+  for await (const stmt of sqlite3.statements(db, 'SELECT count(*) FROM card_transactions')) {
+    while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+      tableCountRows.push(sqlite3.row(stmt));
+    }
+  }
+  console.log('[DEBUG-093] DB opened. Table count (card_transactions rows):', tableCountRows[0]?.[0]);
 
   return { ok: true };
 }
