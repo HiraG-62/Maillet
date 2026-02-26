@@ -55,10 +55,10 @@ export default function TransactionsPage() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-teal-400 bg-clip-text text-transparent">
           取引一覧
         </h1>
-        <span className="bg-cyan-500/20 text-cyan-400 text-xs px-2 py-0.5 rounded-full border border-cyan-500/30">
+        <span className="bg-teal-500/20 text-teal-500 text-xs px-2 py-0.5 rounded-full border border-teal-500/30">
           {filtered.length}件
         </span>
       </div>
@@ -74,7 +74,7 @@ export default function TransactionsPage() {
       />
 
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <div className="float-card flex flex-col items-center justify-center py-16 gap-4">
           <div className="w-16 h-16 rounded-full dark:bg-white/5 bg-black/5 flex items-center justify-center border dark:border-white/10 border-black/10">
             <Receipt className="w-8 h-8 text-[var(--color-text-muted)]" />
           </div>
@@ -86,21 +86,25 @@ export default function TransactionsPage() {
       ) : (
         <>
           {/* Mobile: card list */}
-          <div className="flex flex-col gap-3 md:hidden">
-            {filtered
-              .slice()
-              .sort(
-                (a, b) =>
-                  new Date(b.transaction_date ?? '').getTime() -
-                  new Date(a.transaction_date ?? '').getTime()
-              )
-              .map((tx, idx) => (
-                <TransactionCard key={tx.id ?? idx} transaction={tx} />
-              ))}
+          <div className="float-card p-0 overflow-hidden md:hidden">
+            <div className="flex flex-col divide-y dark:divide-white/5 divide-black/5">
+              {filtered
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(b.transaction_date ?? '').getTime() -
+                    new Date(a.transaction_date ?? '').getTime()
+                )
+                .map((tx, idx) => (
+                  <TransactionCard key={tx.id ?? idx} transaction={tx} />
+                ))}
+            </div>
           </div>
 
           {/* PC: table */}
-          <TransactionTable transactions={filtered} />
+          <div className="float-card p-0 overflow-hidden hidden md:block">
+            <TransactionTable transactions={filtered} />
+          </div>
         </>
       )}
     </div>

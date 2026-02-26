@@ -15,14 +15,14 @@ const variantConfig: Record<
   NonNullable<StatCardProps['variant']>,
   { text: string; borderLeft: string; glowHover: string }
 > = {
-  default:  { text: 'text-cyan-400',   borderLeft: 'border-l-4 border-l-cyan-500',   glowHover: 'hover:shadow-cyan-500/10' },
+  default:  { text: 'text-teal-500',   borderLeft: 'border-l-4 border-l-teal-500',   glowHover: 'hover:shadow-teal-500/10' },
   success:  { text: 'text-emerald-400', borderLeft: 'border-l-4 border-l-emerald-500', glowHover: 'hover:shadow-emerald-500/10' },
   warning:  { text: 'text-amber-400',  borderLeft: 'border-l-4 border-l-amber-500',  glowHover: 'hover:shadow-amber-500/10' },
   danger:   { text: 'text-red-400',    borderLeft: 'border-l-4 border-l-red-500',    glowHover: 'hover:shadow-red-500/10' },
-  cyan:     { text: 'text-cyan-400',   borderLeft: 'border-l-4 border-l-cyan-500',   glowHover: 'hover:shadow-cyan-500/10' },
-  purple:   { text: 'text-purple-400', borderLeft: 'border-l-4 border-l-purple-500', glowHover: 'hover:shadow-purple-500/10' },
-  orange:   { text: 'text-orange-400', borderLeft: 'border-l-4 border-l-orange-500', glowHover: 'hover:shadow-orange-500/10' },
-  green:    { text: 'text-green-400',  borderLeft: 'border-l-4 border-l-green-500',  glowHover: 'hover:shadow-green-500/10' },
+  cyan:     { text: 'text-teal-500',   borderLeft: 'border-l-4 border-l-teal-500',   glowHover: 'hover:shadow-teal-500/10' },
+  purple:   { text: 'text-teal-600',   borderLeft: 'border-l-4 border-l-teal-600',   glowHover: 'hover:shadow-teal-600/10' },
+  orange:   { text: 'text-teal-700',   borderLeft: 'border-l-4 border-l-teal-700',   glowHover: 'hover:shadow-teal-700/10' },
+  green:    { text: 'text-teal-400',   borderLeft: 'border-l-4 border-l-teal-400',   glowHover: 'hover:shadow-teal-400/10' },
 };
 
 export function StatCard({

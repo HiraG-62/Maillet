@@ -53,14 +53,14 @@ export function FilterBar({
     selectedMonth !== 'all' || selectedCard !== 'all' || searchQuery.trim() !== '';
 
   return (
-    <div className="bg-[var(--color-background)] border dark:border-white/10 border-black/10 rounded-lg p-3">
+    <div className="float-card p-3">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         {/* Month selector */}
         <Select value={selectedMonth} onValueChange={onMonthChange}>
           <SelectTrigger
             className={`w-full md:w-40 bg-transparent text-[var(--color-text-primary)] transition-colors ${
               selectedMonth !== 'all'
-                ? 'border-cyan-500/50 bg-cyan-500/5 text-cyan-400'
+                ? 'border-teal-500/50 bg-teal-500/5 text-teal-500'
                 : 'dark:border-white/10 border-black/10'
             }`}
           >
@@ -81,7 +81,7 @@ export function FilterBar({
           <SelectTrigger
             className={`w-full md:w-36 bg-transparent text-[var(--color-text-primary)] transition-colors ${
               selectedCard !== 'all'
-                ? 'border-cyan-500/50 bg-cyan-500/5 text-cyan-400'
+                ? 'border-teal-500/50 bg-teal-500/5 text-teal-500'
                 : 'dark:border-white/10 border-black/10'
             }`}
           >
@@ -104,7 +104,7 @@ export function FilterBar({
             placeholder="加盟店・説明で検索..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 bg-transparent dark:border-white/10 border-black/10 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30"
+            className="pl-9 bg-transparent dark:border-white/10 border-black/10 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/30"
           />
         </div>
 

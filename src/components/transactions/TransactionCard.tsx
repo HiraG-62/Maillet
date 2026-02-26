@@ -30,7 +30,7 @@ function formatDate(dateStr: string | null | undefined): string {
 
 function getCardBorderClass(cardCompany: string | null | undefined): string {
   const c = (cardCompany ?? '').toLowerCase();
-  if (c.includes('smbc') || c.includes('三井住友')) return 'border-l-cyan-500';
+  if (c.includes('smbc') || c.includes('三井住友')) return 'border-l-teal-500';
   if (c.includes('楽天')) return 'border-l-rose-500';
   if (c.includes('amex') || c.includes('アメックス')) return 'border-l-amber-500';
   if (c.includes('jcb')) return 'border-l-blue-500';
@@ -99,7 +99,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
   return (
     <div
-      className={`md:hidden dark:bg-white/5 bg-black/5 backdrop-blur-sm border dark:border-white/10 border-black/10 border-l-4 ${borderClass} rounded-xl p-4 hover:scale-[1.01] hover:shadow-md dark:hover:bg-white/[0.07] hover:bg-black/[0.07] transition-all duration-200`}
+      className={`border-l-4 ${borderClass} p-4 hover:bg-[var(--color-surface-hover,var(--color-surface))] transition-colors duration-200`}
     >
       <div className="flex items-start justify-between gap-3">
         {/* Left: date + card + merchant */}

@@ -37,7 +37,7 @@ interface CardBadgeStyle {
 function getCardBadgeStyle(cardCompany: string | null | undefined): CardBadgeStyle {
   const c = (cardCompany ?? '').toLowerCase();
   if (c.includes('smbc') || c.includes('三井住友')) {
-    return { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/30' };
+    return { bg: 'bg-teal-500/15', text: 'text-teal-500', border: 'border-teal-500/30' };
   }
   if (c.includes('楽天')) {
     return { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/30' };
@@ -63,7 +63,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
   );
 
   return (
-    <div className="hidden md:block bg-[var(--color-background)] border dark:border-white/10 border-black/10 rounded-lg overflow-hidden">
+    <div className="overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow className="dark:border-white/10 border-black/10 hover:bg-transparent">
