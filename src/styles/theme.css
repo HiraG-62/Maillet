@@ -18,32 +18,21 @@
 
 /* === Teal Brand Color System === */
 
-/* ライトモード — ANA Inspired: 白〜淡いティールのグラデーション背景 */
+/* ライトモード — ニュートラル基調 + テーマカラーアクセント */
 :root {
-  /* Brand scale (Teal) */
-  --brand-50: #f0fdfa;
-  --brand-100: #ccfbf1;
-  --brand-200: #99f6e4;
-  --brand-300: #5eead4;
-  --brand-400: #2dd4bf;
-  --brand-500: #14b8a6;
-  --brand-600: #0d9488;
-  --brand-700: #0f766e;
-  --brand-800: #115e59;
-  --brand-900: #134e4a;
-
-  /* Semantic tokens */
-  --color-background: #f8fffe;
+  /* Semantic tokens（ニュートラル: テーマ色に依存しない） */
+  --color-background: #fafafa;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
   --color-border: #e2e8f0;
-  --color-border-subtle: #f0fdfa;
+  --color-border-subtle: #f1f5f9;
 
-  --color-text-primary: #134e4a;
-  --color-text-secondary: #0f766e;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #475569;
   --color-text-muted: #64748b;
   --color-text-inverse: #ffffff;
 
+  /* テーマカラー（デフォルト: Teal — applyThemeColor() が上書き） */
   --color-primary: #0d9488;
   --color-primary-hover: #0f766e;
   --color-primary-light: #ccfbf1;
@@ -52,35 +41,36 @@
   /* カードボーダー色 */
   --card-border-color: #0d9488;
 
-  /* グラデーション背景（ANA風: 白→淡いティール） */
+  /* グラデーション背景（applyThemeColor() が上書き） */
   --gradient-bg: linear-gradient(180deg, #ffffff 0%, #f0fdfa 50%, #ccfbf1 100%);
 
-  /* 影（ウォーム系から中性色に変更） */
+  /* 影 */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
   --shadow-glow: 0 0 24px rgba(13, 148, 136, 0.12);
 }
 
-/* ダークモード — ティール基調の暗いグラデーション */
+/* ダークモード — ニュートラル暗色基調 + テーマカラーアクセント */
 .dark {
-  --color-background: #042f2e;
-  --color-surface: #0a3d38;
-  --color-surface-elevated: #115e59;
-  --color-border: #0f766e;
-  --color-border-subtle: #0a3d38;
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-elevated: #334155;
+  --color-border: #475569;
+  --color-border-subtle: #1e293b;
 
-  --color-text-primary: #f0fdfa;
-  --color-text-secondary: #99f6e4;
-  --color-text-muted: #5eead4;
-  --color-text-inverse: #042f2e;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #0f172a;
 
+  /* テーマカラー（デフォルト: Teal — applyThemeColor() が上書き） */
   --color-primary: #2dd4bf;
   --color-primary-hover: #5eead4;
   --color-primary-light: #134e4a;
   --color-primary-foreground: #042f2e;
 
-  --gradient-bg: linear-gradient(180deg, #042f2e 0%, #063b38 50%, #0d4f48 100%);
+  --gradient-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%);
 
   --card-border-color: #2dd4bf;
 

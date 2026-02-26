@@ -64,7 +64,7 @@ function getCategoryStyle(category: string | null | undefined): CategoryStyle {
     return { bg: 'bg-[var(--color-primary)]/20', text: 'text-[var(--color-primary)]' };
   }
   if (c.includes('通信') || c.includes('サブスク')) {
-    return { bg: 'bg-cyan-500/20', text: 'text-cyan-300' };
+    return { bg: 'bg-[var(--color-primary)]/20', text: 'text-[var(--color-primary)]' };
   }
   return { bg: 'dark:bg-white/10 bg-black/10', text: 'text-[var(--color-text-secondary)]' };
 }

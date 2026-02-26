@@ -20,7 +20,7 @@ export function AuthStatus() {
   return (
     <div className="flex items-center gap-2 text-xs text-[var(--color-text-primary)]">
       <span
-        className="w-2 h-2 rounded-full bg-cyan-400 shrink-0"
+        className="w-2 h-2 rounded-full bg-[var(--color-primary)] shrink-0"
         aria-hidden="true"
         title="ログイン済み"
       />

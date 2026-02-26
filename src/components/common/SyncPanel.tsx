@@ -13,7 +13,7 @@ export function SyncPanel() {
     return (
       <div className="bg-[var(--color-background)] border dark:border-white/10 border-black/10 rounded-xl p-6 space-y-4">
         <div className="flex items-center gap-2 text-[var(--color-text-secondary)]">
-          <LogIn size={18} className="text-cyan-400" />
+          <LogIn size={18} className="text-[var(--color-primary)]" />
           <span className="font-medium">Gmail 同期</span>
         </div>
         {isGoogleConfigured ? (
@@ -69,7 +69,7 @@ export function SyncPanel() {
     <div className="bg-[var(--color-background)] border dark:border-white/10 border-black/10 rounded-xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-[var(--color-text-secondary)]">
-          <RefreshCw size={18} className="text-cyan-400" />
+          <RefreshCw size={18} className="text-[var(--color-primary)]" />
           <span className="font-medium">Gmail 同期</span>
         </div>
         {result && (
@@ -87,7 +87,7 @@ export function SyncPanel() {
         <button
           onClick={() => void startSync()}
           disabled={isSyncing}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-500 text-[var(--color-text-primary)] font-medium text-sm hover:bg-cyan-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)] font-medium text-sm hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <RefreshCw size={16} />
           同期開始
@@ -116,7 +116,7 @@ export function SyncPanel() {
                   ? 'bg-red-500'
                   : progress.status === 'done'
                     ? 'bg-[var(--color-success)]'
-                    : 'bg-cyan-500'
+                    : 'bg-[var(--color-primary)]'
               }`}
               style={{ width: `${progress.percentage}%` }}
             />
@@ -148,7 +148,7 @@ export function SyncPanel() {
             <span>取得メール数</span>
             <span className="text-[var(--color-text-primary)] text-right">{result.total_fetched}</span>
             <span>新規取引</span>
-            <span className="text-cyan-400 text-right font-medium">{result.new_transactions}</span>
+            <span className="text-[var(--color-primary)] text-right font-medium">{result.new_transactions}</span>
             <span>重複スキップ</span>
             <span className="text-[var(--color-text-primary)] text-right">{result.duplicates_skipped}</span>
             {result.parse_errors > 0 && (
