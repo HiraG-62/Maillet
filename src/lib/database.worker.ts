@@ -47,14 +47,15 @@ async function init() {
       // @ts-expect-error dynamic path
       'wa-sqlite/src/examples/AccessHandlePoolVFS.js'
     );
-    const vfs = await AccessHandlePoolVFS.create(DB_NAME, module);
+    const vfs = new AccessHandlePoolVFS(DB_NAME);
+    await vfs.isReady;
     sqlite3.vfs_register(vfs, true);
     db = await sqlite3.open_v2(
       DB_NAME,
       SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE,
-      DB_NAME
+      'AccessHandlePool'
     );
-    console.log('[DEBUG-093] OPFS VFS created successfully');
+    console.log('[DEBUG-093] OPFS VFS created successfully (AccessHandlePool)');
     console.log('[DEBUG-093] DB file:', DB_NAME);
   } catch (error) {
     // OPFS unavailable (non-secure context, test env, etc.) → in-memory fallback
