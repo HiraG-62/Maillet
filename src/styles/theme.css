@@ -16,50 +16,73 @@
   --color-info: #3b82f6;
 }
 
-/* ライトモード（デフォルト） — ベージュ/ウォーム系 */
-:root {
-  --color-background: #faf8f5;
-  --color-surface: #f3ede6;
-  --color-surface-elevated: #ebe4da;
-  --color-border: #d4cbbf;
-  --color-border-subtle: #ede8e2;
+/* === Teal Brand Color System === */
 
-  --color-text-primary: #1c1714;
-  --color-text-secondary: #6b5e52;
-  --color-text-muted: #9c8f82;
+/* ライトモード — ANA Inspired: 白〜淡いティールのグラデーション背景 */
+:root {
+  /* Brand scale (Teal) */
+  --brand-50: #f0fdfa;
+  --brand-100: #ccfbf1;
+  --brand-200: #99f6e4;
+  --brand-300: #5eead4;
+  --brand-400: #2dd4bf;
+  --brand-500: #14b8a6;
+  --brand-600: #0d9488;
+  --brand-700: #0f766e;
+  --brand-800: #115e59;
+  --brand-900: #134e4a;
+
+  /* Semantic tokens */
+  --color-background: #f8fffe;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f0fdfa;
+
+  --color-text-primary: #134e4a;
+  --color-text-secondary: #0f766e;
+  --color-text-muted: #64748b;
   --color-text-inverse: #ffffff;
 
-  --color-primary: #0891b2;
-  --color-primary-hover: #0e7490;
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-primary-light: #ccfbf1;
   --color-primary-foreground: #ffffff;
 
-  --shadow-sm: 0 1px 2px rgba(101, 76, 57, 0.06);
-  --shadow-md: 0 4px 6px rgba(101, 76, 57, 0.09);
-  --shadow-lg: 0 10px 15px rgba(101, 76, 57, 0.12);
-  --shadow-glow: 0 0 20px rgba(8, 145, 178, 0.1);
+  /* グラデーション背景（ANA風: 白→淡いティール） */
+  --gradient-bg: linear-gradient(180deg, #ffffff 0%, #f0fdfa 50%, #ccfbf1 100%);
+
+  /* 影（ウォーム系から中性色に変更） */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 24px rgba(13, 148, 136, 0.12);
 }
 
-/* ダークモード */
+/* ダークモード — ティール基調の暗いグラデーション */
 .dark {
-  --color-background: #0f172a;
-  --color-surface: #1e293b;
-  --color-surface-elevated: #334155;
-  --color-border: #475569;
-  --color-border-subtle: #334155;
+  --color-background: #042f2e;
+  --color-surface: #0a3d38;
+  --color-surface-elevated: #115e59;
+  --color-border: #0f766e;
+  --color-border-subtle: #0a3d38;
 
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
-  --color-text-inverse: #0f172a;
+  --color-text-primary: #f0fdfa;
+  --color-text-secondary: #99f6e4;
+  --color-text-muted: #5eead4;
+  --color-text-inverse: #042f2e;
 
-  --color-primary: #06b6d4;
-  --color-primary-hover: #0891b2;
-  --color-primary-foreground: #0f172a;
+  --color-primary: #2dd4bf;
+  --color-primary-hover: #5eead4;
+  --color-primary-light: #134e4a;
+  --color-primary-foreground: #042f2e;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
+  --gradient-bg: linear-gradient(180deg, #042f2e 0%, #063b38 50%, #0d4f48 100%);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 24px rgba(45, 212, 191, 0.15);
 }
 
 /* グローバルスタイル */

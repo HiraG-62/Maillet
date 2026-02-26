@@ -8,7 +8,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)]">
+    <div className="min-h-screen gradient-bg text-[var(--color-text-primary)]">
       {/* Mobile: top navbar */}
       <Navbar />
 
@@ -16,7 +16,7 @@ export function Layout({ children }: LayoutProps) {
       <Sidebar />
 
       {/* Main content area */}
-      <main className="md:ml-56 min-h-screen pt-14 pb-16 md:pt-0 md:pb-0">
+      <main className="md:ml-56 min-h-screen pt-14 pb-20 md:pt-0 md:pb-0">
         {children}
       </main>
 
