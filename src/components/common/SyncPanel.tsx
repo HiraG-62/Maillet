@@ -34,7 +34,7 @@ export function SyncPanel() {
         <button
           onClick={() => void login()}
           disabled={authLoading || !isGoogleConfigured}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-slate-900 font-medium text-sm hover:bg-slate-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-[var(--color-text-primary)] font-medium text-sm hover:bg-[var(--color-surface)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {authLoading ? (
             <RefreshCw size={16} className="animate-spin" />
@@ -87,7 +87,7 @@ export function SyncPanel() {
         <button
           onClick={() => void startSync()}
           disabled={isSyncing}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-500 text-slate-900 font-medium text-sm hover:bg-cyan-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-500 text-[var(--color-text-primary)] font-medium text-sm hover:bg-cyan-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <RefreshCw size={16} />
           同期開始
@@ -95,7 +95,7 @@ export function SyncPanel() {
       ) : (
         <button
           onClick={cancelSync}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--color-surface-elevated)] text-[var(--color-text-primary)] font-medium text-sm hover:bg-slate-600 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--color-surface-elevated)] text-[var(--color-text-primary)] font-medium text-sm hover:bg-[var(--color-surface-elevated)] transition-colors"
         >
           <XCircle size={16} />
           キャンセル

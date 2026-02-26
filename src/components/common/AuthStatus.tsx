@@ -7,29 +7,29 @@ export function AuthStatus() {
   if (!authState.isAuthenticated) {
     return (
       <div
-        className="flex items-center gap-2 text-xs text-slate-500"
+        className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]"
         title="未ログイン"
         aria-label="未ログイン"
       >
-        <span className="w-2 h-2 rounded-full bg-slate-600 shrink-0" aria-hidden="true" />
+        <span className="w-2 h-2 rounded-full bg-[var(--color-surface-elevated)] shrink-0" aria-hidden="true" />
         <span className="hidden sm:inline">未ログイン</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 text-xs text-slate-300">
+    <div className="flex items-center gap-2 text-xs text-[var(--color-text-primary)]">
       <span
         className="w-2 h-2 rounded-full bg-cyan-400 shrink-0"
         aria-hidden="true"
         title="ログイン済み"
       />
-      <span className="hidden sm:inline text-slate-400">Gmail 接続済み</span>
+      <span className="hidden sm:inline text-[var(--color-text-secondary)]">Gmail 接続済み</span>
       <button
         onClick={logout}
         title="ログアウト"
         aria-label="Gmail からログアウト"
-        className="flex items-center gap-1 text-slate-500 hover:text-slate-200 transition-colors ml-1"
+        className="flex items-center gap-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ml-1"
       >
         <LogOut size={13} />
         <span className="hidden sm:inline">ログアウト</span>

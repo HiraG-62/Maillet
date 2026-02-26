@@ -105,7 +105,7 @@ export default function SummaryPage() {
         {monthlyData.some((d) => d.total_amount > 0) ? (
           <MonthlyBarChart data={monthlyData} height={200} />
         ) : (
-          <div className="h-[200px] flex flex-col items-center justify-center gap-2 text-slate-600">
+          <div className="h-[200px] flex flex-col items-center justify-center gap-2 text-[var(--color-text-secondary)]">
             <BarChart2 className="w-10 h-10 opacity-40" />
             <span className="text-sm">データなし</span>
           </div>
@@ -123,7 +123,7 @@ export default function SummaryPage() {
         {categoryData.length > 0 ? (
           <CategoryPieChart data={categoryData} height={250} />
         ) : (
-          <div className="h-[250px] flex flex-col items-center justify-center gap-2 text-slate-600">
+          <div className="h-[250px] flex flex-col items-center justify-center gap-2 text-[var(--color-text-secondary)]">
             <PieChartIcon className="w-10 h-10 opacity-40" />
             <span className="text-sm">この月はデータがありません</span>
           </div>
@@ -156,7 +156,7 @@ export default function SummaryPage() {
             </tbody>
           </table>
         ) : (
-          <div className="py-10 flex flex-col items-center gap-2 text-slate-600">
+          <div className="py-10 flex flex-col items-center gap-2 text-[var(--color-text-secondary)]">
             <Layers className="w-10 h-10 opacity-40" />
             <span className="text-sm">この月のデータがありません</span>
           </div>

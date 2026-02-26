@@ -4,15 +4,15 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'bg-cyan-500 text-slate-900 hover:bg-cyan-400',
-        outline: 'border border-slate-600 bg-transparent text-slate-100 hover:bg-slate-700',
-        ghost: 'text-slate-400 hover:bg-slate-700 hover:text-slate-100',
+        default: 'bg-cyan-500 text-[var(--color-text-primary)] hover:bg-cyan-400',
+        outline: 'border border-[var(--color-border)] bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]',
+        ghost: 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text-primary)]',
         destructive: 'bg-red-600 text-white hover:bg-red-500',
-        secondary: 'bg-slate-700 text-slate-100 hover:bg-slate-600',
+        secondary: 'bg-[var(--color-surface-elevated)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]',
         link: 'text-cyan-400 underline-offset-4 hover:underline',
       },
       size: {

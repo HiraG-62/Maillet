@@ -15,7 +15,7 @@ const CARD_COLORS: Record<string, { bg: string; text: string; border: string }> 
   dcard: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: '#f97316' },
 };
 
-const DEFAULT_CARD = { bg: 'bg-slate-500/20', text: 'text-[var(--color-text-secondary)]', border: '#64748b' };
+const DEFAULT_CARD = { bg: 'bg-[var(--color-surface-elevated)]/20', text: 'text-[var(--color-text-secondary)]', border: '#64748b' };
 
 function getCardColor(company: string | null | undefined) {
   if (!company) return DEFAULT_CARD;
