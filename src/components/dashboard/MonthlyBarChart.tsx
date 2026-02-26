@@ -6,6 +6,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  Cell,
 } from 'recharts';
 
 interface MonthlyDataPoint {
@@ -30,6 +31,16 @@ const formatYAxis = (value: number) => {
   return `${value}`;
 };
 
+// Gradient from muted → vivid cyan: oldest month = darkest, most recent = brightest
+const BAR_COLORS = [
+  '#155e75', // 5 months ago
+  '#0e7490', // 4 months ago
+  '#0891b2', // 3 months ago
+  '#06b6d4', // 2 months ago (base cyan)
+  '#22d3ee', // 1 month ago
+  '#67e8f9', // current (vivid)
+];
+
 const CustomTooltip = ({
   active,
   payload,
@@ -43,16 +54,16 @@ const CustomTooltip = ({
     return (
       <div
         style={{
-          background: '#1a1a2e',
-          border: '1px solid #2a2a3a',
-          borderRadius: '6px',
+          backgroundColor: '#1e293b',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '8px',
           padding: '8px 12px',
         }}
       >
         <p style={{ color: '#94a3b8', marginBottom: '4px', fontSize: '12px' }}>
           {label ? formatMonth(label) : ''}
         </p>
-        <p style={{ color: '#06b6d4', fontWeight: 'bold', fontSize: '14px' }}>
+        <p style={{ color: '#22d3ee', fontWeight: 'bold', fontSize: '14px' }}>
           ¥{payload[0].value.toLocaleString('ja-JP')}
         </p>
       </div>
@@ -65,12 +76,12 @@ export default function MonthlyBarChart({ data, height = 200 }: MonthlyBarChartP
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
         <XAxis
           dataKey="month"
           tickFormatter={formatMonth}
           tick={{ fill: '#94a3b8', fontSize: 12 }}
-          axisLine={{ stroke: '#2a2a3a' }}
+          axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
           tickLine={false}
         />
         <YAxis
@@ -81,7 +92,14 @@ export default function MonthlyBarChart({ data, height = 200 }: MonthlyBarChartP
           width={40}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(6, 182, 212, 0.08)' }} />
-        <Bar dataKey="total_amount" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="total_amount" radius={[6, 6, 0, 0]} isAnimationActive={true}>
+          {data.map((_, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={BAR_COLORS[index % BAR_COLORS.length]}
+            />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );

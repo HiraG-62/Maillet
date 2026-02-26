@@ -1,3 +1,4 @@
+import { CreditCard, ShoppingBag, Utensils, Train, Zap } from 'lucide-react';
 import type { CardTransaction } from '@/types/transaction';
 import { CurrencyDisplay } from './CurrencyDisplay';
 
@@ -6,21 +7,41 @@ interface RecentTransactionsProps {
   limit?: number;
 }
 
-const CARD_BADGE_COLORS: Record<string, { bg: string; text: string }> = {
-  smbc: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
-  jcb: { bg: 'bg-green-500/20', text: 'text-green-400' },
-  rakuten: { bg: 'bg-red-500/20', text: 'text-red-400' },
-  amex: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
-  dcard: { bg: 'bg-orange-500/20', text: 'text-orange-400' },
+const CARD_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  smbc: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: '#3b82f6' },
+  jcb: { bg: 'bg-green-500/20', text: 'text-green-400', border: '#22c55e' },
+  rakuten: { bg: 'bg-red-500/20', text: 'text-red-400', border: '#ef4444' },
+  amex: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: '#a855f7' },
+  dcard: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: '#f97316' },
 };
 
-function getCardBadgeColor(company: string | null | undefined): { bg: string; text: string } {
-  if (!company) return { bg: 'bg-slate-500/20', text: 'text-slate-400' };
+const DEFAULT_CARD = { bg: 'bg-slate-500/20', text: 'text-slate-400', border: '#64748b' };
+
+function getCardColor(company: string | null | undefined) {
+  if (!company) return DEFAULT_CARD;
   const lower = company.toLowerCase().replace(/[\s\-_]/g, '');
-  for (const [key, val] of Object.entries(CARD_BADGE_COLORS)) {
+  for (const [key, val] of Object.entries(CARD_COLORS)) {
     if (lower.includes(key)) return val;
   }
-  return { bg: 'bg-slate-500/20', text: 'text-slate-400' };
+  return DEFAULT_CARD;
+}
+
+function getCategoryIcon(category: string | null | undefined) {
+  if (!category) return <CreditCard size={14} className="text-slate-500 shrink-0" />;
+  const lower = category.toLowerCase();
+  if (lower.includes('食') || lower.includes('飲食') || lower.includes('restaurant') || lower.includes('グルメ')) {
+    return <Utensils size={14} className="text-orange-400 shrink-0" />;
+  }
+  if (lower.includes('交通') || lower.includes('鉄道') || lower.includes('電車') || lower.includes('travel')) {
+    return <Train size={14} className="text-blue-400 shrink-0" />;
+  }
+  if (lower.includes('ショッピング') || lower.includes('shop') || lower.includes('衣料')) {
+    return <ShoppingBag size={14} className="text-pink-400 shrink-0" />;
+  }
+  if (lower.includes('光熱') || lower.includes('電気') || lower.includes('utility') || lower.includes('水道')) {
+    return <Zap size={14} className="text-yellow-400 shrink-0" />;
+  }
+  return <CreditCard size={14} className="text-slate-400 shrink-0" />;
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -48,24 +69,26 @@ export function RecentTransactions({ transactions, limit = 10 }: RecentTransacti
   return (
     <ul>
       {sorted.map((tx, index) => {
-        const badge = getCardBadgeColor(tx.card_company);
+        const card = getCardColor(tx.card_company);
         return (
           <li
             key={tx.id ?? `${tx.transaction_date}-${index}`}
-            className="flex items-center gap-3 py-3 border-b border-white/5 last:border-b-0"
+            className="flex items-center gap-3 py-3 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors cursor-pointer rounded-r-md pl-2"
+            style={{ borderLeft: `3px solid ${card.border}` }}
           >
-            <span className="text-slate-400 text-sm w-auto shrink-0">
+            {getCategoryIcon(tx.category)}
+            <span className="text-slate-400 text-xs w-auto shrink-0">
               {formatDate(tx.transaction_date)}
             </span>
             <span
-              className={`px-2 py-0.5 rounded text-[10px] font-medium shrink-0 ${badge.bg} ${badge.text}`}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${card.bg} ${card.text}`}
             >
               {tx.card_company}
             </span>
             <span className="flex-1 text-slate-200 text-sm truncate">
               {tx.merchant}
             </span>
-            <CurrencyDisplay amount={tx.amount} size="sm" className="shrink-0" />
+            <CurrencyDisplay amount={tx.amount} size="md" className="shrink-0" />
           </li>
         );
       })}
