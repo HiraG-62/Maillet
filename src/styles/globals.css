@@ -18,7 +18,7 @@
   background: var(--color-surface);
   border-radius: 16px;
   box-shadow: var(--shadow-lg);
-  border-top: 3px solid var(--color-primary);
+  border-top: 3px solid var(--card-border-color);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .float-card:hover {

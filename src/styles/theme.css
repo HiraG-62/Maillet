@@ -49,6 +49,9 @@
   --color-primary-light: #ccfbf1;
   --color-primary-foreground: #ffffff;
 
+  /* カードボーダー色 */
+  --card-border-color: #0d9488;
+
   /* グラデーション背景（ANA風: 白→淡いティール） */
   --gradient-bg: linear-gradient(180deg, #ffffff 0%, #f0fdfa 50%, #ccfbf1 100%);
 
@@ -78,6 +81,8 @@
   --color-primary-foreground: #042f2e;
 
   --gradient-bg: linear-gradient(180deg, #042f2e 0%, #063b38 50%, #0d4f48 100%);
+
+  --card-border-color: #2dd4bf;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
