@@ -28,6 +28,18 @@ const formatMonthLabel = (m: string) => {
   return `${year}年${parseInt(month)}月`;
 };
 
+const getPrevMonth = (m: string): string => {
+  const [yearStr, monthStr] = m.split('-');
+  const d = new Date(parseInt(yearStr), parseInt(monthStr) - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const formatPctChange = (current: number, prev: number) => {
+  if (prev === 0) return null;
+  const pct = ((current - prev) / prev) * 100;
+  return { text: `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`, isIncrease: pct > 0 };
+};
+
 export default function SummaryPage() {
   const transactions = useTransactionStore((s) => s.transactions);
 
@@ -47,14 +59,19 @@ export default function SummaryPage() {
 
   const monthlyData = useMemo(() => {
     const last6 = getLastNMonths(defaultMonth, 6);
+    const last7 = getLastNMonths(defaultMonth, 7);
     const totals: Record<string, number> = {};
     transactions.forEach((t) => {
       const m = toYearMonth(t.transaction_date);
-      if (last6.includes(m)) {
+      if (last7.includes(m)) {
         totals[m] = (totals[m] ?? 0) + t.amount;
       }
     });
-    return last6.map((m) => ({ month: m, total_amount: totals[m] ?? 0 }));
+    return last6.map((m, i) => ({
+      month: m,
+      total_amount: totals[m] ?? 0,
+      prev_total_amount: totals[last7[i]] ?? 0,
+    }));
   }, [transactions]);
 
   const categoryData = useMemo(() => {
@@ -70,6 +87,20 @@ export default function SummaryPage() {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
   }, [transactions, selectedMonth]);
+
+  const prevMonth = useMemo(() => getPrevMonth(selectedMonth), [selectedMonth]);
+
+  const prevCategoryTotals = useMemo(() => {
+    const filtered = transactions.filter(
+      (t) => toYearMonth(t.transaction_date) === prevMonth
+    );
+    const totals: Record<string, number> = {};
+    filtered.forEach((t) => {
+      const cat = t.category ?? 'その他';
+      totals[cat] = (totals[cat] ?? 0) + t.amount;
+    });
+    return totals;
+  }, [transactions, prevMonth]);
 
   const merchantRanking = useMemo(() => {
     const filtered = transactions.filter(
@@ -169,17 +200,45 @@ export default function SummaryPage() {
               <tr className="border-b dark:border-white/10 border-black/10">
                 <th className="text-left py-2 text-[var(--color-text-secondary)] font-medium">カテゴリ</th>
                 <th className="text-right py-2 text-[var(--color-text-secondary)] font-medium">金額</th>
+                <th className="text-right py-2 text-[var(--color-text-secondary)] font-medium">前月</th>
+                <th className="text-right py-2 text-[var(--color-text-secondary)] font-medium">前月比</th>
               </tr>
             </thead>
             <tbody>
-              {categoryData.map((item, i) => (
-                <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                  <td className="py-2.5 text-[var(--color-text-primary)]">{item.name}</td>
-                  <td className="py-2.5 text-right">
-                    <CurrencyDisplay amount={item.value} size="sm" className="text-[var(--color-primary)]" />
-                  </td>
-                </tr>
-              ))}
+              {categoryData.map((item, i) => {
+                const prev = prevCategoryTotals[item.name] ?? 0;
+                const change = formatPctChange(item.value, prev);
+                return (
+                  <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                    <td className="py-2.5 text-[var(--color-text-primary)]">{item.name}</td>
+                    <td className="py-2.5 text-right">
+                      <CurrencyDisplay amount={item.value} size="sm" className="text-[var(--color-primary)]" />
+                    </td>
+                    <td className="py-2.5 text-right">
+                      {prev > 0 ? (
+                        <CurrencyDisplay amount={prev} size="sm" variant="muted" />
+                      ) : (
+                        <span className="text-xs text-[var(--color-text-muted)]">—</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 text-right">
+                      {change ? (
+                        <span
+                          className={`text-xs font-medium ${
+                            change.isIncrease
+                              ? 'text-[var(--color-danger)]'
+                              : 'text-[var(--color-success)]'
+                          }`}
+                        >
+                          {change.text}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--color-text-muted)]">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         ) : (
