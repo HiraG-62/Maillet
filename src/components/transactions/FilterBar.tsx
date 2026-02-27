@@ -12,9 +12,12 @@ interface FilterBarProps {
   selectedMonth: string;
   selectedCard: string;
   searchQuery: string;
+  categories: string[];
+  selectedCategory: string;
   onMonthChange: (month: string) => void;
   onCardChange: (card: string) => void;
   onSearchChange: (query: string) => void;
+  onCategoryChange: (category: string) => void;
   onReset?: () => void;
 }
 
@@ -43,14 +46,17 @@ export function FilterBar({
   selectedMonth,
   selectedCard,
   searchQuery,
+  categories,
+  selectedCategory,
   onMonthChange,
   onCardChange,
   onSearchChange,
+  onCategoryChange,
   onReset,
 }: FilterBarProps) {
   const monthOptions = getPast12Months();
   const hasActiveFilter =
-    selectedMonth !== 'all' || selectedCard !== 'all' || searchQuery.trim() !== '';
+    selectedMonth !== 'all' || selectedCard !== 'all' || searchQuery.trim() !== '' || selectedCategory !== '';
 
   return (
     <div className="float-card p-3">
@@ -91,6 +97,27 @@ export function FilterBar({
             {CARD_OPTIONS.map((c) => (
               <SelectItem key={c.value} value={c.value}>
                 {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Category selector */}
+        <Select value={selectedCategory} onValueChange={onCategoryChange}>
+          <SelectTrigger
+            className={`w-full md:w-36 bg-transparent text-[var(--color-text-primary)] transition-colors ${
+              selectedCategory !== ''
+                ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                : 'dark:border-white/10 border-black/10'
+            }`}
+          >
+            <SelectValue placeholder="カテゴリ" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">全カテゴリ</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
               </SelectItem>
             ))}
           </SelectContent>

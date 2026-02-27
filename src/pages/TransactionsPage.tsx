@@ -26,6 +26,12 @@ export default function TransactionsPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedCard, setSelectedCard] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  const categories = useMemo(() => {
+    const cats = [...new Set(transactions?.map(t => t.category).filter(Boolean))] as string[];
+    return cats.sort();
+  }, [transactions]);
 
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
@@ -42,14 +48,18 @@ export default function TransactionsPage() {
         const inDesc = (tx.description ?? '').toLowerCase().includes(q);
         if (!inMerchant && !inDesc) return false;
       }
+      if (selectedCategory) {
+        if (tx.category !== selectedCategory) return false;
+      }
       return true;
     });
-  }, [transactions, selectedMonth, selectedCard, searchQuery]);
+  }, [transactions, selectedMonth, selectedCard, searchQuery, selectedCategory]);
 
   function handleReset() {
     setSelectedMonth('all');
     setSelectedCard('all');
     setSearchQuery('');
+    setSelectedCategory('');
   }
 
   return (
@@ -67,9 +77,12 @@ export default function TransactionsPage() {
         selectedMonth={selectedMonth}
         selectedCard={selectedCard}
         searchQuery={searchQuery}
+        categories={categories}
+        selectedCategory={selectedCategory}
         onMonthChange={setSelectedMonth}
         onCardChange={setSelectedCard}
         onSearchChange={setSearchQuery}
+        onCategoryChange={setSelectedCategory}
         onReset={handleReset}
       />
 
