@@ -9,6 +9,7 @@ import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
 import { formatDateRelative, formatCurrency } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
+import { CategoryBudgetProgress } from '@/components/dashboard/CategoryBudgetProgress';
 import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
 import type { CardTransaction } from '@/types/transaction';
 
@@ -51,6 +52,7 @@ function getCategoryEmoji(category: string | null | undefined): string {
 export default function DashboardPage() {
   const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
   const monthlyBudget = useSettingsStore((s) => s.monthly_budget);
+  const categoryBudgets = useSettingsStore((s) => s.categoryBudgets);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
   const [dbWarning, setDbWarning] = useState<string | null>(null);
   const { error: authError } = useAuth();
@@ -97,6 +99,18 @@ export default function DashboardPage() {
     );
     const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
     return { total, hasData: filtered.length > 0 };
+  }, [transactions, selectedMonth]);
+
+  const categoryTotals = useMemo(() => {
+    const filtered = transactions.filter(
+      (tx) => (tx.transaction_date ?? '').slice(0, 7) === selectedMonth
+    );
+    return filtered.reduce<Record<string, number>>((acc, tx) => {
+      if (tx.category) {
+        acc[tx.category] = (acc[tx.category] ?? 0) + tx.amount;
+      }
+      return acc;
+    }, {});
   }, [transactions, selectedMonth]);
 
   const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
@@ -261,6 +275,14 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* ===== Category Budget Progress (F-001b) ===== */}
+      {!isLoading && Object.keys(categoryBudgets).length > 0 && (
+        <CategoryBudgetProgress
+          categoryBudgets={categoryBudgets}
+          categoryTotals={categoryTotals}
+        />
+      )}
 
       {/* ===== Recent Transactions ===== */}
       {!isEmpty && recentTransactions.length > 0 && (
