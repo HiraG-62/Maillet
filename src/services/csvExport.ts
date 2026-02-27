@@ -1,4 +1,5 @@
 import type { CardTransaction } from '@/types/transaction';
+import { formatDateForExport } from '@/lib/utils';
 
 export interface CsvExportOptions {
   filename?: string;
@@ -11,18 +12,6 @@ const CSV_HEADERS = [
   'メールID', '作成日時'
 ];
 
-function formatDate(isoString: string | undefined): string {
-  if (!isoString) return '';
-  const d = new Date(isoString);
-  if (isNaN(d.getTime())) return isoString;
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${yyyy}/${mm}/${dd} ${hh}:${min}`;
-}
-
 function escapeCsvField(value: string): string {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -32,13 +21,13 @@ function escapeCsvField(value: string): string {
 
 export function transactionToCsvRow(tx: CardTransaction): string[] {
   return [
-    formatDate(tx.transaction_date),
+    formatDateForExport(tx.transaction_date),
     tx.card_company,
     String(tx.amount),
     tx.merchant,
     tx.category ?? '',
     tx.gmail_message_id ?? '',
-    formatDate(tx.created_at),
+    formatDateForExport(tx.created_at),
   ];
 }
 

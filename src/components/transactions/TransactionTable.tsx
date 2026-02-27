@@ -1,5 +1,6 @@
 import type { CardTransaction } from '@/types/transaction';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
+import { formatDateFull } from '@/lib/utils';
 import { ChevronUp } from 'lucide-react';
 import {
   Table,
@@ -12,20 +13,6 @@ import {
 
 interface TransactionTableProps {
   transactions: CardTransaction[];
-}
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = d.getHours();
-  const min = d.getMinutes();
-  const date = `${yyyy}/${mm}/${dd}`;
-  if (hh === 0 && min === 0) return date;
-  return `${date} ${String(hh).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
 interface CardBadgeStyle {
@@ -100,7 +87,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                 className="dark:border-white/5 border-black/5 dark:hover:bg-white/5 hover:bg-black/5 transition-colors"
               >
                 <TableCell className="text-[var(--color-text-secondary)] text-sm whitespace-nowrap">
-                  {formatDate(tx.transaction_date)}
+                  {formatDateFull(tx.transaction_date)}
                 </TableCell>
                 <TableCell>
                   {tx.card_company ? (

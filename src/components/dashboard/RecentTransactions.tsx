@@ -1,5 +1,6 @@
 import { CreditCard, ShoppingBag, Utensils, Train, Zap } from 'lucide-react';
 import type { CardTransaction } from '@/types/transaction';
+import { formatDateShort } from '@/lib/utils';
 import { CurrencyDisplay } from './CurrencyDisplay';
 
 interface RecentTransactionsProps {
@@ -44,19 +45,6 @@ function getCategoryIcon(category: string | null | undefined) {
   return <CreditCard size={14} className="text-[var(--color-text-secondary)] shrink-0" />;
 }
 
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = d.getHours();
-  const min = d.getMinutes();
-  const date = `${mm}/${dd}`;
-  if (hh === 0 && min === 0) return date;
-  return `${date} ${String(hh).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-}
-
 export function RecentTransactions({ transactions, limit = 10 }: RecentTransactionsProps) {
   const sorted = [...transactions]
     .sort((a, b) => (b.transaction_date ?? '').localeCompare(a.transaction_date ?? ''))
@@ -78,7 +66,7 @@ export function RecentTransactions({ transactions, limit = 10 }: RecentTransacti
           >
             {getCategoryIcon(tx.category)}
             <span className="text-[var(--color-text-secondary)] text-xs w-auto shrink-0">
-              {formatDate(tx.transaction_date)}
+              {formatDateShort(tx.transaction_date)}
             </span>
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${card.bg} ${card.text}`}

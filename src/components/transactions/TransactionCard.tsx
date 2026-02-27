@@ -1,5 +1,6 @@
 import type { CardTransaction } from '@/types/transaction';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
+import { formatDateFull } from '@/lib/utils';
 import {
   ShoppingBag,
   Plane,
@@ -12,20 +13,6 @@ import {
 
 interface TransactionCardProps {
   transaction: CardTransaction;
-}
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = d.getHours();
-  const min = d.getMinutes();
-  const date = `${yyyy}/${mm}/${dd}`;
-  if (hh === 0 && min === 0) return date;
-  return `${date} ${String(hh).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
 function getCardBorderClass(cardCompany: string | null | undefined): string {
@@ -104,7 +91,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
       <div className="flex items-start justify-between gap-3">
         {/* Left: date + card + merchant */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-[var(--color-text-secondary)] mb-1">{formatDate(transaction.transaction_date)}</p>
+          <p className="text-xs text-[var(--color-text-secondary)] mb-1">{formatDateFull(transaction.transaction_date)}</p>
           <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{transaction.merchant}</p>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{transaction.card_company}</p>
         </div>

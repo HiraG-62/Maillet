@@ -6,6 +6,7 @@ type Pending = {
 let worker: Worker | null = null;
 let msgId = 0;
 const pending = new Map<number, Pending>();
+let dbInitialized = false;
 
 function getWorker(): Worker {
   if (!worker) {
@@ -38,10 +39,12 @@ function call(action: string, args: unknown[] = []): Promise<unknown> {
 }
 
 export async function initDB(): Promise<{ warning?: string }> {
+  if (dbInitialized) return {};
   const result = (await call('init')) as { ok: true; warning?: string };
   if (result.warning) {
     console.warn('[DB] initDB warning:', result.warning);
   }
+  dbInitialized = true;
   return { warning: result.warning };
 }
 

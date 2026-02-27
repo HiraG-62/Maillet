@@ -257,7 +257,6 @@ async function processMessage(msg: { id: string }): Promise<ProcessResult> {
       };
     }
 
-    console.log('[DEBUG-091] Saving transaction:', { merchant: parsed.merchant, amount: parsed.amount, date: parsed.transaction_date });
     await saveTransaction(
       msg.id,
       fromAddress,
@@ -267,8 +266,6 @@ async function processMessage(msg: { id: string }): Promise<ProcessResult> {
       parsed.transaction_date,
       parsed.card_company
     );
-    console.log('[DEBUG-091] saveTransaction result: saved successfully');
-
     return { saved: true, parseError: false };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);

@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
+import { formatDateRelative } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 
 function getCurrentMonth(): string {
@@ -30,22 +31,6 @@ function addMonths(ym: string, delta: number): string {
   const m = parseInt(parts[1]) - 1;
   const d = new Date(y, m + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const isYesterday = d.toDateString() === yesterday.toDateString();
-
-  if (isToday) return '今日';
-  if (isYesterday) return '昨日';
-
-  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 function getCategoryEmoji(category: string | null | undefined): string {
@@ -86,18 +71,6 @@ export default function DashboardPage() {
         setLoading(false);
       });
   }, [setTransactions, setLoading]);
-
-  // DEBUG-091
-  useEffect(() => {
-    (window as any).__debugDB = async () => {
-      await initDB();
-      const txs = await getTransactions();
-      console.log('[DEBUG-091] DB transactions count:', txs.length);
-      console.log('[DEBUG-091] DB transactions (first 3):', JSON.stringify(txs.slice(0, 3), null, 2));
-      return txs;
-    };
-    console.log('[DEBUG-091] __debugDB ready. Type window.__debugDB() in console.');
-  }, []);
 
   const monthlyStats = useMemo(() => {
     const filtered = transactions.filter(
@@ -220,7 +193,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right shrink-0">
                   <CurrencyDisplay amount={tx.amount} size="sm" />
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{formatDate(tx.transaction_date)}</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{formatDateRelative(tx.transaction_date)}</p>
                 </div>
               </div>
             ))}
