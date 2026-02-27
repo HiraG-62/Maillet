@@ -8,6 +8,7 @@ import {
   Label,
   type LegendProps,
 } from 'recharts';
+import { useChartColors } from '@/hooks/useChartColors';
 
 interface CategoryDataPoint {
   name: string;
@@ -20,23 +21,14 @@ interface CategoryPieChartProps {
   height?: number;
 }
 
-const PALETTE = [
-  '#0d9488', // brand-600
-  '#14b8a6', // brand-500
-  '#2dd4bf', // brand-400
-  '#5eead4', // brand-300
-  '#99f6e4', // brand-200
-  '#0f766e', // brand-700
-  '#115e59', // brand-800
-  '#134e4a', // brand-900
-];
-
 const CustomTooltip = ({
   active,
   payload,
+  accentColor,
 }: {
   active?: boolean;
   payload?: Array<{ name: string; value: number }>;
+  accentColor?: string;
 }) => {
   if (active && payload && payload.length) {
     return (
@@ -51,7 +43,7 @@ const CustomTooltip = ({
         <p style={{ color: '#94a3b8', marginBottom: '4px', fontSize: '12px' }}>
           {payload[0].name}
         </p>
-        <p style={{ color: '#0d9488', fontWeight: 'bold', fontSize: '14px' }}>
+        <p style={{ color: accentColor, fontWeight: 'bold', fontSize: '14px' }}>
           ¥{payload[0].value.toLocaleString('ja-JP')}
         </p>
       </div>
@@ -61,6 +53,7 @@ const CustomTooltip = ({
 };
 
 export default function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
+  const { pieShades, tooltipAccent } = useChartColors();
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   const renderLegend = ({ payload }: LegendProps) => {
@@ -120,7 +113,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
           {data.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
-              fill={entry.color ?? PALETTE[index % PALETTE.length]}
+              fill={entry.color ?? pieShades[index % pieShades.length]}
               stroke="rgba(0,0,0,0.3)"
               strokeWidth={1}
             />
@@ -144,7 +137,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
                       textAnchor="middle"
                       fontSize={12}
                       fontWeight="bold"
-                      fill="#0d9488"
+                      fill={tooltipAccent}
                     >
                       {totalStr}
                     </tspan>
@@ -157,7 +150,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
             />
           )}
         </Pie>
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip accentColor={tooltipAccent} />} />
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Legend content={renderLegend as any} />
       </PieChart>
