@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { TrendingUp, BarChart2, PieChart as PieChartIcon, Layers, Store } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import MonthlyBarChart from '@/components/dashboard/MonthlyBarChart';
@@ -32,6 +32,12 @@ export default function SummaryPage() {
   const transactions = useTransactionStore((s) => s.transactions);
 
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const DEFAULT_DISPLAY_COUNT = 10;
+
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [selectedMonth]);
 
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
@@ -82,8 +88,7 @@ export default function SummaryPage() {
       }
     }
     return [...map.values()]
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
+      .sort((a, b) => b.total - a.total);
   }, [transactions, selectedMonth]);
 
   return (
@@ -194,32 +199,44 @@ export default function SummaryPage() {
           </h2>
         </div>
         {merchantRanking.length > 0 ? (
-          <div className="space-y-3">
-            {merchantRanking.map((item, i) => (
-              <div key={item.display} className="flex items-center gap-3">
-                <span className="text-sm font-bold w-6 text-center text-[var(--color-primary)]">
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm font-medium truncate text-[var(--color-text-primary)]">
-                      {item.display}
-                    </span>
-                    <CurrencyDisplay amount={item.total} size="sm" className="text-[var(--color-primary)]" />
+          <div>
+            <div className="space-y-3">
+              {(isExpanded ? merchantRanking : merchantRanking.slice(0, DEFAULT_DISPLAY_COUNT)).map((item, i) => (
+                <div key={item.display} className="flex items-center gap-3">
+                  <span className="text-sm font-bold w-6 text-center text-[var(--color-primary)]">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm font-medium truncate text-[var(--color-text-primary)]">
+                        {item.display}
+                      </span>
+                      <CurrencyDisplay amount={item.total} size="sm" className="text-[var(--color-primary)]" />
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-[var(--color-surface)]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(item.total / (merchantRanking[0]?.total || 1)) * 100}%`,
+                          backgroundColor: 'var(--color-primary)',
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-[var(--color-text-muted)]">{item.count}件</span>
                   </div>
-                  <div className="mt-1 h-1.5 rounded-full bg-[var(--color-surface)]">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(item.total / (merchantRanking[0]?.total || 1)) * 100}%`,
-                        backgroundColor: 'var(--color-primary)',
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs text-[var(--color-text-muted)]">{item.count}件</span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            {merchantRanking.length > DEFAULT_DISPLAY_COUNT && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full mt-3 py-2 text-sm font-medium rounded-lg text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+              >
+                {isExpanded
+                  ? '閉じる'
+                  : `すべて表示（${merchantRanking.length}件）`}
+              </button>
+            )}
           </div>
         ) : (
           <div className="py-10 flex flex-col items-center gap-2 text-[var(--color-text-secondary)]">
