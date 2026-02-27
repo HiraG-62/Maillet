@@ -103,7 +103,10 @@ export function FilterBar({
         </Select>
 
         {/* Category selector */}
-        <Select value={selectedCategory} onValueChange={onCategoryChange}>
+        <Select
+          value={selectedCategory || '__all__'}
+          onValueChange={(v) => onCategoryChange(v === '__all__' ? '' : v)}
+        >
           <SelectTrigger
             className={`w-full md:w-36 bg-transparent text-[var(--color-text-primary)] transition-colors ${
               selectedCategory !== ''
@@ -114,8 +117,8 @@ export function FilterBar({
             <SelectValue placeholder="カテゴリ" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">全カテゴリ</SelectItem>
-            {categories.map((cat) => (
+            <SelectItem value="__all__">全カテゴリ</SelectItem>
+            {categories.filter(c => c && c.trim() !== '').map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
               </SelectItem>
