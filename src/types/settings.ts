@@ -1,9 +1,16 @@
+export interface CategoryRule {
+  id: string;
+  keyword: string;
+  category: string;
+}
+
 export interface AppSettings {
   monthly_budget: number;
   currency: 'JPY';
   theme: 'dark' | 'light';
   llm_provider: 'anthropic' | 'openai' | null;
   gmail_connected: boolean;
+  categoryRules: CategoryRule[];
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -12,4 +19,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   llm_provider: null,
   gmail_connected: false,
+  categoryRules: [],
 };

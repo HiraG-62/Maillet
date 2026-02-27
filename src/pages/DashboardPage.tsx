@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
-import { formatDateRelative } from '@/lib/utils';
+import { formatDateRelative, formatCurrency } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 
 function getCurrentMonth(): string {
@@ -88,6 +88,15 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [transactions]);
 
+  const prevMonthStats = useMemo(() => {
+    const prevMonth = addMonths(selectedMonth, -1);
+    const filtered = transactions.filter(
+      (tx) => (tx.transaction_date ?? '').slice(0, 7) === prevMonth
+    );
+    const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
+    return { total, hasData: filtered.length > 0 };
+  }, [transactions, selectedMonth]);
+
   const isEmpty = transactions.length === 0 && !isLoading;
 
   return (
@@ -130,13 +139,78 @@ export default function DashboardPage() {
         </div>
 
         {/* Total amount — large and bold */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-2">
           {isLoading ? (
             <div className="h-12 w-48 mx-auto rounded-lg bg-[var(--color-primary-light)] animate-pulse" />
           ) : (
             <CurrencyDisplay amount={monthlyStats.total} size="lg" className="text-4xl! font-black text-[var(--color-text-primary)]" />
           )}
         </div>
+
+        {/* D-002: 前月比トレンドインジケーター */}
+        {!isLoading && (
+          <div className="text-center mb-3">
+            {prevMonthStats.hasData ? (
+              (() => {
+                const diff = monthlyStats.total - prevMonthStats.total;
+                const pctChange = prevMonthStats.total > 0
+                  ? (diff / prevMonthStats.total) * 100
+                  : 0;
+                const isIncrease = diff >= 0;
+                const color = isIncrease ? 'var(--color-danger)' : 'var(--color-success)';
+                const arrow = isIncrease ? '▲' : '▼';
+                const sign = isIncrease ? '+' : '';
+                return (
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color }}
+                  >
+                    {arrow} {sign}{formatCurrency(diff)} ({sign}{pctChange.toFixed(1)}%) vs 先月
+                  </span>
+                );
+              })()
+            ) : (
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                （前月データなし）
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* D-001: 使用枠消化率プログレスバー */}
+        {monthlyBudget > 0 && !isLoading && (
+          <div className="mb-4">
+            {(() => {
+              const ratio = (monthlyStats.total ?? 0) / monthlyBudget;
+              const clampedPct = Math.min(ratio, 1) * 100;
+              const barColor =
+                ratio <= 0.5
+                  ? 'var(--color-success)'
+                  : ratio <= 0.8
+                  ? 'var(--color-warning)'
+                  : 'var(--color-danger)';
+              return (
+                <>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-xs text-[var(--color-text-muted)]">使用枠</span>
+                    <span className="text-xs font-medium" style={{ color: barColor }}>
+                      {formatCurrency(monthlyStats.total ?? 0)} / {formatCurrency(monthlyBudget)}（{Math.round(ratio * 100)}%）
+                    </span>
+                  </div>
+                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-elevated)]">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${clampedPct}%`,
+                        backgroundColor: barColor,
+                      }}
+                    />
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Divider */}
         <div className="border-t border-[var(--color-border)] my-4" />

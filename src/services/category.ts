@@ -1,4 +1,5 @@
 import { queryDB, executeDB } from '@/lib/database';
+import type { CategoryRule } from '@/types/settings';
 
 // Python版 category_service.py の CATEGORIES dict を移植（全キーワード収録）
 export const CATEGORIES: Record<string, string[]> = {
@@ -36,9 +37,23 @@ export const CATEGORIES: Record<string, string[]> = {
   ],
 };
 
-export function classify_transaction(merchant: string): string | null {
+export function classify_transaction(
+  merchant: string,
+  userRules?: CategoryRule[]
+): string | null {
   if (!merchant) return null;
   const lower = merchant.toLowerCase();
+
+  // ユーザー定義ルールを優先
+  if (userRules) {
+    for (const rule of userRules) {
+      if (rule.keyword && lower.includes(rule.keyword.toLowerCase())) {
+        return rule.category;
+      }
+    }
+  }
+
+  // デフォルトルールにフォールバック
   for (const [category, keywords] of Object.entries(CATEGORIES)) {
     if (keywords.some((kw) => lower.includes(kw.toLowerCase()))) {
       return category;
@@ -48,7 +63,8 @@ export function classify_transaction(merchant: string): string | null {
 }
 
 export async function applyCategoriesToDB(
-  overwrite = false
+  overwrite = false,
+  userRules?: CategoryRule[]
 ): Promise<{ updated: number; skipped: number }> {
   const sql = overwrite
     ? 'SELECT id, merchant FROM card_transactions'
@@ -57,7 +73,7 @@ export async function applyCategoriesToDB(
   let updated = 0;
   let skipped = 0;
   for (const [id, merchant] of rows) {
-    const category = classify_transaction(merchant ?? '');
+    const category = classify_transaction(merchant ?? '', userRules);
     if (category) {
       await executeDB(
         'UPDATE card_transactions SET category = ? WHERE id = ?',
