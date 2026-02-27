@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
@@ -9,6 +9,8 @@ import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
 import { formatDateRelative, formatCurrency } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
+import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
+import type { CardTransaction } from '@/types/transaction';
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -96,6 +98,18 @@ export default function DashboardPage() {
     const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
     return { total, hasData: filtered.length > 0 };
   }, [transactions, selectedMonth]);
+
+  const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleTransactionClick = useCallback((tx: CardTransaction) => {
+    setSelectedTransaction(tx);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleModalSaved = useCallback(() => {
+    getTransactions().then((data) => setTransactions(data ?? []));
+  }, [setTransactions]);
 
   const isEmpty = transactions.length === 0 && !isLoading;
 
@@ -256,7 +270,8 @@ export default function DashboardPage() {
             {recentTransactions.map((tx, i) => (
               <div
                 key={tx.id ?? `${tx.transaction_date}-${i}`}
-                className={`flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--color-primary-light)]/30 ${
+                onClick={() => handleTransactionClick(tx)}
+                className={`flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--color-primary-light)]/30 cursor-pointer ${
                   i < recentTransactions.length - 1 ? 'border-b border-[var(--color-border)]/50' : ''
                 }`}
               >
@@ -327,6 +342,13 @@ export default function DashboardPage() {
           <circle cx="350" cy="110" r="3" fill="var(--color-primary)" opacity="0.1" />
         </svg>
       </div>
+
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSaved={handleModalSaved}
+      />
     </div>
   );
 }

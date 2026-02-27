@@ -1,10 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { FilterBar } from '@/components/transactions/FilterBar';
 import { TransactionCard } from '@/components/transactions/TransactionCard';
 import { TransactionTable } from '@/components/transactions/TransactionTable';
+import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
+import type { CardTransaction } from '@/types/transaction';
 import { Receipt } from 'lucide-react';
 
 export default function TransactionsPage() {
@@ -27,6 +29,17 @@ export default function TransactionsPage() {
   const [selectedCard, setSelectedCard] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleTransactionClick = useCallback((tx: CardTransaction) => {
+    setSelectedTransaction(tx);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleModalSaved = useCallback(() => {
+    getTransactions().then((data) => setTransactions(data ?? []));
+  }, [setTransactions]);
 
   const categories = useMemo(() => {
     const cats = [...new Set(transactions?.map(t => t.category).filter(Boolean))] as string[];
@@ -109,17 +122,26 @@ export default function TransactionsPage() {
                     new Date(a.transaction_date ?? '').getTime()
                 )
                 .map((tx, idx) => (
-                  <TransactionCard key={tx.id ?? idx} transaction={tx} />
+                  <div key={tx.id ?? idx} onClick={() => handleTransactionClick(tx)} className="cursor-pointer">
+                    <TransactionCard transaction={tx} />
+                  </div>
                 ))}
             </div>
           </div>
 
           {/* PC: table */}
           <div className="float-card p-0 overflow-hidden hidden md:block">
-            <TransactionTable transactions={filtered} />
+            <TransactionTable transactions={filtered} onRowClick={handleTransactionClick} />
           </div>
         </>
       )}
+
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSaved={handleModalSaved}
+      />
     </div>
   );
 }

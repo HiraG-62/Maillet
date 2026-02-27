@@ -64,7 +64,7 @@ async function cleanupLegacyIDB(): Promise<void> {
 const COLUMNS =
   'id, card_company, amount, merchant, transaction_date, ' +
   'description, category, email_subject, email_from, ' +
-  'gmail_message_id, is_verified, created_at';
+  'gmail_message_id, is_verified, created_at, memo';
 
 async function saveToIDB(): Promise<void> {
   if (db === undefined || !sqlite3) return;
@@ -87,10 +87,16 @@ async function loadFromIDB(): Promise<void> {
   if (!bytes) return;
   const rows = JSON.parse(new TextDecoder().decode(bytes)) as unknown[][];
   if (rows.length === 0) return;
+  const colCount = COLUMNS.split(',').length;
+  const placeholders = Array(colCount).fill('?').join(',');
   for (const row of rows) {
+    // 旧フォーマット互換: memo列がない場合は空文字を追加
+    if (row.length === colCount - 1) {
+      row.push('');
+    }
     for await (const stmt of sqlite3.statements(
       db,
-      `INSERT OR REPLACE INTO card_transactions (${COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+      `INSERT OR REPLACE INTO card_transactions (${COLUMNS}) VALUES (${placeholders})`
     )) {
       sqlite3.bind_collection(stmt, row);
       await sqlite3.step(stmt);
@@ -113,7 +119,8 @@ const SCHEMA_SQL = `
     email_from TEXT,
     gmail_message_id TEXT UNIQUE,
     is_verified INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    memo TEXT DEFAULT ''
   );
   CREATE INDEX IF NOT EXISTS idx_transactions_date
     ON card_transactions(transaction_date);
