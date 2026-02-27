@@ -13,6 +13,6 @@ export const useSettingsStore = create<SettingsState>()(
       ...DEFAULT_SETTINGS,
       updateSettings: (settings) => set((state) => ({ ...state, ...settings })),
     }),
-    { name: 'card-tracker-settings' }
+    { name: 'maillet-settings' }
   )
 );

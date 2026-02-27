@@ -58,33 +58,6 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* サービスアイコン（丸型） */
-.service-icon {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-.service-icon-circle {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--color-primary-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.service-icon-circle:hover {
-  transform: scale(1.08);
-  box-shadow: var(--shadow-md);
-}
-.service-icon-label {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-}
 
 /* Maillet 世界観イラスト — 封筒とカードのSVG風CSS */
 .maillet-illustration {
