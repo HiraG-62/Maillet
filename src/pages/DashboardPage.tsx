@@ -10,7 +10,9 @@ import { getTransactions } from '@/lib/transactions';
 import { formatDateRelative, formatCurrency } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { CategoryBudgetProgress } from '@/components/dashboard/CategoryBudgetProgress';
+import { SubscriptionWidget } from '@/components/dashboard/SubscriptionWidget';
 import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 import type { CardTransaction } from '@/types/transaction';
 
 function getCurrentMonth(): string {
@@ -57,6 +59,7 @@ export default function DashboardPage() {
   const [dbWarning, setDbWarning] = useState<string | null>(null);
   const { error: authError } = useAuth();
   const { isSyncing, result, progress } = useSync();
+  const { subscriptions, isLoading: subsLoading } = useSubscriptions(transactions);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -283,6 +286,11 @@ export default function DashboardPage() {
           categoryTotals={categoryTotals}
         />
       )}
+
+      {/* ===== Subscription Detection (F-002b) ===== */}
+      <div className="mb-8 slide-up" style={{ animationDelay: '0.05s' }}>
+        <SubscriptionWidget subscriptions={subscriptions} isLoading={subsLoading} />
+      </div>
 
       {/* ===== Recent Transactions ===== */}
       {!isEmpty && recentTransactions.length > 0 && (
