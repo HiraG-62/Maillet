@@ -160,7 +160,7 @@ export default function DashboardPage() {
             <>
               <div className="w-px bg-[var(--color-border)]" />
               <div>
-                <p className="text-xs text-[var(--color-text-muted)] mb-1">予算残り</p>
+                <p className="text-xs text-[var(--color-text-muted)] mb-1">使用枠残り</p>
                 <p className="text-lg font-bold text-[var(--color-text-primary)]">
                   <CurrencyDisplay
                     amount={monthlyBudget - monthlyStats.total}

@@ -34,11 +34,11 @@ export function BudgetSection() {
 
   return (
     <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4 mb-4">
-      <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">月間予算</h3>
+      <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">月間使用枠</h3>
       <div className="space-y-3">
         <Input
           type="number"
-          placeholder="予算を入力"
+          placeholder="使用枠を入力"
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
           min="0"

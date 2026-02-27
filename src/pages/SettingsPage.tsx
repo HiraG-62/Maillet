@@ -45,7 +45,7 @@ export default function SettingsPage() {
 
       <SectionCard
         icon={<Wallet className="w-4 h-4 text-[var(--color-primary)]" />}
-        label="予算設定"
+        label="使用枠設定"
       >
         <BudgetSection />
       </SectionCard>
