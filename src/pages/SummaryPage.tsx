@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { TrendingUp, BarChart2, PieChart as PieChartIcon, Layers } from 'lucide-react';
+import { TrendingUp, BarChart2, PieChart as PieChartIcon, Layers, Store } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import MonthlyBarChart from '@/components/dashboard/MonthlyBarChart';
 import CategoryPieChart from '@/components/dashboard/CategoryPieChart';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
+import { normalizeMerchant } from '@/lib/normalize-merchant';
 
 const toYearMonth = (dateStr: string | null | undefined) => (dateStr ?? '').slice(0, 7);
 
@@ -62,6 +63,27 @@ export default function SummaryPage() {
     return Object.entries(totals)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
+  }, [transactions, selectedMonth]);
+
+  const merchantRanking = useMemo(() => {
+    const filtered = transactions.filter(
+      (t) => toYearMonth(t.transaction_date) === selectedMonth
+    );
+    const map = new Map<string, { display: string; total: number; count: number }>();
+    for (const tx of filtered) {
+      const key = normalizeMerchant(tx.merchant ?? '');
+      if (!key) continue;
+      const existing = map.get(key);
+      if (existing) {
+        existing.total += tx.amount ?? 0;
+        existing.count += 1;
+      } else {
+        map.set(key, { display: tx.merchant?.trim() ?? key, total: tx.amount ?? 0, count: 1 });
+      }
+    }
+    return [...map.values()]
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
   }, [transactions, selectedMonth]);
 
   return (
@@ -158,6 +180,50 @@ export default function SummaryPage() {
         ) : (
           <div className="py-10 flex flex-col items-center gap-2 text-[var(--color-text-secondary)]">
             <Layers className="w-10 h-10 opacity-40" />
+            <span className="text-sm">この月のデータがありません</span>
+          </div>
+        )}
+      </div>
+
+      {/* Merchant ranking — float card */}
+      <div className="float-card p-5 mt-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Store className="w-4 h-4 text-[var(--color-primary)]" />
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
+            店舗別ランキング（{formatMonthLabel(selectedMonth)}）
+          </h2>
+        </div>
+        {merchantRanking.length > 0 ? (
+          <div className="space-y-3">
+            {merchantRanking.map((item, i) => (
+              <div key={item.display} className="flex items-center gap-3">
+                <span className="text-sm font-bold w-6 text-center text-[var(--color-primary)]">
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-sm font-medium truncate text-[var(--color-text-primary)]">
+                      {item.display}
+                    </span>
+                    <CurrencyDisplay amount={item.total} size="sm" className="text-[var(--color-primary)]" />
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-[var(--color-surface)]">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${(item.total / (merchantRanking[0]?.total || 1)) * 100}%`,
+                        backgroundColor: 'var(--color-primary)',
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs text-[var(--color-text-muted)]">{item.count}件</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-10 flex flex-col items-center gap-2 text-[var(--color-text-secondary)]">
+            <Store className="w-10 h-10 opacity-40" />
             <span className="text-sm">この月のデータがありません</span>
           </div>
         )}
