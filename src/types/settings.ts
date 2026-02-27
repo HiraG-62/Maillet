@@ -11,6 +11,7 @@ export interface AppSettings {
   llm_provider: 'anthropic' | 'openai' | null;
   gmail_connected: boolean;
   categoryRules: CategoryRule[];
+  categoryBudgets: Record<string, number>;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -20,4 +21,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   llm_provider: null,
   gmail_connected: false,
   categoryRules: [],
+  categoryBudgets: {},
 };

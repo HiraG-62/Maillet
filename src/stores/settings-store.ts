@@ -8,6 +8,8 @@ interface SettingsState extends AppSettings {
   addCategoryRule: (rule: Omit<CategoryRule, 'id'>) => void;
   removeCategoryRule: (id: string) => void;
   updateCategoryRule: (id: string, updates: Partial<Omit<CategoryRule, 'id'>>) => void;
+  setCategoryBudget: (category: string, amount: number) => void;
+  removeCategoryBudget: (category: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -32,6 +34,16 @@ export const useSettingsStore = create<SettingsState>()(
             r.id === id ? { ...r, ...updates } : r
           ),
         })),
+      setCategoryBudget: (category, amount) =>
+        set((state) => ({
+          categoryBudgets: { ...state.categoryBudgets, [category]: amount },
+        })),
+      removeCategoryBudget: (category) =>
+        set((state) => {
+          const next = { ...state.categoryBudgets };
+          delete next[category];
+          return { categoryBudgets: next };
+        }),
     }),
     { name: 'maillet-settings' }
   )
