@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { BarChart2, PieChart, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
-import { StatGrid, MonthlyBarChart, CategoryPieChart } from '@/components/dashboard';
-import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
+import { useSettingsStore } from '@/stores/settings-store';
 import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
+import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -32,15 +32,44 @@ function addMonths(ym: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+
+  if (isToday) return '今日';
+  if (isYesterday) return '昨日';
+
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function getCategoryEmoji(category: string | null | undefined): string {
+  if (!category) return '💳';
+  const lower = category.toLowerCase();
+  if (lower.includes('食') || lower.includes('飲食') || lower.includes('グルメ')) return '🍽️';
+  if (lower.includes('交通') || lower.includes('鉄道')) return '🚃';
+  if (lower.includes('ショッピング') || lower.includes('衣')) return '🛍️';
+  if (lower.includes('光熱') || lower.includes('電気') || lower.includes('水道')) return '⚡';
+  if (lower.includes('通信') || lower.includes('携帯')) return '📱';
+  if (lower.includes('医療') || lower.includes('健康')) return '🏥';
+  if (lower.includes('娯楽') || lower.includes('エンタメ')) return '🎬';
+  return '💳';
+}
+
 export default function DashboardPage() {
   const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
+  const monthlyBudget = useSettingsStore((s) => s.monthly_budget);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
   const [dbWarning, setDbWarning] = useState<string | null>(null);
-  const { authState, isLoading: authLoading, error: authError } = useAuth();
-  const { startSync, isSyncing, result, progress } = useSync();
+  const { error: authError } = useAuth();
+  const { isSyncing, result, progress } = useSync();
   const navigate = useNavigate();
 
-  // マウント時にDBからデータを読み込む（リロード対応）
   useEffect(() => {
     setLoading(true);
     initDB()
@@ -58,7 +87,7 @@ export default function DashboardPage() {
       });
   }, [setTransactions, setLoading]);
 
-  // DEBUG-091: 殿のデバッグ用。本番削除予定
+  // DEBUG-091
   useEffect(() => {
     (window as any).__debugDB = async () => {
       await initDB();
@@ -70,158 +99,187 @@ export default function DashboardPage() {
     console.log('[DEBUG-091] __debugDB ready. Type window.__debugDB() in console.');
   }, []);
 
-  const monthlyData = useMemo(() => {
-    const now = new Date();
-    const months: string[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const y = d.getFullYear();
-      const mo = String(d.getMonth() + 1).padStart(2, '0');
-      months.push(`${y}-${mo}`);
-    }
-    const map: Record<string, number> = {};
-    for (const tx of transactions) {
-      const month = (tx.transaction_date ?? '').slice(0, 7);
-      if (months.includes(month)) {
-        map[month] = (map[month] ?? 0) + tx.amount;
-      }
-    }
-    return months.map((month) => ({ month, total_amount: map[month] ?? 0 }));
-  }, [transactions]);
-
-  const categoryData = useMemo(() => {
+  const monthlyStats = useMemo(() => {
     const filtered = transactions.filter(
       (tx) => (tx.transaction_date ?? '').slice(0, 7) === selectedMonth
     );
-    const map: Record<string, number> = {};
-    for (const tx of filtered) {
-      const cat = tx.category ?? '未分類';
-      map[cat] = (map[cat] ?? 0) + tx.amount;
-    }
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
+    const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
+    const count = filtered.length;
+    const average = count > 0 ? Math.round(total / count) : 0;
+    return { total, count, average };
   }, [transactions, selectedMonth]);
+
+  const recentTransactions = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => (b.transaction_date ?? '').localeCompare(a.transaction_date ?? ''))
+      .slice(0, 5);
+  }, [transactions]);
 
   const isEmpty = transactions.length === 0 && !isLoading;
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto">
+    <div className="max-w-2xl mx-auto px-6 py-8 md:px-8 md:py-10">
+      {/* Alerts */}
       {authError && (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
-          認証エラー: {authError}
+        <div className="mb-6 float-card-flat p-4 border-l-4 border-l-[var(--color-danger)] fade-in">
+          <p className="text-sm text-[var(--color-danger)]">認証エラー: {authError}</p>
         </div>
       )}
       {dbWarning && (
-        <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-400">
-          ⚠️ {dbWarning}
+        <div className="mb-6 float-card-flat p-4 border-l-4 border-l-[var(--color-warning)] fade-in">
+          <p className="text-sm text-[var(--color-warning)]">⚠️ {dbWarning}</p>
         </div>
       )}
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            ダッシュボード
-          </h1>
-          <div className="flex items-center gap-1 mt-1">
+
+      {/* ===== Hero Card — 月間利用総額 ===== */}
+      <div className="float-card p-6 mb-8 fade-in">
+        {/* Month selector */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-medium text-[var(--color-text-muted)]">
+            {formatMonthLabel(selectedMonth)}の利用総額
+          </span>
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setSelectedMonth((m) => addMonths(m, -1))}
-              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-white/10 transition-colors p-1 rounded"
+              className="p-1.5 rounded-full hover:bg-[var(--color-primary-light)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
               aria-label="前の月"
             >
-              <ChevronLeft size={14} />
+              <ChevronLeft size={16} />
             </button>
-            <span className="text-[var(--color-text-secondary)] text-sm px-1">{formatMonthLabel(selectedMonth)}</span>
             <button
               onClick={() => setSelectedMonth((m) => addMonths(m, 1))}
-              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-white/10 transition-colors p-1 rounded"
+              className="p-1.5 rounded-full hover:bg-[var(--color-primary-light)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
               aria-label="次の月"
             >
-              <ChevronRight size={14} />
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border dark:border-white/10 border-black/10 dark:bg-white/5 bg-black/5 text-[var(--color-text-secondary)] text-sm hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSyncing || authLoading}
-            onClick={() => {
-              if (authLoading) return;
-              if (!authState.isAuthenticated) {
-                navigate('/settings');
-                return;
-              }
-              startSync();
-            }}
-          >
-            <svg
-              className={`w-4 h-4 ${isSyncing || authLoading ? 'animate-spin' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {isSyncing ? '同期中...' : authLoading ? '認証中...' : '同期'}
-          </button>
-          {isSyncing && progress.total > 0 && (
-            <span className="text-xs text-cyan-400">
-              {progress.current}/{progress.total}件 処理中
-            </span>
+
+        {/* Total amount — large and bold */}
+        <div className="text-center mb-4">
+          {isLoading ? (
+            <div className="h-12 w-48 mx-auto rounded-lg bg-[var(--color-primary-light)] animate-pulse" />
+          ) : (
+            <CurrencyDisplay amount={monthlyStats.total} size="lg" className="text-4xl! font-black text-[var(--color-text-primary)]" />
           )}
-          {result && !isSyncing && (
-            <span className="text-xs text-[var(--color-text-muted)]">
-              新規 {result.new_transactions}件 取得
-            </span>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-[var(--color-border)] my-4" />
+
+        {/* Sub stats */}
+        <div className="flex justify-around text-center">
+          <div>
+            <p className="text-xs text-[var(--color-text-muted)] mb-1">利用件数</p>
+            <p className="text-lg font-bold text-[var(--color-text-primary)]">
+              {monthlyStats.count}<span className="text-sm font-normal text-[var(--color-text-muted)] ml-0.5">件</span>
+            </p>
+          </div>
+          <div className="w-px bg-[var(--color-border)]" />
+          <div>
+            <p className="text-xs text-[var(--color-text-muted)] mb-1">平均</p>
+            <p className="text-lg font-bold text-[var(--color-text-primary)]">
+              <CurrencyDisplay amount={monthlyStats.average} size="sm" />
+            </p>
+          </div>
+          {monthlyBudget > 0 && (
+            <>
+              <div className="w-px bg-[var(--color-border)]" />
+              <div>
+                <p className="text-xs text-[var(--color-text-muted)] mb-1">予算残り</p>
+                <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                  <CurrencyDisplay
+                    amount={monthlyBudget - monthlyStats.total}
+                    size="sm"
+                    variant={monthlyBudget - monthlyStats.total < 0 ? 'negative' : 'positive'}
+                  />
+                </p>
+              </div>
+            </>
           )}
         </div>
       </div>
 
-      {/* StatGrid */}
-      <div className="mb-6">
-        <StatGrid />
-      </div>
+      {/* ===== Recent Transactions ===== */}
+      {!isEmpty && recentTransactions.length > 0 && (
+        <div className="mb-8 slide-up" style={{ animationDelay: '0.1s' }}>
+          <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3 px-1">最近の取引</h2>
+          <div className="float-card overflow-hidden">
+            {recentTransactions.map((tx, i) => (
+              <div
+                key={tx.id ?? `${tx.transaction_date}-${i}`}
+                className={`flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--color-primary-light)]/30 ${
+                  i < recentTransactions.length - 1 ? 'border-b border-[var(--color-border)]/50' : ''
+                }`}
+              >
+                <span className="text-lg shrink-0">{getCategoryEmoji(tx.category)}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{tx.merchant}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{tx.card_company}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <CurrencyDisplay amount={tx.amount} size="sm" />
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{formatDate(tx.transaction_date)}</p>
+                </div>
+              </div>
+            ))}
+            {/* 全て見る */}
+            <button
+              onClick={() => navigate('/transactions')}
+              className="w-full flex items-center justify-center gap-1 py-3 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary-light)]/30 transition-colors"
+            >
+              全て見る <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
-      {isEmpty ? (
-        <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 backdrop-blur-xl p-12 text-center">
+      {/* ===== Empty State ===== */}
+      {isEmpty && (
+        <div className="float-card p-12 text-center mb-8 fade-in">
+          <div className="text-4xl mb-3">📭</div>
           <p className="text-[var(--color-text-secondary)] text-lg mb-2">データがありません</p>
           <p className="text-[var(--color-text-muted)] text-sm">
-            右上の「同期」ボタンでGmailから取引データを取得してください
+            下の「同期」ボタンからGmailの取引データを取得してください
           </p>
         </div>
-      ) : (
-        <>
-          {/* Graph row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="md:col-span-2 rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 backdrop-blur-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart2 className="text-cyan-400" size={16} />
-                <p className="text-[var(--color-text-primary)] font-semibold">月次推移</p>
-              </div>
-              <MonthlyBarChart data={monthlyData} height={200} />
-            </div>
-            <div className="md:col-span-1 rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 backdrop-blur-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <PieChart className="text-purple-400" size={16} />
-                <p className="text-[var(--color-text-primary)] font-semibold">カテゴリ別</p>
-              </div>
-              <CategoryPieChart data={categoryData} height={200} />
-            </div>
-          </div>
-
-          {/* Recent transactions */}
-          <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 backdrop-blur-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="text-cyan-400" size={16} />
-              <p className="text-[var(--color-text-primary)] font-semibold">直近の取引</p>
-            </div>
-            <RecentTransactions transactions={transactions} limit={10} />
-          </div>
-        </>
       )}
+
+      {/* Sync status */}
+      {isSyncing && progress.total > 0 && (
+        <p className="text-center text-xs text-[var(--color-primary)] mb-4 fade-in">
+          {progress.current}/{progress.total}件 処理中...
+        </p>
+      )}
+      {result && !isSyncing && (
+        <p className="text-center text-xs text-[var(--color-text-muted)] mb-4 fade-in">
+          新規 {result.new_transactions}件 取得しました
+        </p>
+      )}
+
+      {/* ===== Maillet Illustration (世界観) ===== */}
+      <div className="maillet-illustration fade-in" style={{ animationDelay: '0.3s' }}>
+        <svg viewBox="0 0 400 140" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          {/* 封筒 */}
+          <rect x="130" y="50" width="140" height="90" rx="8" fill="var(--color-primary-light)" stroke="var(--color-primary)" strokeWidth="1.5" opacity="0.7" />
+          {/* 封筒フラップ */}
+          <path d="M130 58 L200 95 L270 58" stroke="var(--color-primary)" strokeWidth="1.5" fill="none" opacity="0.5" />
+          {/* カード（封筒から飛び出す） */}
+          <g transform="rotate(-12, 210, 30)">
+            <rect x="165" y="8" width="90" height="56" rx="6" fill="var(--color-surface)" stroke="var(--color-primary)" strokeWidth="1.5" />
+            <rect x="173" y="20" width="30" height="20" rx="3" fill="var(--color-primary)" opacity="0.3" />
+            <line x1="173" y1="50" x2="247" y2="50" stroke="var(--color-border)" strokeWidth="1" />
+          </g>
+          {/* 装飾ドット */}
+          <circle cx="80" cy="100" r="3" fill="var(--color-primary)" opacity="0.2" />
+          <circle cx="95" cy="85" r="2" fill="var(--color-primary)" opacity="0.15" />
+          <circle cx="320" cy="90" r="4" fill="var(--color-primary)" opacity="0.2" />
+          <circle cx="335" cy="75" r="2" fill="var(--color-primary)" opacity="0.15" />
+          <circle cx="60" cy="70" r="2" fill="var(--color-primary)" opacity="0.1" />
+          <circle cx="350" cy="110" r="3" fill="var(--color-primary)" opacity="0.1" />
+        </svg>
+      </div>
     </div>
   );
 }

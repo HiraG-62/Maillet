@@ -7,7 +7,7 @@ const SummaryPage = lazy(() => import('@/pages/SummaryPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 
 const Fallback = () => (
-  <div className="flex h-screen items-center justify-center text-cyan-400">読み込み中...</div>
+  <div className="flex h-screen items-center justify-center text-[var(--color-primary)]">読み込み中...</div>
 );
 
 export const routes: RouteObject[] = [

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@/styles/globals.css';
 import { App } from '@/app/App';
+import { applyThemeColor, loadThemeColor } from '@/lib/apply-theme-color';
 
 // テーマをLocalStorageから復元（フラッシュ防止）
 try {
@@ -15,6 +16,11 @@ try {
 } catch {
   document.documentElement.classList.add('dark');
 }
+
+// テーマカラーをLocalStorageから復元
+const savedColorId = loadThemeColor();
+const isDark = document.documentElement.classList.contains('dark');
+applyThemeColor(savedColorId, isDark);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

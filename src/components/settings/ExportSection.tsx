@@ -31,7 +31,7 @@ export function ExportSection() {
         >
           CSVエクスポート ({transactions.length}件)
         </Button>
-        {exported && <p className="text-green-500 text-sm">ダウンロードを開始しました</p>}
+        {exported && <p className="text-[var(--color-success)] text-sm">ダウンロードを開始しました</p>}
         {transactions.length === 0 && (
           <p className="text-[var(--color-text-muted)] text-sm">エクスポートするデータがありません</p>
         )}

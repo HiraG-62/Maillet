@@ -168,7 +168,7 @@ export function ApiKeySection() {
               disabled={loading}
             />
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            {message && <p className="text-green-500 text-sm">{message}</p>}
+            {message && <p className="text-[var(--color-success)] text-sm">{message}</p>}
             <div className="flex gap-2">
               <Button
                 onClick={handleSave}

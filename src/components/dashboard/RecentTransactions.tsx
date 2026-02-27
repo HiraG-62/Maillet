@@ -9,7 +9,7 @@ interface RecentTransactionsProps {
 
 const CARD_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   smbc: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: '#3b82f6' },
-  jcb: { bg: 'bg-green-500/20', text: 'text-green-400', border: '#22c55e' },
+  jcb: { bg: 'bg-[var(--color-success)]/20', text: 'text-[var(--color-success)]', border: 'var(--color-success)' },
   rakuten: { bg: 'bg-red-500/20', text: 'text-red-400', border: '#ef4444' },
   amex: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: '#a855f7' },
   dcard: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: '#f97316' },

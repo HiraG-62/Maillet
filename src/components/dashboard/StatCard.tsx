@@ -15,14 +15,14 @@ const variantConfig: Record<
   NonNullable<StatCardProps['variant']>,
   { text: string; borderLeft: string; glowHover: string }
 > = {
-  default:  { text: 'text-cyan-400',   borderLeft: 'border-l-4 border-l-cyan-500',   glowHover: 'hover:shadow-cyan-500/10' },
-  success:  { text: 'text-emerald-400', borderLeft: 'border-l-4 border-l-emerald-500', glowHover: 'hover:shadow-emerald-500/10' },
+  default:  { text: 'text-[var(--color-primary)]',   borderLeft: 'border-l-4 border-l-[var(--color-primary)]',   glowHover: 'hover:shadow-[var(--color-primary-light)]' },
+  success:  { text: 'text-[var(--color-success)]', borderLeft: 'border-l-4 border-l-[var(--color-success)]', glowHover: 'hover:shadow-[var(--color-success)]' },
   warning:  { text: 'text-amber-400',  borderLeft: 'border-l-4 border-l-amber-500',  glowHover: 'hover:shadow-amber-500/10' },
   danger:   { text: 'text-red-400',    borderLeft: 'border-l-4 border-l-red-500',    glowHover: 'hover:shadow-red-500/10' },
-  cyan:     { text: 'text-cyan-400',   borderLeft: 'border-l-4 border-l-cyan-500',   glowHover: 'hover:shadow-cyan-500/10' },
-  purple:   { text: 'text-purple-400', borderLeft: 'border-l-4 border-l-purple-500', glowHover: 'hover:shadow-purple-500/10' },
-  orange:   { text: 'text-orange-400', borderLeft: 'border-l-4 border-l-orange-500', glowHover: 'hover:shadow-orange-500/10' },
-  green:    { text: 'text-green-400',  borderLeft: 'border-l-4 border-l-green-500',  glowHover: 'hover:shadow-green-500/10' },
+  cyan:     { text: 'text-[var(--color-primary)]',   borderLeft: 'border-l-4 border-l-[var(--color-primary)]',   glowHover: 'hover:shadow-[var(--color-primary-light)]' },
+  purple:   { text: 'text-[var(--color-primary-hover)]',   borderLeft: 'border-l-4 border-l-[var(--color-primary-hover)]',   glowHover: 'hover:shadow-[var(--color-primary-light)]' },
+  orange:   { text: 'text-[var(--color-primary-hover)]',   borderLeft: 'border-l-4 border-l-[var(--color-primary-hover)]',   glowHover: 'hover:shadow-[var(--color-primary-light)]' },
+  green:    { text: 'text-[var(--color-primary)]',   borderLeft: 'border-l-4 border-l-[var(--color-primary)]',   glowHover: 'hover:shadow-[var(--color-primary-light)]' },
 };
 
 export function StatCard({

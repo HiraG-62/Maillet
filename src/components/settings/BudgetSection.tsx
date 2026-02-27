@@ -45,7 +45,7 @@ export function BudgetSection() {
           step="0.01"
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
-        {saved && <p className="text-green-500 text-sm">✅ 保存しました</p>}
+        {saved && <p className="text-[var(--color-success)] text-sm">✅ 保存しました</p>}
         <Button onClick={handleSave} variant="default">
           保存
         </Button>

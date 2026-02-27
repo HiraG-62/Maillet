@@ -68,10 +68,10 @@ export default function SummaryPage() {
     <div className="p-6">
       {/* Page header with gradient title */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/20">
-          <TrendingUp className="w-5 h-5 text-purple-400" />
+        <div className="p-2 rounded-lg bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-primary-hover)]/20 border border-[var(--color-primary)]/20">
+          <TrendingUp className="w-5 h-5 text-[var(--color-primary)]" />
         </div>
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] bg-clip-text text-transparent">
           集計
         </h1>
       </div>
@@ -82,7 +82,7 @@ export default function SummaryPage() {
         <select
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
-          className="bg-[var(--color-background)] border dark:border-white/10 border-black/10 text-[var(--color-text-primary)] rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-purple-500 transition-colors"
+          className="bg-[var(--color-background)] border dark:border-white/10 border-black/10 text-[var(--color-text-primary)] rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors"
         >
           {availableMonths.length > 0 ? (
             availableMonths.map((m) => (
@@ -96,10 +96,10 @@ export default function SummaryPage() {
         </select>
       </div>
 
-      {/* Monthly bar chart — glassmorphism card */}
-      <div className="mb-6 rounded-xl border dark:border-white/10 border-black/10 bg-white/[0.03] backdrop-blur-sm p-5 hover:border-white/20 transition-all duration-300">
+      {/* Monthly bar chart — float card */}
+      <div className="float-card p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <BarChart2 className="w-4 h-4 text-cyan-400" />
+          <BarChart2 className="w-4 h-4 text-[var(--color-primary)]" />
           <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">月次推移（過去6ヶ月）</h2>
         </div>
         {monthlyData.some((d) => d.total_amount > 0) ? (
@@ -112,10 +112,10 @@ export default function SummaryPage() {
         )}
       </div>
 
-      {/* Category pie chart — glassmorphism card */}
-      <div className="mb-6 rounded-xl border dark:border-white/10 border-black/10 bg-white/[0.03] backdrop-blur-sm p-5 hover:border-white/20 transition-all duration-300">
+      {/* Category pie chart — float card */}
+      <div className="float-card p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <PieChartIcon className="w-4 h-4 text-purple-400" />
+          <PieChartIcon className="w-4 h-4 text-[var(--color-primary)]" />
           <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
             カテゴリ別支出（{formatMonthLabel(selectedMonth)}）
           </h2>
@@ -130,10 +130,10 @@ export default function SummaryPage() {
         )}
       </div>
 
-      {/* Category breakdown table — glassmorphism card */}
-      <div className="rounded-xl border dark:border-white/10 border-black/10 bg-white/[0.03] backdrop-blur-sm p-5">
+      {/* Category breakdown table — float card */}
+      <div className="float-card p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Layers className="w-4 h-4 text-emerald-400" />
+          <Layers className="w-4 h-4 text-[var(--color-primary)]" />
           <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">カテゴリ別内訳</h2>
         </div>
         {categoryData.length > 0 ? (
@@ -149,7 +149,7 @@ export default function SummaryPage() {
                 <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
                   <td className="py-2.5 text-[var(--color-text-primary)]">{item.name}</td>
                   <td className="py-2.5 text-right">
-                    <CurrencyDisplay amount={item.value} size="sm" className="text-cyan-300" />
+                    <CurrencyDisplay amount={item.value} size="sm" className="text-[var(--color-primary)]" />
                   </td>
                 </tr>
               ))}

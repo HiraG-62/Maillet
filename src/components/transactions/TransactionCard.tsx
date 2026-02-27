@@ -30,11 +30,11 @@ function formatDate(dateStr: string | null | undefined): string {
 
 function getCardBorderClass(cardCompany: string | null | undefined): string {
   const c = (cardCompany ?? '').toLowerCase();
-  if (c.includes('smbc') || c.includes('三井住友')) return 'border-l-cyan-500';
+  if (c.includes('smbc') || c.includes('三井住友')) return 'border-l-[var(--color-primary)]';
   if (c.includes('楽天')) return 'border-l-rose-500';
   if (c.includes('amex') || c.includes('アメックス')) return 'border-l-amber-500';
   if (c.includes('jcb')) return 'border-l-blue-500';
-  if (c.includes('dcard') || c.includes('d card')) return 'border-l-green-500';
+  if (c.includes('dcard') || c.includes('d card')) return 'border-l-[var(--color-primary)]';
   return 'border-l-purple-500';
 }
 
@@ -61,10 +61,10 @@ function getCategoryStyle(category: string | null | undefined): CategoryStyle {
     return { bg: 'bg-purple-500/20', text: 'text-purple-300' };
   }
   if (c.includes('健康') || c.includes('医療') || c.includes('病院')) {
-    return { bg: 'bg-green-500/20', text: 'text-green-300' };
+    return { bg: 'bg-[var(--color-primary)]/20', text: 'text-[var(--color-primary)]' };
   }
   if (c.includes('通信') || c.includes('サブスク')) {
-    return { bg: 'bg-cyan-500/20', text: 'text-cyan-300' };
+    return { bg: 'bg-[var(--color-primary)]/20', text: 'text-[var(--color-primary)]' };
   }
   return { bg: 'dark:bg-white/10 bg-black/10', text: 'text-[var(--color-text-secondary)]' };
 }
@@ -99,7 +99,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
   return (
     <div
-      className={`md:hidden dark:bg-white/5 bg-black/5 backdrop-blur-sm border dark:border-white/10 border-black/10 border-l-4 ${borderClass} rounded-xl p-4 hover:scale-[1.01] hover:shadow-md dark:hover:bg-white/[0.07] hover:bg-black/[0.07] transition-all duration-200`}
+      className={`border-l-4 ${borderClass} p-4 hover:bg-[var(--color-surface-hover,var(--color-surface))] transition-colors duration-200`}
     >
       <div className="flex items-start justify-between gap-3">
         {/* Left: date + card + merchant */}
