@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { Layout } from '@/components/common/Layout';
+import { ChunkErrorBoundary } from '@/components/common/ChunkErrorBoundary';
 import { routes } from './routes';
 
 const routesWithLayout = routes.map((route) => ({
@@ -12,5 +13,9 @@ const router = createBrowserRouter(routesWithLayout, {
 });
 
 export function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ChunkErrorBoundary>
+      <RouterProvider router={router} />
+    </ChunkErrorBoundary>
+  );
 }
