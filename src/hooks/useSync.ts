@@ -3,14 +3,14 @@ import { syncGmailTransactions } from '@/services/gmail/sync';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { getTransactions } from '@/lib/transactions';
 import { saveDB } from '@/lib/database';
-import type { SyncProgress, SyncResult } from '@/types/gmail';
+import type { SyncProgress, SyncResult, SyncDateRange } from '@/types/gmail';
 
 interface UseSyncReturn {
   progress: SyncProgress;
   result: SyncResult | null;
   isSyncing: boolean;
   error: string | null;
-  startSync: () => Promise<void>;
+  startSync: (dateRange?: SyncDateRange) => Promise<void>;
   cancelSync: () => void;
   reset: () => void;
 }
@@ -31,7 +31,7 @@ export function useSync(): UseSyncReturn {
   const abortControllerRef = useRef<AbortController | null>(null);
   const setTransactions = useTransactionStore((state) => state.setTransactions);
 
-  const startSync = useCallback(async () => {
+  const startSync = useCallback(async (dateRange?: SyncDateRange) => {
     try {
       // Prevent multiple simultaneous syncs
       if (isSyncing) {
@@ -44,7 +44,7 @@ export function useSync(): UseSyncReturn {
 
       const syncResult = await syncGmailTransactions((progressUpdate) => {
         setProgress(progressUpdate);
-      });
+      }, dateRange);
 
       setResult(syncResult);
 

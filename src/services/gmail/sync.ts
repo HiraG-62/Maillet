@@ -1,4 +1,4 @@
-import type { GmailMessage, SyncResult, SyncProgress, GmailAuthConfig } from '@/types/gmail';
+import type { GmailMessage, SyncResult, SyncProgress, GmailAuthConfig, SyncDateRange } from '@/types/gmail';
 import { parse_email_debug, detect_card_company } from '@/services/parsers';
 import { initDB, executeDB } from '@/lib/database';
 import { getSyncedMessageIds } from '@/lib/transactions';
@@ -80,6 +80,13 @@ export function getCurrentMonthDateFilter(): string {
   const endYear = nextMonth.getFullYear();
   const endMonth = String(nextMonth.getMonth() + 1).padStart(2, '0');
   return `after:${year}/${startMonth}/01 before:${endYear}/${endMonth}/01`;
+}
+
+function formatGmailDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}/${m}/${d}`;
 }
 
 /**
@@ -273,7 +280,8 @@ async function processMessage(msg: { id: string }): Promise<ProcessResult> {
  * Main sync function
  */
 export async function syncGmailTransactions(
-  onProgress: (progress: SyncProgress) => void = () => {}
+  onProgress: (progress: SyncProgress) => void = () => {},
+  dateRange?: SyncDateRange
 ): Promise<SyncResult> {
   const result: SyncResult = {
     total_fetched: 0,
@@ -288,7 +296,9 @@ export async function syncGmailTransactions(
 
     // Fetch all card notification emails
     const allMessages = [];
-    const dateFilter = getCurrentMonthDateFilter();
+    const dateFilter = dateRange
+      ? `after:${formatGmailDate(dateRange.after)} before:${formatGmailDate(dateRange.before)}`
+      : getCurrentMonthDateFilter();
     for (const query of CARD_EMAIL_QUERIES) {
       try {
         const msgs = await listMessages(`${query} ${dateFilter}`, 500);

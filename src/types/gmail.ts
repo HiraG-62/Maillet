@@ -28,6 +28,11 @@ export interface SyncProgress {
   message?: string;
 }
 
+export interface SyncDateRange {
+  after: Date;
+  before: Date;
+}
+
 export interface GmailAuthConfig {
   clientId: string;
   clientSecret?: string;

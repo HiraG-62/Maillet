@@ -1,10 +1,52 @@
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
 import { RefreshCw, LogIn, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import type { SyncDateRange } from '@/types/gmail';
+
+type SyncPeriod = 'current' | 'last' | '3months' | '6months' | 'custom';
+
+function periodToDateRange(period: SyncPeriod, customStart?: string, customEnd?: string): SyncDateRange | undefined {
+  const now = new Date();
+  switch (period) {
+    case 'current':
+      return undefined;
+    case 'last': {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { after: start, before: end };
+    }
+    case '3months': {
+      const start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      return { after: start, before: end };
+    }
+    case '6months': {
+      const start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      return { after: start, before: end };
+    }
+    case 'custom':
+      if (customStart && customEnd) {
+        return { after: new Date(customStart), before: new Date(customEnd) };
+      }
+      return undefined;
+    default:
+      return undefined;
+  }
+}
 
 export function SyncPanel() {
   const { authState, login, isLoading: authLoading, error: authError } = useAuth();
   const { progress, result, isSyncing, error: syncError, startSync, cancelSync, reset } = useSync();
+  const [period, setPeriod] = useState<SyncPeriod>('current');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  const dateRange = useMemo(
+    () => periodToDateRange(period, customStart, customEnd),
+    [period, customStart, customEnd]
+  );
 
   const isGoogleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
@@ -82,11 +124,49 @@ export function SyncPanel() {
         )}
       </div>
 
+      {/* Period selector */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-[var(--color-text-muted)]">期間:</span>
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as SyncPeriod)}
+            disabled={isSyncing}
+            className="bg-[var(--color-surface)] border dark:border-white/10 border-black/10 rounded-lg px-2 py-1 text-sm text-[var(--color-text-primary)] disabled:opacity-60"
+          >
+            <option value="current">当月</option>
+            <option value="last">先月</option>
+            <option value="3months">過去3ヶ月</option>
+            <option value="6months">過去6ヶ月</option>
+            <option value="custom">カスタム期間</option>
+          </select>
+        </div>
+        {period === 'custom' && (
+          <div className="flex items-center gap-2 text-sm">
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              disabled={isSyncing}
+              className="bg-[var(--color-surface)] border dark:border-white/10 border-black/10 rounded-lg px-2 py-1 text-sm text-[var(--color-text-primary)] disabled:opacity-60"
+            />
+            <span className="text-[var(--color-text-muted)]">〜</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              disabled={isSyncing}
+              className="bg-[var(--color-surface)] border dark:border-white/10 border-black/10 rounded-lg px-2 py-1 text-sm text-[var(--color-text-primary)] disabled:opacity-60"
+            />
+          </div>
+        )}
+      </div>
+
       {/* Sync button or cancel */}
       {!isSyncing ? (
         <button
-          onClick={() => void startSync()}
-          disabled={isSyncing}
+          onClick={() => void startSync(dateRange)}
+          disabled={isSyncing || (period === 'custom' && (!customStart || !customEnd))}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)] font-medium text-sm hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <RefreshCw size={16} />
