@@ -50,7 +50,6 @@ export function useSync(): UseSyncReturn {
 
       // Persist memory DB to IndexedDB after sync
       await saveDB();
-      console.log('[DEBUG-098] DB saved to IndexedDB after sync');
 
       // Fetch updated transactions from database
       if (!abortControllerRef.current.signal.aborted) {

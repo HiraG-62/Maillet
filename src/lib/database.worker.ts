@@ -53,7 +53,6 @@ async function cleanupLegacyIDB(): Promise<void> {
         req.onsuccess = () => resolve();
         req.onerror = () => resolve();
       });
-      console.log('[DEBUG-098] Cleaned up legacy IDB:', name);
     } catch {
       // ignore
     }
@@ -80,7 +79,6 @@ async function saveToIDB(): Promise<void> {
   }
   const encoder = new TextEncoder();
   await idbSave(encoder.encode(JSON.stringify(rows)));
-  console.log('[DEBUG-098] save: serialized', rows.length, 'rows to IDB');
 }
 
 async function loadFromIDB(): Promise<void> {
@@ -89,7 +87,6 @@ async function loadFromIDB(): Promise<void> {
   if (!bytes) return;
   const rows = JSON.parse(new TextDecoder().decode(bytes)) as unknown[][];
   if (rows.length === 0) return;
-  console.log('[DEBUG-098] init: loading', rows.length, 'rows from IDB...');
   for (const row of rows) {
     for await (const stmt of sqlite3.statements(
       db,
@@ -99,7 +96,6 @@ async function loadFromIDB(): Promise<void> {
       await sqlite3.step(stmt);
     }
   }
-  console.log('[DEBUG-098] init: rows loaded:', rows.length);
 }
 
 /* ── Schema & migration ── */
@@ -137,14 +133,12 @@ const MIGRATION_SQL = `
 /* ── Core functions ── */
 
 async function init(): Promise<{ ok: true; warning?: string }> {
-  console.log('[DEBUG-098] init() called');
   if (db !== undefined) return { ok: true };
   const module = await SQLiteAsyncESMFactory();
   sqlite3 = SQLite.Factory(module);
 
   // Memory DB (VFS-free: avoids journal file xOpen trap)
   db = await sqlite3.open_v2(':memory:');
-  console.log('[DEBUG-098] Opened :memory: DB');
 
   // Schema
   for await (const stmt of sqlite3.statements(db, SCHEMA_SQL)) {
@@ -161,18 +155,8 @@ async function init(): Promise<{ ok: true; warning?: string }> {
     await cleanupLegacyIDB();
     await loadFromIDB();
   } catch (error) {
-    console.warn('[DEBUG-098] IDB load failed, starting fresh:', error);
     warning = 'DB復元失敗。新規DBとして開始します。';
   }
-
-  // Row count log
-  const countRows: unknown[][] = [];
-  for await (const stmt of sqlite3.statements(db, 'SELECT count(*) FROM card_transactions')) {
-    while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
-      countRows.push(sqlite3.row(stmt));
-    }
-  }
-  console.log('[DEBUG-098] DB ready. Rows:', countRows[0]?.[0]);
 
   return warning ? { ok: true, warning } : { ok: true };
 }
