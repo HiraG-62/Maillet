@@ -33,19 +33,19 @@ interface CategoryStyle {
 function getCategoryStyle(category: string | null | undefined): CategoryStyle {
   const c = (category ?? '').toLowerCase();
   if (c.includes('食') || c.includes('グルメ') || c.includes('飲食') || c.includes('レストラン')) {
-    return { bg: 'bg-orange-500/20', text: 'text-orange-300' };
+    return { bg: 'bg-orange-500/20', text: 'dark:text-orange-300 text-orange-700' };
   }
   if (c.includes('ショッピング') || c.includes('購入') || c.includes('買い物')) {
-    return { bg: 'bg-pink-500/20', text: 'text-pink-300' };
+    return { bg: 'bg-pink-500/20', text: 'dark:text-pink-300 text-pink-700' };
   }
   if (c.includes('交通') || c.includes('移動') || c.includes('電車') || c.includes('バス')) {
-    return { bg: 'bg-blue-500/20', text: 'text-blue-300' };
+    return { bg: 'bg-blue-500/20', text: 'dark:text-blue-300 text-blue-700' };
   }
   if (c.includes('旅行') || c.includes('飛行機') || c.includes('ホテル')) {
-    return { bg: 'bg-sky-500/20', text: 'text-sky-300' };
+    return { bg: 'bg-sky-500/20', text: 'dark:text-sky-300 text-sky-700' };
   }
   if (c.includes('エンタメ') || c.includes('娯楽') || c.includes('映画')) {
-    return { bg: 'bg-purple-500/20', text: 'text-purple-300' };
+    return { bg: 'bg-purple-500/20', text: 'dark:text-purple-300 text-purple-700' };
   }
   if (c.includes('健康') || c.includes('医療') || c.includes('病院')) {
     return { bg: 'bg-[var(--color-primary)]/20', text: 'text-[var(--color-primary)]' };
@@ -98,7 +98,11 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
         {/* Right: amount + category */}
         <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <CurrencyDisplay amount={transaction.amount} size="md" />
+          <CurrencyDisplay
+            amount={transaction.amount}
+            size="md"
+            className={transaction.amount < 0 ? 'dark:text-orange-400 text-orange-600' : undefined}
+          />
           {transaction.category && (
             <span
               className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${catStyle.bg} ${catStyle.text}`}

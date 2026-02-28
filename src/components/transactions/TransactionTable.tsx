@@ -28,18 +28,18 @@ function getCardBadgeStyle(cardCompany: string | null | undefined): CardBadgeSty
     return { bg: 'bg-[var(--color-primary)]/15', text: 'text-[var(--color-primary)]', border: 'border-[var(--color-primary)]/30' };
   }
   if (c.includes('楽天')) {
-    return { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/30' };
+    return { bg: 'bg-rose-500/15', text: 'dark:text-rose-400 text-rose-700', border: 'border-rose-500/30' };
   }
   if (c.includes('amex') || c.includes('アメックス')) {
-    return { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/30' };
+    return { bg: 'bg-amber-500/15', text: 'dark:text-amber-400 text-amber-700', border: 'border-amber-500/30' };
   }
   if (c.includes('jcb')) {
-    return { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30' };
+    return { bg: 'bg-blue-500/15', text: 'dark:text-blue-400 text-blue-700', border: 'border-blue-500/30' };
   }
   if (c.includes('dcard') || c.includes('d card')) {
     return { bg: 'bg-[var(--color-primary)]/15', text: 'text-[var(--color-primary)]', border: 'border-[var(--color-primary)]/30' };
   }
-  return { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30' };
+  return { bg: 'bg-purple-500/15', text: 'dark:text-purple-400 text-purple-700', border: 'border-purple-500/30' };
 }
 
 const LARGE_AMOUNT_THRESHOLD = 50000;
@@ -106,7 +106,7 @@ export function TransactionTable({ transactions, onRowClick }: TransactionTableP
                   <CurrencyDisplay
                     amount={tx.amount}
                     size="sm"
-                    className={isLarge ? 'text-orange-300' : undefined}
+                    className={isLarge ? 'dark:text-orange-300 text-orange-600' : tx.amount < 0 ? 'dark:text-orange-400 text-orange-600' : undefined}
                   />
                 </TableCell>
                 <TableCell className="text-[var(--color-text-primary)] text-sm font-medium">{tx.merchant}</TableCell>
