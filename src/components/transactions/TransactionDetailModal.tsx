@@ -48,6 +48,8 @@ export function TransactionDetailModal({
       await saveDB();
       onSaved();
       onOpenChange(false);
+    } catch (err) {
+      console.error('[TransactionDetailModal] Save failed:', err);
     } finally {
       setIsSaving(false);
     }
