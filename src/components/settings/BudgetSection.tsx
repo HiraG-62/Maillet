@@ -83,7 +83,7 @@ export function BudgetSection() {
   };
 
   return (
-    <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4 mb-4">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/80 p-4 mb-4">
       <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">月間使用枠</h3>
       <div className="space-y-3">
         <Input
@@ -143,7 +143,7 @@ export function BudgetSection() {
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              className="flex-1 h-9 rounded-md border dark:border-white/10 border-black/10 bg-[var(--color-background)] text-[var(--color-text-primary)] text-sm px-2"
+              className="flex-1 h-9 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text-primary)] text-sm px-2"
             >
               <option value="">カテゴリを選択</option>
               {availableCategories.map((c) => (

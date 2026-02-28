@@ -18,7 +18,7 @@ export function ExportSection() {
   };
 
   return (
-    <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4 mb-4">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/80 p-4 mb-4">
       <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">データエクスポート</h3>
       <div className="space-y-3">
         <p className="text-[var(--color-text-secondary)] text-sm">

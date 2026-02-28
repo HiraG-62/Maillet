@@ -42,7 +42,7 @@ export function ThemeSection() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4">
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/80 p-4">
         <h3 className="text-[var(--color-text-primary)] font-semibold mb-3">テーマ</h3>
         <div className="flex items-center justify-between">
           <span className="text-[var(--color-text-secondary)]">ダークモード</span>
@@ -50,7 +50,7 @@ export function ThemeSection() {
         </div>
       </div>
 
-      <div className="rounded-lg border dark:border-white/10 border-black/10 bg-[var(--color-background)]/80 p-4">
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/80 p-4">
         <div className="flex items-center gap-2 mb-3">
           <Palette className="w-4 h-4 text-[var(--color-primary)]" />
           <h3 className="text-[var(--color-text-primary)] font-semibold">テーマカラー</h3>
@@ -63,7 +63,7 @@ export function ThemeSection() {
             <button
               key={color.id}
               onClick={() => handleColorChange(color.id)}
-              className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-[var(--color-surface-elevated)] transition-colors"
+              className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-[var(--color-border)]/40 transition-colors"
               title={color.name}
             >
               <div
