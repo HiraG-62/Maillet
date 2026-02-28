@@ -75,8 +75,8 @@ export function SubscriptionWidget({ subscriptions, isLoading }: SubscriptionWid
             <span
               className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
                 sub.confidence === 'high'
-                  ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
-                  : 'bg-[var(--color-warning)]/15 text-[var(--color-warning)]'
+                  ? 'bg-[var(--color-success)]/15 text-emerald-700 dark:text-[var(--color-success)]'
+                  : 'bg-[var(--color-warning)]/15 text-amber-700 dark:text-[var(--color-warning)]'
               }`}
             >
               {sub.confidence === 'high' ? '高' : '中'}

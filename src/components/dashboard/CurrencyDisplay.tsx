@@ -15,8 +15,8 @@ const sizeConfig = {
 
 const variantColors = {
   default: 'text-[var(--color-text-primary)]',
-  positive: 'text-[var(--color-success)]',
-  negative: 'text-orange-400',
+  positive: 'text-emerald-700 dark:text-[var(--color-success)]',
+  negative: 'text-orange-700 dark:text-orange-400',
   muted: 'text-[var(--color-text-secondary)]',
 };
 

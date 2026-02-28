@@ -229,7 +229,7 @@ export default function DashboardPage() {
                       {formatCurrency(monthlyStats.total ?? 0)} / {formatCurrency(monthlyBudget)}（{Math.round(ratio * 100)}%）
                     </span>
                   </div>
-                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-elevated)]">
+                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
@@ -342,7 +342,7 @@ export default function DashboardPage() {
             className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
             style={{
               backgroundColor: 'var(--color-primary)',
-              color: 'var(--color-bg)',
+              color: 'var(--color-text-inverse)',
               opacity: isSyncing ? 0.6 : 1,
               cursor: isSyncing ? 'not-allowed' : 'pointer',
             }}

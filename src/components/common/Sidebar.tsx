@@ -41,7 +41,7 @@ export function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)]'
+                  ? 'bg-[var(--color-primary-light)] text-teal-900 dark:text-[var(--color-primary)]'
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-primary-light)]/50'
               }`
             }
@@ -56,7 +56,7 @@ export function Sidebar() {
           onClick={handleSync}
           disabled={isSyncing || authLoading}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                     bg-[var(--color-primary)] text-white
+                     bg-[var(--color-primary-hover)] text-white dark:bg-[var(--color-primary)] dark:text-[var(--color-text-inverse)]
                      hover:opacity-90 active:scale-95
                      disabled:opacity-60 disabled:cursor-not-allowed"
         >

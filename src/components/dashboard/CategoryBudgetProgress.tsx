@@ -41,7 +41,7 @@ export function CategoryBudgetProgress({
                   {formatCurrency(spent)} / {formatCurrency(budget)}（{Math.round(ratio * 100)}%）
                 </span>
               </div>
-              <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-elevated)]">
+              <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
