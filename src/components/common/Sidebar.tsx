@@ -1,5 +1,7 @@
-import { NavLink } from 'react-router';
-import { Mail, LayoutDashboard, List, BarChart2, Settings } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router';
+import { Mail, LayoutDashboard, List, BarChart2, Settings, RefreshCw } from 'lucide-react';
+import { useSync } from '@/hooks/useSync';
+import { useAuth } from '@/hooks/useAuth';
 
 const navItems = [
   { path: '/', label: 'ダッシュボード', icon: LayoutDashboard },
@@ -9,6 +11,19 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const navigate = useNavigate();
+  const { authState, isLoading: authLoading } = useAuth();
+  const { startSync, isSyncing } = useSync();
+
+  const handleSync = () => {
+    if (authLoading) return;
+    if (!authState.isAuthenticated) {
+      navigate('/settings');
+      return;
+    }
+    startSync();
+  };
+
   return (
     <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-56 bg-[var(--color-surface)] border-r border-[var(--color-border)] z-50">
       <div className="flex items-center gap-2.5 h-14 px-4 border-b border-[var(--color-border)]">
@@ -36,6 +51,19 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+      <div className="p-3 border-t border-[var(--color-border)]">
+        <button
+          onClick={handleSync}
+          disabled={isSyncing || authLoading}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                     bg-[var(--color-primary)] text-white
+                     hover:opacity-90 active:scale-95
+                     disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <RefreshCw className={`w-[18px] h-[18px] shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+          <span>{isSyncing ? '同期中...' : 'Gmailから同期'}</span>
+        </button>
+      </div>
     </aside>
   );
 }
