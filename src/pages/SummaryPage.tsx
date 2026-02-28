@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { TrendingUp, BarChart2, PieChart as PieChartIcon, Layers, Store } from 'lucide-react';
+import { TrendingUp, BarChart2, PieChart as PieChartIcon, Layers, Store, Loader2 } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import MonthlyBarChart from '@/components/dashboard/MonthlyBarChart';
 import CategoryPieChart from '@/components/dashboard/CategoryPieChart';
@@ -39,6 +39,7 @@ const formatPctChange = (current: number, prev: number) => {
 
 export default function SummaryPage() {
   const transactions = useTransactionStore((s) => s.transactions);
+  const isLoading = useTransactionStore((s) => s.isLoading);
 
   const defaultMonth = useMemo(() => {
     const now = new Date();
@@ -131,6 +132,15 @@ export default function SummaryPage() {
     return [...map.values()]
       .sort((a, b) => b.total - a.total);
   }, [transactions, selectedMonth]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 gap-4">
+        <Loader2 className="w-8 h-8 text-[var(--color-primary)] animate-spin" />
+        <p className="text-[var(--color-text-secondary)] font-medium">読み込み中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
