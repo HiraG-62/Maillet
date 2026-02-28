@@ -62,7 +62,7 @@ export function FilterBar({
     <div className="float-card p-3">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         {/* Month selector */}
-        <Select value={selectedMonth} onValueChange={onMonthChange}>
+        <Select value={selectedMonth || 'all'} onValueChange={onMonthChange}>
           <SelectTrigger
             className={`w-full md:w-40 bg-transparent text-[var(--color-text-primary)] transition-colors ${
               selectedMonth !== 'all'
@@ -83,7 +83,7 @@ export function FilterBar({
         </Select>
 
         {/* Card company selector */}
-        <Select value={selectedCard} onValueChange={onCardChange}>
+        <Select value={selectedCard || 'all'} onValueChange={onCardChange}>
           <SelectTrigger
             className={`w-full md:w-36 bg-transparent text-[var(--color-text-primary)] transition-colors ${
               selectedCard !== 'all'
