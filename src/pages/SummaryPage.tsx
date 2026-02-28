@@ -59,18 +59,16 @@ export default function SummaryPage() {
 
   const monthlyData = useMemo(() => {
     const last6 = getLastNMonths(defaultMonth, 6);
-    const last7 = getLastNMonths(defaultMonth, 7);
     const totals: Record<string, number> = {};
     transactions.forEach((t) => {
       const m = toYearMonth(t.transaction_date);
-      if (last7.includes(m)) {
+      if (last6.includes(m)) {
         totals[m] = (totals[m] ?? 0) + t.amount;
       }
     });
-    return last6.map((m, i) => ({
+    return last6.map((m) => ({
       month: m,
       total_amount: totals[m] ?? 0,
-      prev_total_amount: totals[last7[i]] ?? 0,
     }));
   }, [transactions]);
 
