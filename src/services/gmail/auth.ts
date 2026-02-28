@@ -204,8 +204,16 @@ export function logout(): void {
 
 /**
  * OAuth callback を処理する（/auth/callback ページで呼び出す）
+ * Singleton promise パターン: 複数の useAuth() インスタンスが同時に呼んでも
+ * token exchange は1回だけ実行される（authorization code 二重使用による 400 を防止）
  */
+let _callbackPromise: Promise<OAuthToken | null> | null = null;
+
 export async function handleAuthCallback(config: GmailAuthConfig): Promise<OAuthToken | null> {
+  if (_callbackPromise) {
+    return _callbackPromise;
+  }
+
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   const verifier = sessionStorage.getItem(STORAGE_KEYS.PKCE_VERIFIER);
@@ -214,5 +222,10 @@ export async function handleAuthCallback(config: GmailAuthConfig): Promise<OAuth
     return null;
   }
 
-  return exchangeCodeForToken(code, verifier, config);
+  _callbackPromise = exchangeCodeForToken(code, verifier, config);
+  try {
+    return await _callbackPromise;
+  } finally {
+    _callbackPromise = null;
+  }
 }
