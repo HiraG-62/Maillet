@@ -196,7 +196,7 @@ export default function DashboardPage() {
                     className="text-xs font-medium"
                     style={{ color }}
                   >
-                    {arrow} {sign}{formatCurrency(diff)} ({sign}{pctChange.toFixed(1)}%) vs 先月
+                    先月比 {arrow} {sign}{formatCurrency(diff)} ({sign}{pctChange.toFixed(1)}%)
                   </span>
                 );
               })()
