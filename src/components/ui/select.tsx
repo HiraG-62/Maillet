@@ -90,7 +90,7 @@ const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
 >(({ className, children, value, ...props }, ref) => {
-  if (!value) return null;
+  if (!value || value === '') return null;
   return (
     <SelectPrimitive.Item
       ref={ref}
