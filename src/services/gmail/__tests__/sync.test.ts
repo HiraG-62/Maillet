@@ -13,6 +13,12 @@ const localStorageMock = (() => {
 })();
 vi.stubGlobal('localStorage', localStorageMock);
 
+// window.location mock for Node.js environment (redirect_uri generation)
+vi.stubGlobal('window', {
+  ...globalThis.window,
+  location: { origin: 'http://localhost:5173' },
+});
+
 import { syncGmailTransactions, getCurrentMonthDateFilter } from '../sync';
 import type { SyncResult, SyncProgress } from '@/types/gmail';
 

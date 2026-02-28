@@ -11,9 +11,7 @@ import {
 const GMAIL_CONFIG: GmailAuthConfig = {
   clientId: (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) ?? '',
   clientSecret: (import.meta.env.VITE_GOOGLE_CLIENT_SECRET as string) ?? '',
-  redirectUri:
-    (import.meta.env.VITE_GOOGLE_REDIRECT_URI as string) ??
-    `${window.location.origin}/auth/callback`,
+  redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}`,
   scope: ['https://www.googleapis.com/auth/gmail.readonly'],
 };
 

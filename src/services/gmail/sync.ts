@@ -10,7 +10,7 @@ function getGmailConfig(): GmailAuthConfig {
   return {
     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
     clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
-    redirectUri: import.meta.env.VITE_GOOGLE_REDIRECT_URI ?? '',
+    redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}`,
     scope: ['https://www.googleapis.com/auth/gmail.readonly'],
   };
 }
