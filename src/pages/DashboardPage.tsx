@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
@@ -7,8 +7,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
-import { formatDateRelative } from '@/lib/utils';
+import { formatDateRelative, formatCurrency } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
+import { CategoryBudgetProgress } from '@/components/dashboard/CategoryBudgetProgress';
+import { SubscriptionWidget } from '@/components/dashboard/SubscriptionWidget';
+import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
+import type { CardTransaction } from '@/types/transaction';
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -49,10 +54,12 @@ function getCategoryEmoji(category: string | null | undefined): string {
 export default function DashboardPage() {
   const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
   const monthlyBudget = useSettingsStore((s) => s.monthly_budget);
+  const categoryBudgets = useSettingsStore((s) => s.categoryBudgets);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
   const [dbWarning, setDbWarning] = useState<string | null>(null);
   const { error: authError } = useAuth();
   const { isSyncing, result, progress } = useSync();
+  const { subscriptions, isLoading: subsLoading } = useSubscriptions(transactions);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,6 +94,39 @@ export default function DashboardPage() {
       .sort((a, b) => (b.transaction_date ?? '').localeCompare(a.transaction_date ?? ''))
       .slice(0, 5);
   }, [transactions]);
+
+  const prevMonthStats = useMemo(() => {
+    const prevMonth = addMonths(selectedMonth, -1);
+    const filtered = transactions.filter(
+      (tx) => (tx.transaction_date ?? '').slice(0, 7) === prevMonth
+    );
+    const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
+    return { total, hasData: filtered.length > 0 };
+  }, [transactions, selectedMonth]);
+
+  const categoryTotals = useMemo(() => {
+    const filtered = transactions.filter(
+      (tx) => (tx.transaction_date ?? '').slice(0, 7) === selectedMonth
+    );
+    return filtered.reduce<Record<string, number>>((acc, tx) => {
+      if (tx.category) {
+        acc[tx.category] = (acc[tx.category] ?? 0) + tx.amount;
+      }
+      return acc;
+    }, {});
+  }, [transactions, selectedMonth]);
+
+  const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleTransactionClick = useCallback((tx: CardTransaction) => {
+    setSelectedTransaction(tx);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleModalSaved = useCallback(() => {
+    getTransactions().then((data) => setTransactions(data ?? []));
+  }, [setTransactions]);
 
   const isEmpty = transactions.length === 0 && !isLoading;
 
@@ -130,13 +170,78 @@ export default function DashboardPage() {
         </div>
 
         {/* Total amount — large and bold */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-2">
           {isLoading ? (
             <div className="h-12 w-48 mx-auto rounded-lg bg-[var(--color-primary-light)] animate-pulse" />
           ) : (
             <CurrencyDisplay amount={monthlyStats.total} size="lg" className="text-4xl! font-black text-[var(--color-text-primary)]" />
           )}
         </div>
+
+        {/* D-002: 前月比トレンドインジケーター */}
+        {!isLoading && (
+          <div className="text-center mb-3">
+            {prevMonthStats.hasData ? (
+              (() => {
+                const diff = monthlyStats.total - prevMonthStats.total;
+                const pctChange = prevMonthStats.total > 0
+                  ? (diff / prevMonthStats.total) * 100
+                  : 0;
+                const isIncrease = diff >= 0;
+                const color = isIncrease ? 'var(--color-danger)' : 'var(--color-success)';
+                const arrow = isIncrease ? '▲' : '▼';
+                const sign = isIncrease ? '+' : '';
+                return (
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color }}
+                  >
+                    先月比 {arrow} {sign}{formatCurrency(diff)} ({sign}{pctChange.toFixed(1)}%)
+                  </span>
+                );
+              })()
+            ) : (
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                （前月データなし）
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* D-001: 使用枠消化率プログレスバー */}
+        {monthlyBudget > 0 && !isLoading && (
+          <div className="mb-4">
+            {(() => {
+              const ratio = (monthlyStats.total ?? 0) / monthlyBudget;
+              const clampedPct = Math.min(ratio, 1) * 100;
+              const barColor =
+                ratio <= 0.5
+                  ? 'var(--color-success)'
+                  : ratio <= 0.8
+                  ? 'var(--color-warning)'
+                  : 'var(--color-danger)';
+              return (
+                <>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-xs text-[var(--color-text-muted)]">使用枠</span>
+                    <span className="text-xs font-medium" style={{ color: barColor }}>
+                      {formatCurrency(monthlyStats.total ?? 0)} / {formatCurrency(monthlyBudget)}（{Math.round(ratio * 100)}%）
+                    </span>
+                  </div>
+                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-elevated)]">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${clampedPct}%`,
+                        backgroundColor: barColor,
+                      }}
+                    />
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Divider */}
         <div className="border-t border-[var(--color-border)] my-4" />
@@ -174,6 +279,19 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ===== Category Budget Progress (F-001b) ===== */}
+      {!isLoading && Object.keys(categoryBudgets).length > 0 && (
+        <CategoryBudgetProgress
+          categoryBudgets={categoryBudgets}
+          categoryTotals={categoryTotals}
+        />
+      )}
+
+      {/* ===== Subscription Detection (F-002b) ===== */}
+      <div className="mb-8 slide-up" style={{ animationDelay: '0.05s' }}>
+        <SubscriptionWidget subscriptions={subscriptions} isLoading={subsLoading} />
+      </div>
+
       {/* ===== Recent Transactions ===== */}
       {!isEmpty && recentTransactions.length > 0 && (
         <div className="mb-8 slide-up" style={{ animationDelay: '0.1s' }}>
@@ -182,7 +300,8 @@ export default function DashboardPage() {
             {recentTransactions.map((tx, i) => (
               <div
                 key={tx.id ?? `${tx.transaction_date}-${i}`}
-                className={`flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--color-primary-light)]/30 ${
+                onClick={() => handleTransactionClick(tx)}
+                className={`flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--color-primary-light)]/30 cursor-pointer ${
                   i < recentTransactions.length - 1 ? 'border-b border-[var(--color-border)]/50' : ''
                 }`}
               >
@@ -253,6 +372,13 @@ export default function DashboardPage() {
           <circle cx="350" cy="110" r="3" fill="var(--color-primary)" opacity="0.1" />
         </svg>
       </div>
+
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSaved={handleModalSaved}
+      />
     </div>
   );
 }

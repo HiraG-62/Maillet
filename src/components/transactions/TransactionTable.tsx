@@ -13,6 +13,7 @@ import {
 
 interface TransactionTableProps {
   transactions: CardTransaction[];
+  onRowClick?: (tx: CardTransaction) => void;
 }
 
 interface CardBadgeStyle {
@@ -43,7 +44,7 @@ function getCardBadgeStyle(cardCompany: string | null | undefined): CardBadgeSty
 
 const LARGE_AMOUNT_THRESHOLD = 50000;
 
-export function TransactionTable({ transactions }: TransactionTableProps) {
+export function TransactionTable({ transactions, onRowClick }: TransactionTableProps) {
   const sorted = [...transactions].sort(
     (a, b) =>
       new Date(b.transaction_date ?? '').getTime() - new Date(a.transaction_date ?? '').getTime()
@@ -84,7 +85,8 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
             return (
               <TableRow
                 key={tx.id ?? idx}
-                className="dark:border-white/5 border-black/5 dark:hover:bg-white/5 hover:bg-black/5 transition-colors"
+                onClick={() => onRowClick?.(tx)}
+                className={`dark:border-white/5 border-black/5 dark:hover:bg-white/5 hover:bg-black/5 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
               >
                 <TableCell className="text-[var(--color-text-secondary)] text-sm whitespace-nowrap">
                   {formatDateFull(tx.transaction_date)}

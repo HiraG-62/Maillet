@@ -11,6 +11,7 @@ export interface CardTransaction {
   gmail_message_id?: string;
   is_verified?: boolean;
   created_at?: string;
+  memo?: string;
 }
 
 export interface ParsedTransaction {

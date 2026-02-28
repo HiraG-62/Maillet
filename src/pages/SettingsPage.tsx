@@ -1,10 +1,11 @@
 import React from 'react';
-import { Bot, Database, Mail, Settings, Sun, Wallet } from 'lucide-react';
+import { Bot, Database, List, Mail, Settings, Sun, Wallet } from 'lucide-react';
 import { SyncPanel } from '@/components/common/SyncPanel';
 import { BudgetSection } from '@/components/settings/BudgetSection';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
 import { ThemeSection } from '@/components/settings/ThemeSection';
 import { ExportSection } from '@/components/settings/ExportSection';
+import { CategoryRuleEditor } from '@/components/settings/CategoryRuleEditor';
 
 function SectionCard({
   icon,
@@ -62,6 +63,13 @@ export default function SettingsPage() {
         label="テーマ"
       >
         <ThemeSection />
+      </SectionCard>
+
+      <SectionCard
+        icon={<List className="w-4 h-4 text-[var(--color-primary)]" />}
+        label="カテゴリ分類ルール"
+      >
+        <CategoryRuleEditor />
       </SectionCard>
 
       <SectionCard

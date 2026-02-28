@@ -39,11 +39,12 @@ const CustomTooltip = ({
   accentColor,
 }: {
   active?: boolean;
-  payload?: Array<{ value: number }>;
+  payload?: Array<{ value: number; dataKey: string }>;
   label?: string;
   accentColor?: string;
 }) => {
   if (active && payload && payload.length) {
+    const entry = payload.find((p) => p.dataKey === 'total_amount');
     return (
       <div
         style={{
@@ -56,9 +57,11 @@ const CustomTooltip = ({
         <p style={{ color: '#94a3b8', marginBottom: '4px', fontSize: '12px' }}>
           {label ? formatMonth(label) : ''}
         </p>
-        <p style={{ color: accentColor, fontWeight: 'bold', fontSize: '14px' }}>
-          ¥{payload[0].value.toLocaleString('ja-JP')}
-        </p>
+        {entry && (
+          <p style={{ color: accentColor, fontWeight: 'bold', fontSize: '14px', margin: 0 }}>
+            ¥{entry.value.toLocaleString('ja-JP')}
+          </p>
+        )}
       </div>
     );
   }
