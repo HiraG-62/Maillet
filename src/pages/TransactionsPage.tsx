@@ -7,10 +7,10 @@ import { TransactionDetailModal } from '@/components/transactions/TransactionDet
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
 import type { CardTransaction } from '@/types/transaction';
-import { Receipt } from 'lucide-react';
+import { Receipt, Loader2 } from 'lucide-react';
 
 export default function TransactionsPage() {
-  const { transactions, setTransactions, setLoading } = useTransactionStore();
+  const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
 
   // マウント時にDBからデータを読み込む（ページ遷移後もデータを保持）
   useEffect(() => {
@@ -25,7 +25,11 @@ export default function TransactionsPage() {
       });
   }, [setTransactions, setLoading]);
 
-  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth());
   const [selectedCard, setSelectedCard] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -99,7 +103,12 @@ export default function TransactionsPage() {
         onReset={handleReset}
       />
 
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="float-card flex flex-col items-center justify-center py-16 gap-4">
+          <Loader2 className="w-8 h-8 text-[var(--color-primary)] animate-spin" />
+          <p className="text-[var(--color-text-secondary)] font-medium">読み込み中...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="float-card flex flex-col items-center justify-center py-16 gap-4">
           <div className="w-16 h-16 rounded-full dark:bg-white/5 bg-black/5 flex items-center justify-center border dark:border-white/10 border-black/10">
             <Receipt className="w-8 h-8 text-[var(--color-text-muted)]" />

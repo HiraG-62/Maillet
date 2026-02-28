@@ -47,7 +47,7 @@ const LARGE_AMOUNT_THRESHOLD = 50000;
 export function TransactionTable({ transactions, onRowClick }: TransactionTableProps) {
   const sorted = [...transactions].sort(
     (a, b) =>
-      new Date(b.transaction_date ?? '').getTime() - new Date(a.transaction_date ?? '').getTime()
+      new Date(b.transaction_date || '1970-01-01').getTime() - new Date(a.transaction_date || '1970-01-01').getTime()
   );
 
   return (
