@@ -229,7 +229,7 @@ export default function SummaryPage() {
                 const prev = prevCategoryTotals[item.name] ?? 0;
                 const change = formatPctChange(item.value, prev);
                 return (
-                  <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <tr key={i} className="border-b dark:border-white/5 border-black/[0.06] last:border-0 dark:hover:bg-white/[0.02] hover:bg-black/[0.02] transition-colors">
                     <td className="py-2.5 text-[var(--color-text-primary)]">{item.name}</td>
                     <td className="py-2.5 text-right">
                       <CurrencyDisplay amount={item.value} size="sm" className="text-[var(--color-primary)]" />
@@ -292,7 +292,7 @@ export default function SummaryPage() {
                       </span>
                       <CurrencyDisplay amount={item.total} size="sm" className="text-[var(--color-primary)]" />
                     </div>
-                    <div className="mt-1 h-1.5 rounded-full bg-[var(--color-surface)]">
+                    <div className="mt-1 h-1.5 rounded-full bg-black/10 dark:bg-white/10">
                       <div
                         className="h-full rounded-full"
                         style={{
