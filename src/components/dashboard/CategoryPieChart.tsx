@@ -9,6 +9,7 @@ import {
   type LegendProps,
 } from 'recharts';
 import { useChartColors } from '@/hooks/useChartColors';
+import { getCategoryColor } from '@/lib/category-colors';
 
 interface CategoryDataPoint {
   name: string;
@@ -53,7 +54,7 @@ const CustomTooltip = ({
 };
 
 export default function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
-  const { pieShades, tooltipAccent } = useChartColors();
+  const { tooltipAccent } = useChartColors();
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   const renderLegend = ({ payload }: LegendProps) => {
@@ -113,7 +114,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
           {data.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
-              fill={entry.color ?? pieShades[index % pieShades.length]}
+              fill={entry.color ?? getCategoryColor(entry.name)}
               stroke="rgba(0,0,0,0.3)"
               strokeWidth={1}
             />
