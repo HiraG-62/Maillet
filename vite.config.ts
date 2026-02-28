@@ -70,6 +70,12 @@ export default defineConfig(({ command }) => ({
   optimizeDeps: {
     exclude: ['wa-sqlite'],
   },
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
+  },
   worker: {
     format: 'es',
   },
