@@ -141,14 +141,17 @@ const MIGRATION_SQL = `
 
 async function init(): Promise<{ ok: true; warning?: string }> {
   if (db !== undefined) return { ok: true };
-  const module = await SQLiteAsyncESMFactory({
-    locateFile: (file: string) => {
-      if (file.endsWith('.wasm')) {
-        return `${import.meta.env.BASE_URL}wa-sqlite-async.wasm`;
-      }
-      return file;
-    }
-  });
+
+  // Pre-fetch WASM binary to bypass Emscripten's internal URL resolution
+  // (locateFile alone is unreliable across dev/production/worker contexts)
+  const wasmPath = `${import.meta.env.BASE_URL}wa-sqlite-async.wasm`;
+  const wasmResp = await fetch(wasmPath);
+  if (!wasmResp.ok) {
+    throw new Error(`Failed to load wa-sqlite WASM (${wasmResp.status}) from ${wasmPath}`);
+  }
+  const wasmBinary = new Uint8Array(await wasmResp.arrayBuffer());
+
+  const module = await SQLiteAsyncESMFactory({ wasmBinary });
   sqlite3 = SQLite.Factory(module);
 
   // Memory DB (VFS-free: avoids journal file xOpen trap)
