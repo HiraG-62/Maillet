@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -57,6 +58,18 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
   const { tooltipAccent } = useChartColors();
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  const legendTextColor = isDark ? '#e2e8f0' : '#334155';
+  const legendMutedColor = isDark ? '#94a3b8' : '#64748b';
+
   const renderLegend = ({ payload }: LegendProps) => {
     if (!payload) return null;
     return (
@@ -85,9 +98,9 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
                   flexShrink: 0,
                 }}
               />
-              <span style={{ color: '#e2e8f0', fontSize: '11px' }}>{String(entry.value)}</span>
+              <span style={{ color: legendTextColor, fontSize: '11px' }}>{String(entry.value)}</span>
               {item && (
-                <span style={{ color: '#94a3b8', fontSize: '11px' }}>
+                <span style={{ color: legendMutedColor, fontSize: '11px' }}>
                   ¥{item.value.toLocaleString('ja-JP')}
                 </span>
               )}
