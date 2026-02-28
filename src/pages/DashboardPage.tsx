@@ -90,10 +90,11 @@ export default function DashboardPage() {
   }, [transactions, selectedMonth]);
 
   const recentTransactions = useMemo(() => {
-    return [...transactions]
+    return transactions
+      .filter((t) => (t.transaction_date ?? '').startsWith(selectedMonth))
       .sort((a, b) => (b.transaction_date ?? '').localeCompare(a.transaction_date ?? ''))
       .slice(0, 5);
-  }, [transactions]);
+  }, [transactions, selectedMonth]);
 
   const prevMonthStats = useMemo(() => {
     const prevMonth = addMonths(selectedMonth, -1);
@@ -128,7 +129,7 @@ export default function DashboardPage() {
     getTransactions().then((data) => setTransactions(data ?? []));
   }, [setTransactions]);
 
-  const isEmpty = transactions.length === 0 && !isLoading;
+  const isEmpty = monthlyStats.count === 0 && !isLoading;
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 md:px-8 md:py-10">
@@ -196,7 +197,7 @@ export default function DashboardPage() {
                     className="text-xs font-medium"
                     style={{ color }}
                   >
-                    先月比 {arrow} {sign}{formatCurrency(diff)} ({sign}{pctChange.toFixed(1)}%)
+                    先月比 {arrow} {formatCurrency(Math.abs(diff))} ({sign}{pctChange.toFixed(1)}%)
                   </span>
                 );
               })()
