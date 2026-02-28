@@ -4,8 +4,8 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
-export default defineConfig({
-  base: '/Maillet/',
+export default defineConfig(({ command }) => ({
+  base: command === 'serve' ? '/' : '/Maillet/',
   plugins: [
     react(),
     tailwindcss(),
@@ -73,4 +73,4 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
-});
+}));
