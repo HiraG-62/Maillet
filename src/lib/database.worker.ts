@@ -141,7 +141,14 @@ const MIGRATION_SQL = `
 
 async function init(): Promise<{ ok: true; warning?: string }> {
   if (db !== undefined) return { ok: true };
-  const module = await SQLiteAsyncESMFactory();
+  const module = await SQLiteAsyncESMFactory({
+    locateFile: (file: string) => {
+      if (file.endsWith('.wasm')) {
+        return `${import.meta.env.BASE_URL}wa-sqlite-async.wasm`;
+      }
+      return file;
+    }
+  });
   sqlite3 = SQLite.Factory(module);
 
   // Memory DB (VFS-free: avoids journal file xOpen trap)

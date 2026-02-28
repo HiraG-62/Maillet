@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "postinstall": "cp node_modules/wa-sqlite/dist/wa-sqlite-async.wasm public/wa-sqlite-async.wasm",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
