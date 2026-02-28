@@ -72,8 +72,8 @@ export function useChartColors(): ChartColors {
   }, []);
 
   return {
-    barShades: generateShades(primary, 6, 15, 75),
-    pieShades: generateShades(primary, 8, 10, 80),
+    barShades: generateShades(primary, 6, 30, 75),
+    pieShades: generateShades(primary, 8, 25, 80),
     tooltipAccent: primary,
   };
 }
