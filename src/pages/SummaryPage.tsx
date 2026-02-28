@@ -20,9 +20,6 @@ const getLastNMonths = (fromMonth: string, n: number): string[] => {
   return result;
 };
 
-const now = new Date();
-const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
 const formatMonthLabel = (m: string) => {
   const [year, month] = m.split('-');
   return `${year}年${parseInt(month)}月`;
@@ -43,6 +40,11 @@ const formatPctChange = (current: number, prev: number) => {
 export default function SummaryPage() {
   const transactions = useTransactionStore((s) => s.transactions);
 
+  const defaultMonth = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }, []);
+
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
   const [isExpanded, setIsExpanded] = useState(false);
   const DEFAULT_DISPLAY_COUNT = 10;
@@ -52,10 +54,20 @@ export default function SummaryPage() {
   }, [selectedMonth]);
 
   const availableMonths = useMemo(() => {
-    const months = new Set<string>();
-    transactions.forEach((t) => months.add(toYearMonth(t.transaction_date)));
-    return Array.from(months).filter(m => m.length > 0).sort((a, b) => b.localeCompare(a));
-  }, [transactions]);
+    const months = new Set<string>([defaultMonth]);
+    transactions.forEach(t => {
+      if (t.transaction_date) {
+        months.add(t.transaction_date.slice(0, 7));
+      }
+    });
+    return [...months].sort().reverse();
+  }, [transactions, defaultMonth]);
+
+  useEffect(() => {
+    if (availableMonths.length > 0 && !availableMonths.includes(selectedMonth)) {
+      setSelectedMonth(availableMonths[0]);
+    }
+  }, [availableMonths, selectedMonth]);
 
   const monthlyData = useMemo(() => {
     const last6 = getLastNMonths(defaultMonth, 6);
