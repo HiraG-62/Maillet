@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { applyCategoriesToDB, CATEGORIES } from '@/services/category';
+import { getTransactions } from '@/lib/transactions';
+import { saveDB } from '@/lib/database';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -43,8 +45,11 @@ export function CategoryRuleEditor() {
       const rules = useSettingsStore.getState().categoryRules;
       const result = await applyCategoriesToDB(false, rules);
       setReclassifyResult(result);
-      // transaction-store を空にして次回ロード時に再取得させる
-      setTransactions([]);
+      // Bug2修正: DB変更をIndexedDBに永続化（F5リロードでも保持される）
+      await saveDB();
+      // Bug1修正: storeを空にせず、DBから再取得して即反映（Summary直行でも表示される）
+      const freshData = await getTransactions();
+      setTransactions(freshData);
     } catch (e) {
       console.error('再分類エラー', e);
     } finally {
