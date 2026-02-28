@@ -23,6 +23,9 @@ export function Layout({ children }: LayoutProps) {
       .then((data) => {
         setTransactions(data ?? []);
       })
+      .catch((err) => {
+        console.error('[Layout] DB init/load failed:', err);
+      })
       .finally(() => {
         setLoading(false);
       });
