@@ -58,7 +58,7 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
   const [dbWarning, setDbWarning] = useState<string | null>(null);
   const { error: authError } = useAuth();
-  const { isSyncing, result, progress } = useSync();
+  const { isSyncing, result, progress, startSync } = useSync();
   const { subscriptions, isLoading: subsLoading } = useSubscriptions(transactions);
   const navigate = useNavigate();
 
@@ -333,9 +333,22 @@ export default function DashboardPage() {
         <div className="float-card p-12 text-center mb-8 fade-in">
           <div className="text-4xl mb-3">📭</div>
           <p className="text-[var(--color-text-secondary)] text-lg mb-2">データがありません</p>
-          <p className="text-[var(--color-text-muted)] text-sm">
-            下の「同期」ボタンからGmailの取引データを取得してください
+          <p className="text-[var(--color-text-muted)] text-sm mb-6">
+            Gmailからカード利用通知を同期して始めましょう
           </p>
+          <button
+            onClick={() => void startSync()}
+            disabled={isSyncing}
+            className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              color: 'var(--color-bg)',
+              opacity: isSyncing ? 0.6 : 1,
+              cursor: isSyncing ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isSyncing ? '同期中...' : 'Gmailから同期する'}
+          </button>
         </div>
       )}
 
