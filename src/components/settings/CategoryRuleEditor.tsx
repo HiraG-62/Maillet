@@ -99,18 +99,27 @@ export function CategoryRuleEditor() {
           className="flex-1"
         />
         {/* 拡張1: カテゴリ名のSelect選択肢 */}
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder="カテゴリを選択" />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORY_KEYS.filter((cat) => cat !== '').map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {CATEGORY_KEYS.length > 0 ? (
+          <Select value={category || undefined} onValueChange={setCategory}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="カテゴリを選択" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORY_KEYS.filter((cat) => cat !== '').map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            placeholder="カテゴリ（手入力）"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="flex-1"
+          />
+        )}
         <Button
           onClick={handleAdd}
           variant="default"

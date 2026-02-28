@@ -95,7 +95,7 @@ export function TransactionDetailModal({
           {/* Category (editable) */}
           <div>
             <label className="text-xs text-[var(--color-text-muted)] block mb-1">カテゴリ</label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category || '__none__'} onValueChange={setCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="カテゴリを選択" />
               </SelectTrigger>
