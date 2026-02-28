@@ -101,7 +101,7 @@ export function TransactionDetailModal({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">未分類</SelectItem>
-                {CATEGORY_KEYS.map((cat) => (
+                {CATEGORY_KEYS.filter((cat) => cat !== '').map((cat) => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
               </SelectContent>

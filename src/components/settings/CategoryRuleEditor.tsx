@@ -104,7 +104,7 @@ export function CategoryRuleEditor() {
             <SelectValue placeholder="カテゴリを選択" />
           </SelectTrigger>
           <SelectContent>
-            {CATEGORY_KEYS.map((cat) => (
+            {CATEGORY_KEYS.filter((cat) => cat !== '').map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
               </SelectItem>
