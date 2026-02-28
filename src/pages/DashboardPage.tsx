@@ -209,6 +209,26 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* D-003: 支出ベロシティ（月末予測） */}
+        {monthlyBudget > 0 && !isLoading && monthlyStats.count > 0 && (
+          (() => {
+            const now = new Date();
+            const isCurrentMonth = selectedMonth === getCurrentMonth();
+            if (!isCurrentMonth) return null;
+            const dayOfMonth = now.getDate();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const progressRatio = dayOfMonth / daysInMonth;
+            if (progressRatio < 0.1) return null;
+            const projected = Math.round(monthlyStats.total / progressRatio);
+            const willExceed = projected > monthlyBudget;
+            return (
+              <p className="text-center text-xs mb-2" style={{ color: willExceed ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+                このペースだと月末に {formatCurrency(projected)}{willExceed ? `（予算を ${formatCurrency(projected - monthlyBudget)} 超過）` : '（予算内）'}
+              </p>
+            );
+          })()
+        )}
+
         {/* D-001: 使用枠消化率プログレスバー */}
         {monthlyBudget > 0 && !isLoading && (
           <div className="mb-4">

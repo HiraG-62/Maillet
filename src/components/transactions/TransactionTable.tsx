@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import type { CardTransaction } from '@/types/transaction';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { formatDateFull } from '@/lib/utils';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -10,6 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+
+type SortKey = 'date' | 'amount';
+type SortDir = 'asc' | 'desc';
 
 interface TransactionTableProps {
   transactions: CardTransaction[];
@@ -45,29 +49,55 @@ function getCardBadgeStyle(cardCompany: string | null | undefined): CardBadgeSty
 const LARGE_AMOUNT_THRESHOLD = 50000;
 
 export function TransactionTable({ transactions, onRowClick }: TransactionTableProps) {
-  const sorted = [...transactions].sort(
-    (a, b) =>
-      new Date(b.transaction_date || '1970-01-01').getTime() - new Date(a.transaction_date || '1970-01-01').getTime()
-  );
+  const [sortKey, setSortKey] = useState<SortKey>('date');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
+    return sortDir === 'desc'
+      ? <ChevronDown className="h-3 w-3 opacity-70" />
+      : <ChevronUp className="h-3 w-3 opacity-70" />;
+  };
+
+  const sorted = [...transactions].sort((a, b) => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    if (sortKey === 'amount') return (a.amount - b.amount) * dir;
+    return (new Date(a.transaction_date || '1970-01-01').getTime() - new Date(b.transaction_date || '1970-01-01').getTime()) * dir;
+  });
 
   return (
     <div className="overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow className="dark:border-white/10 border-black/10 hover:bg-transparent">
-            <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold">
+            <TableHead
+              className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold cursor-pointer select-none hover:text-[var(--color-primary)] transition-colors"
+              onClick={() => toggleSort('date')}
+            >
               <span className="flex items-center gap-1">
                 日付
-                <ChevronUp className="h-3 w-3 opacity-40" />
+                <SortIcon col="date" />
               </span>
             </TableHead>
             <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold">
               カード
             </TableHead>
-            <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold text-right">
+            <TableHead
+              className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold text-right cursor-pointer select-none hover:text-[var(--color-primary)] transition-colors"
+              onClick={() => toggleSort('amount')}
+            >
               <span className="flex items-center justify-end gap-1">
                 金額
-                <ChevronUp className="h-3 w-3 opacity-40" />
+                <SortIcon col="amount" />
               </span>
             </TableHead>
             <TableHead className="text-[var(--color-text-secondary)] uppercase text-xs tracking-wide font-semibold">

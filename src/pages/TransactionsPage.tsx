@@ -7,7 +7,8 @@ import { TransactionDetailModal } from '@/components/transactions/TransactionDet
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
 import type { CardTransaction } from '@/types/transaction';
-import { Receipt, Loader2 } from 'lucide-react';
+import { Receipt, Loader2, Download } from 'lucide-react';
+import { downloadCsv } from '@/services/csvExport';
 
 export default function TransactionsPage() {
   const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
@@ -88,6 +89,16 @@ export default function TransactionsPage() {
         <span className="bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs px-2 py-0.5 rounded-full border border-[var(--color-primary)]/30">
           {filtered.length}件
         </span>
+        {filtered.length > 0 && (
+          <button
+            onClick={() => downloadCsv(filtered, { filename: `transactions_${selectedMonth}.csv` })}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 transition-colors"
+            title="フィルタ済みデータをCSVエクスポート"
+          >
+            <Download className="w-3.5 h-3.5" />
+            CSV
+          </button>
+        )}
       </div>
 
       <FilterBar
