@@ -13,6 +13,8 @@ import {
   getTransactions,
   getTransactionById,
   updateTransactionCategory,
+  updateTransactionMemo,
+  updateTransactionMerchant,
   deleteTransaction,
   getTransactionCount,
   getSyncedMessageIds,
@@ -224,5 +226,80 @@ describe('getSyncedMessageIds', () => {
     mockQueryDB.mockResolvedValueOnce([] as never);
     const ids = await getSyncedMessageIds();
     expect(ids).toEqual([]);
+  });
+});
+
+describe('updateTransactionMemo', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('メモを更新する', async () => {
+    mockExecuteDB.mockResolvedValueOnce({ lastId: 0, changes: 1 } as never);
+    await updateTransactionMemo(1, '重要な買い物');
+    expect(mockExecuteDB).toHaveBeenCalledWith(
+      'UPDATE card_transactions SET memo = ? WHERE id = ?',
+      ['重要な買い物', 1]
+    );
+  });
+
+  it('空文字列のメモも更新できる', async () => {
+    mockExecuteDB.mockResolvedValueOnce({ lastId: 0, changes: 1 } as never);
+    await updateTransactionMemo(5, '');
+    expect(mockExecuteDB).toHaveBeenCalledWith(
+      'UPDATE card_transactions SET memo = ? WHERE id = ?',
+      ['', 5]
+    );
+  });
+});
+
+describe('updateTransactionMerchant', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('加盟店名を更新する', async () => {
+    mockExecuteDB.mockResolvedValueOnce({ lastId: 0, changes: 1 } as never);
+    await updateTransactionMerchant(2, 'セブンイレブン');
+    expect(mockExecuteDB).toHaveBeenCalledWith(
+      'UPDATE card_transactions SET merchant = ? WHERE id = ?',
+      ['セブンイレブン', 2]
+    );
+  });
+});
+
+describe('getTransactions (additional cases)', () => {
+  const mockRow = [1, '三井住友', 1500, 'スタバ', '2024-03-15T10:30:00',
+                   '', null, null, null, null, 1, '2024-03-15T10:30:00', null];
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('category フィルタ', async () => {
+    mockQueryDB.mockResolvedValueOnce([mockRow] as never);
+    await getTransactions({ category: '食費' });
+    expect(mockQueryDB).toHaveBeenCalledWith(
+      expect.stringContaining('category = ?'),
+      expect.arrayContaining(['食費'])
+    );
+  });
+
+  it('year のみ指定（month なし）では strftime フィルタなし', async () => {
+    mockQueryDB.mockResolvedValueOnce([] as never);
+    await getTransactions({ year: 2024 });
+    expect(mockQueryDB).toHaveBeenCalledWith(
+      expect.not.stringContaining("strftime('%Y-%m'"),
+      []
+    );
+  });
+
+  it('memo フィールドが空文字にフォールバックする', async () => {
+    mockQueryDB.mockResolvedValueOnce([mockRow] as never);
+    const result = await getTransactions();
+    expect(result[0].memo).toBe('');
+  });
+
+  it('複合フィルタ（year + month + card_company）', async () => {
+    mockQueryDB.mockResolvedValueOnce([] as never);
+    await getTransactions({ year: 2024, month: 3, card_company: 'JCB' });
+    expect(mockQueryDB).toHaveBeenCalledWith(
+      expect.stringContaining("strftime('%Y-%m'"),
+      expect.arrayContaining(['2024-03', 'JCB'])
+    );
   });
 });
