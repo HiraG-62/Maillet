@@ -86,7 +86,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
   return (
     <div
-      className={`border-l-4 ${borderClass} p-4 hover:bg-[var(--color-surface-hover,var(--color-surface))] transition-colors duration-200`}
+      className={`border-l-4 ${borderClass} p-4 dark:hover:bg-white/5 hover:bg-black/[0.03] transition-colors duration-200`}
     >
       <div className="flex items-start justify-between gap-3">
         {/* Left: date + card + merchant */}

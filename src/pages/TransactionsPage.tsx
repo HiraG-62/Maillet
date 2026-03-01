@@ -20,6 +20,9 @@ export default function TransactionsPage() {
       .then((data) => {
         setTransactions(data ?? []);
       })
+      .catch((err) => {
+        console.error('[TransactionsPage] DB init/load failed:', err);
+      })
       .finally(() => {
         setLoading(false);
       });
@@ -42,7 +45,9 @@ export default function TransactionsPage() {
   }, []);
 
   const handleModalSaved = useCallback(() => {
-    getTransactions().then((data) => setTransactions(data ?? []));
+    getTransactions().then((data) => setTransactions(data ?? [])).catch((err) => {
+      console.error('[TransactionsPage] Failed to reload transactions:', err);
+    });
   }, [setTransactions]);
 
   const categories = useMemo(() => {

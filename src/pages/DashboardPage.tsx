@@ -74,6 +74,9 @@ export default function DashboardPage() {
       .then((data) => {
         setTransactions(data ?? []);
       })
+      .catch((err) => {
+        console.error('[DashboardPage] DB init/load failed:', err);
+      })
       .finally(() => {
         setLoading(false);
       });
@@ -126,7 +129,9 @@ export default function DashboardPage() {
   }, []);
 
   const handleModalSaved = useCallback(() => {
-    getTransactions().then((data) => setTransactions(data ?? []));
+    getTransactions().then((data) => setTransactions(data ?? [])).catch((err) => {
+      console.error('[DashboardPage] Failed to reload transactions:', err);
+    });
   }, [setTransactions]);
 
   const isEmpty = monthlyStats.count === 0 && !isLoading;
