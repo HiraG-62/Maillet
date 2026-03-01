@@ -259,6 +259,31 @@ export default function SummaryPage() {
                   </tr>
                 );
               })}
+              {/* 合計行 */}
+              <tr className="border-t-2 dark:border-white/20 border-black/20">
+                <td className="py-2.5 font-semibold text-[var(--color-text-primary)]">合計</td>
+                <td className="py-2.5 text-right font-semibold">
+                  <CurrencyDisplay amount={categoryData.reduce((s, d) => s + d.value, 0)} size="sm" className="text-[var(--color-primary)]" />
+                </td>
+                <td className="py-2.5 text-right font-semibold">
+                  {(() => {
+                    const prevTotal = Object.values(prevCategoryTotals).reduce((s, v) => s + v, 0);
+                    return prevTotal > 0
+                      ? <CurrencyDisplay amount={prevTotal} size="sm" variant="muted" />
+                      : <span className="text-xs text-[var(--color-text-muted)]">—</span>;
+                  })()}
+                </td>
+                <td className="py-2.5 text-right font-semibold">
+                  {(() => {
+                    const curTotal = categoryData.reduce((s, d) => s + d.value, 0);
+                    const prevTotal = Object.values(prevCategoryTotals).reduce((s, v) => s + v, 0);
+                    const change = formatPctChange(curTotal, prevTotal);
+                    return change
+                      ? <span className={`text-xs font-medium ${change.isIncrease ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}`}>{change.text}</span>
+                      : <span className="text-xs text-[var(--color-text-muted)]">—</span>;
+                  })()}
+                </td>
+              </tr>
             </tbody>
           </table>
         ) : (
