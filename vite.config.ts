@@ -71,6 +71,10 @@ export default defineConfig(({ command }) => ({
     exclude: ['wa-sqlite'],
   },
   server: {
+    hmr: {
+      host: 'localhost',
+      protocol: 'ws',
+    },
     watch: {
       usePolling: true,
       interval: 1000,
