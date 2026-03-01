@@ -1,6 +1,8 @@
 name: Test
 
 on:
+  push:
+    branches: [main, dev]
   pull_request:
     branches: [main]
 
@@ -10,30 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
+          node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install
+        run: npm ci
 
-      - name: Lint (ruff)
-        run: |
-          poetry run ruff check .
-          poetry run ruff format --check .
+      - name: Type check
+        run: npx tsc --noEmit
 
-      - name: Test (pytest)
-        env:
-          DATABASE_PATH: ":memory:"
-          TOKEN_ENCRYPTION_KEY: "test-key-for-ci-only"
-          SESSION_SECRET: "test-secret"
-        run: |
-          poetry run pytest --cov=app --cov-report=term-missing --cov-report=xml
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          file: coverage.xml
-        if: always()
+      - name: Test (vitest)
+        run: npm run test:run
