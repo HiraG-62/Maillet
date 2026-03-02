@@ -10,6 +10,8 @@ import {
 import { useSettingsStore } from '@/stores/settings-store';
 import { KeyStoreError } from '@/types/llm';
 import type { ClassificationProposal } from '@/types/classification';
+import { CategorySuggestPanel } from '@/components/classify/CategorySuggestPanel';
+import { RuleConfirmModal } from '@/components/classify/RuleConfirmModal';
 
 type State = 'idle' | 'pin_input' | 'loading' | 'showing_proposals' | 'done' | 'error';
 
@@ -22,6 +24,8 @@ export function SmartClassifySection() {
   const [errorMessage, setErrorMessage] = useState('');
   const [updatedCount, setUpdatedCount] = useState(0);
   const [costEstimate, setCostEstimate] = useState('');
+  const [confirmProposals, setConfirmProposals] = useState<ClassificationProposal[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     getUnclassifiedCount().then(setUnclassifiedCount).catch(() => {});
@@ -67,7 +71,7 @@ export function SmartClassifySection() {
     const allRules = useSettingsStore.getState().categoryRules;
     const result = await retroactiveApply(allRules);
     setUpdatedCount(result.updated);
-    setUnclassifiedCount(0);
+    setUnclassifiedCount(prev => Math.max(0, prev - result.updated));
     setState('done');
   };
 
@@ -143,51 +147,16 @@ export function SmartClassifySection() {
         </div>
       )}
 
-      {/* showing_proposals: 提案リスト（CategorySuggestPanelが未実装のためインライン表示） */}
+      {/* showing_proposals: CategorySuggestPanel で提案表示・個別選択・確認ダイアログ */}
       {state === 'showing_proposals' && (
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-[var(--color-text-secondary)]">
-            {proposals.length}件の提案
-          </p>
-          <ul className="space-y-2 max-h-64 overflow-y-auto">
-            {proposals.map((p) => (
-              <li
-                key={p.merchantName}
-                className="flex items-center justify-between px-3 py-2 rounded-lg
-                           bg-[var(--color-surface-elevated)] text-sm"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-[var(--color-text-primary)] truncate">
-                    {p.merchantName}
-                  </p>
-                  {p.reasoning && (
-                    <p className="text-xs text-[var(--color-text-muted)] truncate">{p.reasoning}</p>
-                  )}
-                </div>
-                <span className="ml-2 shrink-0 text-xs font-medium text-[var(--color-primary)]">
-                  {p.suggestedCategory}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className="flex gap-2">
-            <button
-              onClick={() => void handleApprove(proposals)}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                         bg-[var(--color-primary)] text-[var(--color-text-inverse)]"
-            >
-              すべて承認して適用
-            </button>
-            <button
-              onClick={handleRetry}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                         bg-[var(--color-surface)] border border-[var(--color-border)]
-                         text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-elevated)]"
-            >
-              キャンセル
-            </button>
-          </div>
-        </div>
+        <CategorySuggestPanel
+          proposals={proposals}
+          onApprove={(approved) => {
+            setConfirmProposals(approved);
+            setConfirmOpen(true);
+          }}
+          onClose={handleRetry}
+        />
       )}
 
       {/* done */}
@@ -215,6 +184,15 @@ export function SmartClassifySection() {
           </button>
         </div>
       )}
+      <RuleConfirmModal
+        open={confirmOpen}
+        proposals={confirmProposals}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          void handleApprove(confirmProposals);
+        }}
+        onClose={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
