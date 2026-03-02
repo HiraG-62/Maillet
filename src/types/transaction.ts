@@ -12,6 +12,7 @@ export interface CardTransaction {
   is_verified?: boolean;
   created_at?: string;
   memo?: string;
+  tags?: string[];  // FlexTag: ["外食", "接待", "経費"]
 }
 
 export interface ParsedTransaction {
