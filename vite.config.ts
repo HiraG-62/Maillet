@@ -36,7 +36,7 @@ export default defineConfig(({ command }) => ({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm,mjs}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,mjs}'],
         navigateFallback: '/Maillet/index.html',
         navigateFallbackDenylist: [/^\/api/, /accounts\.google\.com/],
         runtimeCaching: [
@@ -81,9 +81,6 @@ export default defineConfig(({ command }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  optimizeDeps: {
-    exclude: ['wa-sqlite'],
-  },
   server: {
     hmr: {
       host: 'localhost',
@@ -93,8 +90,5 @@ export default defineConfig(({ command }) => ({
       usePolling: true,
       interval: 1000,
     },
-  },
-  worker: {
-    format: 'es',
   },
 }));
