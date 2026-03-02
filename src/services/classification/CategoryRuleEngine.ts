@@ -1,4 +1,4 @@
-import { normalizeMerchant } from '@/lib/normalize-merchant';
+import { normalizeMerchant, fuzzyMatch } from '@/lib/normalize-merchant';
 import type { CategoryRule } from '@/types/settings';
 import { queryDB, executeDB, saveDB } from '@/lib/database';
 
@@ -9,7 +9,14 @@ import { queryDB, executeDB, saveDB } from '@/lib/database';
 export function matchMerchant(normalizedMerchant: string, rule: CategoryRule): boolean {
   const pattern = rule.merchantPattern ?? rule.keyword;
   if (!pattern) return false;
-  return normalizedMerchant.includes(normalizeMerchant(pattern));
+  const normalizedPattern = normalizeMerchant(pattern);
+  // Primary: substring match (fast path)
+  if (normalizedMerchant.includes(normalizedPattern)) return true;
+  // Fallback: fuzzy match for typos/abbreviations (5+ char patterns only to avoid false positives)
+  if (normalizedPattern.length >= 5) {
+    return fuzzyMatch(normalizedMerchant, normalizedPattern);
+  }
+  return false;
 }
 
 /**
