@@ -10,7 +10,9 @@ interface State {
 }
 
 const RELOAD_KEY = 'maillet-chunk-reload';
-const RELOAD_COOLDOWN_MS = 10000; // 10秒以内の再リロード防止
+// iOS PWA ではプロセス kill 時に sessionStorage がリセットされ無限リロードループになるため
+// localStorage を使用する。localStorage はプロセス再起動後も持続する。
+const RELOAD_COOLDOWN_MS = 300000; // 5分以内の再リロード防止（iOS プロセス再起動を考慮）
 
 export class ChunkErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, isChunkError: false };
@@ -22,15 +24,15 @@ export class ChunkErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error) {
     if (isChunkLoadError(error)) {
-      const lastReload = sessionStorage.getItem(RELOAD_KEY);
+      const lastReload = localStorage.getItem(RELOAD_KEY);
       const now = Date.now();
       // 前回リロードから10秒以上経過している場合のみ自動リロード
       if (!lastReload || now - Number(lastReload) > RELOAD_COOLDOWN_MS) {
-        sessionStorage.setItem(RELOAD_KEY, String(now));
+        localStorage.setItem(RELOAD_KEY, String(now));
         window.location.reload();
         return;
       }
-      // 10秒以内 → 無限ループ防止、手動リロードボタンを表示
+      // 5分以内 → 無限ループ防止、手動リロードボタンを表示
     }
   }
 
@@ -63,7 +65,7 @@ export class ChunkErrorBoundary extends Component<Props, State> {
           </p>
           <button
             onClick={() => {
-              sessionStorage.removeItem(RELOAD_KEY);
+              localStorage.removeItem(RELOAD_KEY);
               window.location.reload();
             }}
             style={{
