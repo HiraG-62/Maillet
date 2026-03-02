@@ -119,11 +119,11 @@ export async function getTransactions(
   const offset = filter.offset ? `OFFSET ${filter.offset}` : '';
 
   const rows = await queryDB<
-    [number, string, number, string, string, string, string | null, string | null, string | null, string | null, number, string, string | null]
+    [number, string, number, string, string, string, string | null, string | null, string | null, string | null, number, string, string | null, string | null]
   >(
     `SELECT id, card_company, amount, merchant, transaction_date,
             description, category, email_subject, email_from,
-            gmail_message_id, is_verified, created_at, memo
+            gmail_message_id, is_verified, created_at, memo, tags
      FROM card_transactions
      ${where}
      ORDER BY transaction_date DESC
@@ -134,7 +134,7 @@ export async function getTransactions(
   return rows.map(
     ([id, card_company, amount, merchant, transaction_date,
       description, category, email_subject, email_from,
-      gmail_message_id, is_verified, created_at, memo]) => ({
+      gmail_message_id, is_verified, created_at, memo, tags]) => ({
       id,
       card_company,
       amount,
@@ -148,6 +148,7 @@ export async function getTransactions(
       is_verified: Boolean(is_verified),
       created_at: created_at ?? undefined,
       memo: memo ?? '',
+      tags: tags ? JSON.parse(tags) as string[] : [],
     })
   );
 }
@@ -155,17 +156,17 @@ export async function getTransactions(
 export async function getTransactionById(
   id: number
 ): Promise<CardTransaction | null> {
-  const row = await queryDB<[number, string, number, string, string, string, string | null, string | null, string | null, string | null, number, string, string | null]>(
+  const row = await queryDB<[number, string, number, string, string, string, string | null, string | null, string | null, string | null, number, string, string | null, string | null]>(
     `SELECT id, card_company, amount, merchant, transaction_date,
             description, category, email_subject, email_from,
-            gmail_message_id, is_verified, created_at, memo
+            gmail_message_id, is_verified, created_at, memo, tags
      FROM card_transactions WHERE id = ?`,
     [id]
   );
   if (row.length === 0) return null;
   const [rid, card_company, amount, merchant, transaction_date,
          description, category, email_subject, email_from,
-         gmail_message_id, is_verified, created_at, memo] = row[0];
+         gmail_message_id, is_verified, created_at, memo, tags] = row[0];
   return {
     id: rid,
     card_company,
@@ -180,6 +181,7 @@ export async function getTransactionById(
     is_verified: Boolean(is_verified),
     created_at: created_at ?? undefined,
     memo: memo ?? '',
+    tags: tags ? JSON.parse(tags) as string[] : [],
   };
 }
 

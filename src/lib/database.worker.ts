@@ -64,7 +64,7 @@ async function cleanupLegacyIDB(): Promise<void> {
 const COLUMNS =
   'id, card_company, amount, merchant, transaction_date, ' +
   'description, category, email_subject, email_from, ' +
-  'gmail_message_id, is_verified, created_at, memo';
+  'gmail_message_id, is_verified, created_at, memo, tags';
 
 async function saveToIDB(): Promise<void> {
   if (db === undefined || !sqlite3) return;
@@ -87,12 +87,17 @@ async function loadFromIDB(): Promise<void> {
   if (!bytes) return;
   const rows = JSON.parse(new TextDecoder().decode(bytes)) as unknown[][];
   if (rows.length === 0) return;
-  const colCount = COLUMNS.split(',').length;
+  const colCount = COLUMNS.split(',').length;  // 14（tags追加後）
   const placeholders = Array(colCount).fill('?').join(',');
   for (const row of rows) {
-    // 旧フォーマット互換: memo列がない場合は空文字を追加
-    if (row.length === colCount - 1) {
-      row.push('');
+    // 旧フォーマット互換
+    if (row.length === colCount - 2) {
+      // memo も tags もない最旧フォーマット
+      row.push('');    // memo を空文字で補完
+      row.push('[]');  // tags を空配列 JSON で補完
+    } else if (row.length === colCount - 1) {
+      // memo はあるが tags がない旧フォーマット
+      row.push('[]');  // tags を空配列 JSON で補完
     }
     for await (const stmt of sqlite3.statements(
       db,
@@ -120,7 +125,8 @@ const SCHEMA_SQL = `
     gmail_message_id TEXT UNIQUE,
     is_verified INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    memo TEXT DEFAULT ''
+    memo TEXT DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]'
   );
   CREATE INDEX IF NOT EXISTS idx_transactions_date
     ON card_transactions(transaction_date);
@@ -128,6 +134,13 @@ const SCHEMA_SQL = `
     ON card_transactions(card_company);
   CREATE INDEX IF NOT EXISTS idx_transactions_date_company
     ON card_transactions(transaction_date, card_company);
+  CREATE TABLE IF NOT EXISTS tag_definitions (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    color TEXT NOT NULL DEFAULT '#06B6D4',
+    usage_count INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `;
 
 const MIGRATION_SQL = `

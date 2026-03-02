@@ -10,6 +10,7 @@ import { getTransactions } from '@/lib/transactions';
 import { formatDateRelative, formatCurrency } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { CategoryBudgetProgress } from '@/components/dashboard/CategoryBudgetProgress';
+import { CategoryHealthBadge } from '@/components/dashboard/CategoryHealthBadge';
 import { SubscriptionWidget } from '@/components/dashboard/SubscriptionWidget';
 import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -303,6 +304,11 @@ export default function DashboardPage() {
             </>
           )}
         </div>
+      </div>
+
+      {/* ===== CategoryHealthBadge (SmartClassify) ===== */}
+      <div className="mb-4 fade-in">
+        <CategoryHealthBadge />
       </div>
 
       {/* ===== Category Budget Progress (F-001b) ===== */}
