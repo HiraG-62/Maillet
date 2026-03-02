@@ -2,6 +2,13 @@ export interface CategoryRule {
   id: string;
   keyword: string;
   category: string;
+  // SmartClassify extension fields (existing rules treat undefined as 'user')
+  merchantPattern?: string;
+  confidence?: number;
+  source?: 'user' | 'ai' | 'system';
+  userConfirmed?: boolean;
+  appliedCount?: number;
+  createdAt?: string;
 }
 
 export interface AppSettings {
