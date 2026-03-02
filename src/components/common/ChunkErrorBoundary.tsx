@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { useRouteError } from 'react-router';
 
 interface Props {
   children: ReactNode;
@@ -93,5 +94,53 @@ function isChunkLoadError(error: Error): boolean {
     msg.includes('Importing a module script failed') ||
     msg.includes('error loading dynamically imported module') ||
     (error.name === 'TypeError' && msg.includes('fetch'))
+  );
+}
+
+// React Router errorElement 用関数コンポーネント（useRouteError ベース）
+export function RouteErrorElement() {
+  const error = useRouteError();
+  const isChunk =
+    error instanceof Error && isChunkLoadError(error);
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        gap: '16px',
+        fontFamily: 'system-ui, sans-serif',
+        color: '#64748b',
+        background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
+      }}
+    >
+      <div style={{ fontSize: '48px' }}>🔄</div>
+      <h2 style={{ margin: 0, color: '#334155' }}>
+        {isChunk ? 'アプリが更新されました' : '予期しないエラーが発生しました'}
+      </h2>
+      <p style={{ margin: 0, textAlign: 'center', maxWidth: '400px' }}>
+        {isChunk
+          ? '新しいバージョンが利用可能です。ページを更新してください。'
+          : 'お手数ですが、ページを更新してお試しください。'}
+      </p>
+      <button
+        onClick={() => window.location.reload()}
+        style={{
+          padding: '12px 24px',
+          borderRadius: '8px',
+          border: 'none',
+          background: 'var(--color-primary, #0d9488)',
+          color: '#fff',
+          fontSize: '16px',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        ページを更新
+      </button>
+    </div>
   );
 }
