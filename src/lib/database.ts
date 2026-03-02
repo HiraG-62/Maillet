@@ -450,7 +450,7 @@ export async function executeDB(
       category: null,
       email_subject: null,
       email_from: null,
-      gmail_message_id: null,
+      gmail_message_id: undefined,
       is_verified: 0,
       created_at: new Date().toISOString(),
       memo: '',
