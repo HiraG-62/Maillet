@@ -70,13 +70,10 @@ describe('matchMerchant', () => {
     expect(matchMerchant('', rule)).toBe(false);
   });
 
-  // TODO: matchMerchant のファジーマッチ統合テスト（現状は完全一致のみ）
-  it('should eventually support fuzzy matching (levenshtein)', () => {
-    // 現在の動作: 完全一致のみ（部分一致は含む）
+  it('supports fuzzy matching (levenshtein) for typos', () => {
+    // fuzzyMatch 統合済み: 1文字違いはマッチする
     const rule: CategoryRule = { id: '1', keyword: 'STARBUCKS', category: '食費' };
-    expect(matchMerchant('STARTBUCKS', rule)).toBe(false); // 1文字違いでもfalse（現在）
-    // 将来: fuzzyMatch 統合後は true になる想定
-    // expect(matchMerchant('STARTBUCKS', rule)).toBe(true);
+    expect(matchMerchant('STARTBUCKS', rule)).toBe(true); // 1文字違いでもtrue（fuzzyMatch統合済み）
   });
 });
 
