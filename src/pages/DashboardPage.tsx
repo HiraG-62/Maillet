@@ -11,7 +11,6 @@ import { formatDateRelative, formatCurrency } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { CategoryBudgetProgress } from '@/components/dashboard/CategoryBudgetProgress';
 import { CategoryHealthBadge } from '@/components/dashboard/CategoryHealthBadge';
-import { MonthlyInsightCard } from '@/components/dashboard/MonthlyInsightCard';
 import { SubscriptionWidget } from '@/components/dashboard/SubscriptionWidget';
 import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -209,9 +208,7 @@ export default function DashboardPage() {
                 );
               })()
             ) : (
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                （前月データなし）
-              </span>
+              null
             )}
           </div>
         )}
@@ -312,17 +309,6 @@ export default function DashboardPage() {
         <CategoryHealthBadge />
       </div>
 
-      {/* ===== Monthly Insight Card (MLT-004) ===== */}
-      <div className="mb-8 slide-up" style={{ animationDelay: '0.02s' }}>
-        <MonthlyInsightCard
-          totalSpending={monthlyStats.total}
-          prevMonthTotal={prevMonthStats.total}
-          hasPrevData={prevMonthStats.hasData}
-          categoryTotals={categoryTotals}
-          categoryBudgets={categoryBudgets}
-          isLoading={isLoading}
-        />
-      </div>
 
       {/* ===== Category Budget Progress (F-001b) ===== */}
       {!isLoading && Object.keys(categoryBudgets).length > 0 && (
