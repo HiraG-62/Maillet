@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LLMProvider } from '@/types/llm';
 import { saveKey, deleteKey, hasKey } from '@/services/llm/key-store';
+import { useSettingsStore } from '@/stores/settings-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -69,6 +70,7 @@ export function ApiKeySection() {
     setLoading(true);
     try {
       await saveKey(selectedProvider, apiKey, userPin);
+      useSettingsStore.getState().updateSettings({ llm_provider: selectedProvider });
       setMessage('✅ APIキーを保存しました');
       setApiKey('');
       setUserPin('');
