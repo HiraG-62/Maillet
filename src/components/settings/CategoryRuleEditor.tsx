@@ -22,6 +22,7 @@ export function CategoryRuleEditor() {
   const { setTransactions } = useTransactionStore();
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isDefaultOpen, setIsDefaultOpen] = useState(false);
   const [isReclassifying, setIsReclassifying] = useState(false);
   const [reclassifyResult, setReclassifyResult] = useState<{
@@ -64,34 +65,45 @@ export function CategoryRuleEditor() {
         ユーザー定義ルールはデフォルトルールより優先されます。
       </p>
 
-      {/* 既存ルール一覧 */}
+      {/* 既存ルール一覧（折りたたみ） */}
       {categoryRules?.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">
           ルールがありません。キーワードとカテゴリを入力して追加してください。
         </p>
       ) : (
-        <div className="space-y-2">
-          {categoryRules?.map((rule) => (
-            <div
-              key={rule.id}
-              className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/80 px-3 py-2"
-            >
-              <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
-                {rule.keyword}
-              </span>
-              <span className="text-[var(--color-text-muted)] text-xs">→</span>
-              <span className="text-sm font-medium text-[var(--color-primary)]">
-                {rule.category}
-              </span>
-              <button
-                onClick={() => removeCategoryRule(rule.id)}
-                className="ml-1 p-1 rounded hover:bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
-                aria-label={`${rule.keyword} ルールを削除`}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+        <div>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            <span>{categoryRules?.length}件のルール</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {isExpanded && (
+            <div className="mt-2 space-y-2">
+              {categoryRules?.map((rule) => (
+                <div
+                  key={rule.id}
+                  className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/80 px-3 py-2"
+                >
+                  <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
+                    {rule.keyword}
+                  </span>
+                  <span className="text-[var(--color-text-muted)] text-xs">→</span>
+                  <span className="text-sm font-medium text-[var(--color-primary)]">
+                    {rule.category}
+                  </span>
+                  <button
+                    onClick={() => removeCategoryRule(rule.id)}
+                    className="ml-1 p-1 rounded hover:bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
+                    aria-label={`${rule.keyword} ルールを削除`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Database, List, Mail, Settings, Sparkles, Sun, Wallet } from 'lucide-react';
+import { Bot, Database, List, Mail, Settings, Sun, Wallet } from 'lucide-react';
 import { SyncPanel } from '@/components/common/SyncPanel';
 import { BudgetSection } from '@/components/settings/BudgetSection';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
@@ -68,16 +68,12 @@ export default function SettingsPage() {
 
       <SectionCard
         icon={<List className="w-4 h-4 text-[var(--color-primary)]" />}
-        label="カテゴリ分類ルール"
+        label="カテゴリ設定"
       >
-        <CategoryRuleEditor />
-      </SectionCard>
-
-      <SectionCard
-        icon={<Sparkles className="w-4 h-4 text-[var(--color-primary)]" />}
-        label="AIカテゴリ整理（SmartClassify）"
-      >
+        {/* 上部: SmartClassify AI実行 */}
         <SmartClassifySection />
+        {/* 下部: ルール一覧（折りたたみ） */}
+        <CategoryRuleEditor />
       </SectionCard>
 
       <SectionCard

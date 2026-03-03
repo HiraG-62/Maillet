@@ -35,6 +35,10 @@ export const CATEGORIES: Record<string, string[]> = {
     '東京電力', '関西電力', '中部電力', '東北電力', '九州電力',
     '東京ガス', '大阪ガス', 'ガス', '水道',
   ],
+  雑費: [
+    '振込手数料', '手数料', 'ATM', 'ATM利用', '年会費',
+    '保険', '税金', '寄付', 'その他', '諸経費',
+  ],
 };
 
 export function classify_transaction(
