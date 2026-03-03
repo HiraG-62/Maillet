@@ -1,6 +1,7 @@
 import type { CardTransaction } from '@/types/transaction';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { formatDateFull } from '@/lib/utils';
+import { TagBadge } from '@/components/transactions/TagBadge';
 import {
   ShoppingBag,
   Plane,
@@ -110,6 +111,16 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
               {getCategoryIcon(transaction.category)}
               {transaction.category}
             </span>
+          )}
+          {(transaction.tags ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-1 justify-end mt-1">
+              {(transaction.tags ?? []).slice(0, 3).map((tag) => (
+                <TagBadge key={tag} tag={tag} />
+              ))}
+              {(transaction.tags ?? []).length > 3 && (
+                <span className="text-[9px] text-[var(--color-text-muted)]">+{(transaction.tags ?? []).length - 3}</span>
+              )}
+            </div>
           )}
         </div>
       </div>

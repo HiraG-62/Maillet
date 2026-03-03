@@ -37,6 +37,7 @@ export default function TransactionsPage() {
   const [selectedCard, setSelectedCard] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -54,6 +55,12 @@ export default function TransactionsPage() {
   const categories = useMemo(() => {
     const cats = [...new Set(transactions?.map(t => t.category).filter(Boolean))] as string[];
     return cats.sort();
+  }, [transactions]);
+
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    transactions.forEach((tx) => (tx.tags ?? []).forEach((t) => tagSet.add(t)));
+    return [...tagSet].sort();
   }, [transactions]);
 
   const filtered = useMemo(() => {
@@ -74,15 +81,20 @@ export default function TransactionsPage() {
       if (selectedCategory) {
         if (tx.category !== selectedCategory) return false;
       }
+      if (selectedTags.length > 0) {
+        const txTags = tx.tags ?? [];
+        if (!selectedTags.every((tag) => txTags.includes(tag))) return false;
+      }
       return true;
     });
-  }, [transactions, selectedMonth, selectedCard, searchQuery, selectedCategory]);
+  }, [transactions, selectedMonth, selectedCard, searchQuery, selectedCategory, selectedTags]);
 
   function handleReset() {
     setSelectedMonth('all');
     setSelectedCard('all');
     setSearchQuery('');
     setSelectedCategory('');
+    setSelectedTags([]);
   }
 
   return (
@@ -112,10 +124,13 @@ export default function TransactionsPage() {
         searchQuery={searchQuery}
         categories={categories}
         selectedCategory={selectedCategory}
+        availableTags={availableTags}
+        selectedTags={selectedTags}
         onMonthChange={setSelectedMonth}
         onCardChange={setSelectedCard}
         onSearchChange={setSearchQuery}
         onCategoryChange={setSelectedCategory}
+        onTagsChange={setSelectedTags}
         onReset={handleReset}
       />
 

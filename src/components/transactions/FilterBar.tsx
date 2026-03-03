@@ -14,10 +14,13 @@ interface FilterBarProps {
   searchQuery: string;
   categories: string[];
   selectedCategory: string;
+  availableTags?: string[];
+  selectedTags?: string[];
   onMonthChange: (month: string) => void;
   onCardChange: (card: string) => void;
   onSearchChange: (query: string) => void;
   onCategoryChange: (category: string) => void;
+  onTagsChange?: (tags: string[]) => void;
   onReset?: () => void;
 }
 
@@ -48,15 +51,18 @@ export function FilterBar({
   searchQuery,
   categories,
   selectedCategory,
+  availableTags = [],
+  selectedTags = [],
   onMonthChange,
   onCardChange,
   onSearchChange,
   onCategoryChange,
+  onTagsChange,
   onReset,
 }: FilterBarProps) {
   const monthOptions = getPast12Months();
   const hasActiveFilter =
-    selectedMonth !== 'all' || selectedCard !== 'all' || searchQuery.trim() !== '' || selectedCategory !== '';
+    selectedMonth !== 'all' || selectedCard !== 'all' || searchQuery.trim() !== '' || selectedCategory !== '' || selectedTags.length > 0;
 
   return (
     <div className="float-card p-3">
@@ -122,6 +128,28 @@ export function FilterBar({
               <SelectItem key={cat} value={cat}>
                 {cat}
               </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Tag selector */}
+        <Select
+          value={selectedTags[0] ?? '__all__'}
+          onValueChange={(v) => onTagsChange?.(v === '__all__' ? [] : [v])}
+        >
+          <SelectTrigger
+            className={`w-full md:w-32 bg-transparent text-[var(--color-text-primary)] transition-colors ${
+              selectedTags.length > 0
+                ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                : 'dark:border-white/10 border-black/10'
+            }`}
+          >
+            <SelectValue placeholder="タグ" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">全タグ</SelectItem>
+            {availableTags.map((tag) => (
+              <SelectItem key={tag} value={tag}>{tag}</SelectItem>
             ))}
           </SelectContent>
         </Select>

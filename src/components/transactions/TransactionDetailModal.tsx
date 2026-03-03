@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { CardTransaction } from '@/types/transaction';
 import { CATEGORIES } from '@/services/category';
-import { updateTransactionCategory, updateTransactionMemo } from '@/lib/transactions';
+import { updateTransactionCategory, updateTransactionMemo, updateTransactionTags, getTransactions } from '@/lib/transactions';
+import { TagBadge } from '@/components/transactions/TagBadge';
 import { saveDB } from '@/lib/database';
 import { formatDateFull, formatCurrency } from '@/lib/utils';
 import {
@@ -29,14 +30,26 @@ export function TransactionDetailModal({
 }: TransactionDetailModalProps) {
   const [category, setCategory] = useState<string>('');
   const [memo, setMemo] = useState<string>('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [allTags, setAllTags] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (transaction) {
       setCategory(transaction.category || '__none__');
       setMemo(transaction.memo ?? '');
+      setTags(transaction.tags ?? []);
     }
   }, [transaction]);
+
+  useEffect(() => {
+    getTransactions().then((txList) => {
+      const tagSet = new Set<string>();
+      txList.forEach((tx) => (tx.tags ?? []).forEach((t) => tagSet.add(t)));
+      setAllTags([...tagSet]);
+    }).catch(() => {});
+  }, []);
 
   async function handleSave() {
     if (!transaction?.id) return;
@@ -45,6 +58,7 @@ export function TransactionDetailModal({
       const categoryToSave = category === '__none__' ? '' : category;
       await updateTransactionCategory(transaction.id, categoryToSave);
       await updateTransactionMemo(transaction.id, memo);
+      await updateTransactionTags(transaction.id, tags);
       await saveDB();
       onSaved();
       onOpenChange(false);
@@ -120,6 +134,41 @@ export function TransactionDetailModal({
               rows={3}
               className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none"
             />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="text-xs text-[var(--color-text-muted)] block mb-1">タグ</label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {tags.map((tag) => (
+                <TagBadge key={tag} tag={tag} onRemove={() => setTags(tags.filter((t) => t !== tag))} />
+              ))}
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                    e.preventDefault();
+                    const newTag = tagInput.trim().replace(/,$/, '');
+                    if (newTag && !tags.includes(newTag)) {
+                      setTags([...tags, newTag]);
+                    }
+                    setTagInput('');
+                  }
+                }}
+                placeholder="タグを入力してEnter..."
+                list="tag-suggestions"
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              />
+              <datalist id="tag-suggestions">
+                {allTags.filter((t) => !tags.includes(t)).map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+            </div>
           </div>
         </div>
 

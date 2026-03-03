@@ -215,6 +215,16 @@ export async function updateTransactionMerchant(
   );
 }
 
+export async function updateTransactionTags(
+  id: number,
+  tags: string[]
+): Promise<void> {
+  await executeDB(
+    'UPDATE card_transactions SET tags = ? WHERE id = ?',
+    [JSON.stringify(tags), id]
+  );
+}
+
 export async function deleteTransaction(id: number): Promise<void> {
   await executeDB('DELETE FROM card_transactions WHERE id = ?', [id]);
 }
