@@ -94,8 +94,22 @@ async function callLLM(
     return data.choices[0]?.message?.content ?? '';
 
   } else {
-    // google: 簡易実装（不完全でもよい）
-    throw new Error('Google プロバイダーは現在 SmartClassify 未対応です。');
+    // google (Gemini)
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      }
+    );
+    if (!resp.ok) throw new Error(`Gemini API error: ${resp.status}`);
+    const data = await resp.json() as {
+      candidates: Array<{ content: { parts: Array<{ text: string }> } }>;
+    };
+    return data.candidates[0]?.content?.parts[0]?.text ?? '';
   }
 }
 
