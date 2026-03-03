@@ -79,36 +79,36 @@ export function CategorySuggestPanel({ proposals, onApprove, onClose }: Category
         {visible.map((proposal, idx) => (
           <div
             key={proposal.merchantName}
-            className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/60 px-3 py-2"
+            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/60 px-3 py-2"
           >
-            {/* チェックボックス */}
-            <input
-              type="checkbox"
-              checked={checked[idx]}
-              onChange={() => handleCheck(idx)}
-              className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
-              aria-label={`${proposal.merchantName} を承認`}
-            />
-
-            {/* 加盟店名 + 件数 + 承認種別 */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-                  {proposal.merchantName}
+            {/* チェックボックス + 加盟店名 + 件数 + 承認種別 */}
+            <div className="flex items-start gap-2 sm:flex-1 sm:min-w-0">
+              <input
+                type="checkbox"
+                checked={checked[idx]}
+                onChange={() => handleCheck(idx)}
+                className="h-4 w-4 mt-0.5 shrink-0 cursor-pointer accent-[var(--color-primary)]"
+                aria-label={`${proposal.merchantName} を承認`}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
+                    {proposal.merchantName}
+                  </p>
+                  {proposal.transactionCount >= 3 ? (
+                    <span className="shrink-0 text-xs text-blue-400">📋 ルール追加</span>
+                  ) : (
+                    <span className="shrink-0 text-xs text-[var(--color-text-muted)]">✓ 取引のみ</span>
+                  )}
+                </div>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  {proposal.transactionCount} 件の取引に適用
                 </p>
-                {proposal.transactionCount >= 3 ? (
-                  <span className="shrink-0 text-xs text-blue-400">📋 ルール追加</span>
-                ) : (
-                  <span className="shrink-0 text-xs text-[var(--color-text-muted)]">✓ 取引のみ</span>
-                )}
               </div>
-              <p className="text-xs text-[var(--color-text-muted)]">
-                {proposal.transactionCount} 件の取引に適用
-              </p>
             </div>
 
             {/* カテゴリドロップダウン */}
-            <div className="w-28 shrink-0">
+            <div className="w-full sm:w-28 sm:shrink-0">
               <Select
                 value={categories[idx]}
                 onValueChange={(v) => handleCategoryChange(idx, v)}
@@ -127,17 +127,19 @@ export function CategorySuggestPanel({ proposals, onApprove, onClose }: Category
             </div>
 
             {/* 確信度バー + テキスト */}
-            <div className="w-24 shrink-0 space-y-1">
-              <Progress
-                value={Math.round(proposal.confidence * 100)}
-                className={`h-1.5 ${confidenceBarColor(proposal.confidence)}`}
-              />
-              <p className={`text-xs text-right ${confidenceColor(proposal.confidence)}`}>
+            <div className="flex items-center gap-2 sm:block sm:w-24 sm:shrink-0 sm:space-y-1">
+              <div className="flex-1">
+                <Progress
+                  value={Math.round(proposal.confidence * 100)}
+                  className={`h-1.5 ${confidenceBarColor(proposal.confidence)}`}
+                />
+              </div>
+              <p className={`text-xs sm:text-right ${confidenceColor(proposal.confidence)}`}>
                 {Math.round(proposal.confidence * 100)}%
               </p>
             </div>
 
-            {/* reasoning */}
+            {/* reasoning: desktop only */}
             <p
               className="hidden sm:block w-28 shrink-0 text-xs text-[var(--color-text-muted)] truncate"
               title={proposal.reasoning}
