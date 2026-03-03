@@ -139,7 +139,8 @@ ${merchantLines}
     "merchantName": "加盟店名そのまま",
     "suggestedCategory": "カテゴリ名",
     "confidence": 0.9,
-    "reasoning": "判断理由（1文）"
+    "reasoning": "判断理由（1文）",
+    "ruleKeyword": "店舗名・支店名・地名を除去した汎用キーワード（例: セブンイレブン新宿店→セブンイレブン）"
   },
   ...
 ]
@@ -148,6 +149,8 @@ ${merchantLines}
 - 日本語の加盟店名（半角カナ、略称、英語混じり）に対応してください
 - confidence は 0.0〜1.0 で判断の確信度を示してください
 - どのカテゴリにも当てはまらない場合は suggestedCategory を "" にしてください
+- ruleKeyword は全国共通でマッチする汎用名にしてください（支店名・地名を除去）
+- ruleKeyword が merchantName と同じ場合はそのまま返してください
 - JSON 以外のテキストは出力しないでください`;
 }
 
@@ -196,6 +199,7 @@ export async function generateCategoryProposals(
       suggestedCategory: string;
       confidence: number;
       reasoning: string;
+      ruleKeyword?: string;
     }>;
     // merchantName を元のリストと照合してtransactionCountを付与
     const countMap = new Map(merchants.map(m => [normalizeMerchant(m.merchant), m.count]));
@@ -207,6 +211,7 @@ export async function generateCategoryProposals(
         suggestedCategory: r.suggestedCategory,
         confidence: Math.max(0, Math.min(1, r.confidence)),
         reasoning: r.reasoning ?? '',
+        ruleKeyword: r.ruleKeyword || r.merchantName,
       }))
       .sort((a, b) => b.confidence - a.confidence); // 確信度降順
   } catch {

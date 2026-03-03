@@ -90,11 +90,18 @@ export function CategorySuggestPanel({ proposals, onApprove, onClose }: Category
               aria-label={`${proposal.merchantName} を承認`}
             />
 
-            {/* 加盟店名 + 件数 */}
+            {/* 加盟店名 + 件数 + 承認種別 */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-                {proposal.merchantName}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                  {proposal.merchantName}
+                </p>
+                {proposal.transactionCount >= 3 ? (
+                  <span className="shrink-0 text-xs text-blue-400">📋 ルール追加</span>
+                ) : (
+                  <span className="shrink-0 text-xs text-[var(--color-text-muted)]">✓ 取引のみ</span>
+                )}
+              </div>
               <p className="text-xs text-[var(--color-text-muted)]">
                 {proposal.transactionCount} 件の取引に適用
               </p>

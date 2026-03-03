@@ -7,6 +7,7 @@ export interface ClassificationProposal {
   suggestedCategory: string;
   confidence: number;        // 0.0〜1.0
   reasoning: string;         // AI判断根拠（UI表示用）
+  ruleKeyword?: string;      // 店舗名除去後の汎用キーワード（AIが生成）
 }
 
 /**
