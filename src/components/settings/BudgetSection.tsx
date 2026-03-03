@@ -161,7 +161,6 @@ export function BudgetSection() {
             />
             <Button
               variant="default"
-              size="sm"
               onClick={handleAddCategoryBudget}
               className="shrink-0 self-start sm:self-center"
             >
