@@ -105,12 +105,19 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
             className={transaction.amount < 0 ? 'dark:text-orange-400 text-orange-600' : undefined}
           />
           {transaction.category && (
-            <span
-              className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${catStyle.bg} ${catStyle.text}`}
-            >
-              {getCategoryIcon(transaction.category)}
-              {transaction.category}
-            </span>
+            <div className="flex items-center gap-1">
+              <span
+                className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${catStyle.bg} ${catStyle.text}`}
+              >
+                {getCategoryIcon(transaction.category)}
+                {transaction.category}
+              </span>
+              {transaction.category_source === 'auto' && (
+                <span className="text-[9px] px-1 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  自動
+                </span>
+              )}
+            </div>
           )}
           {(transaction.tags ?? []).length > 0 && (
             <div className="flex flex-wrap gap-1 justify-end mt-1">

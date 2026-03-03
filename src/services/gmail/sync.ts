@@ -356,6 +356,18 @@ export async function syncGmailTransactions(
       }
     }
 
+    if (result.new_transactions > 0) {
+      try {
+        const { useSettingsStore } = await import('@/stores/settings-store');
+        const settingsRules = useSettingsStore.getState().categoryRules ?? [];
+        const { autoClassifyNewTransactions } = await import('@/services/classification');
+        const classifyResult = await autoClassifyNewTransactions(settingsRules);
+        result.auto_classified = classifyResult.classified;
+      } catch (err) {
+        result.errors.push(`Auto-classify warning: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     onProgress({
       current: result.total_fetched,
       total: result.total_fetched,

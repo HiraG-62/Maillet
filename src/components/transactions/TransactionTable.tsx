@@ -142,9 +142,16 @@ export function TransactionTable({ transactions, onRowClick }: TransactionTableP
                 <TableCell className="text-[var(--color-text-primary)] text-sm font-medium">{tx.merchant}</TableCell>
                 <TableCell>
                   {tx.category ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs dark:bg-white/8 bg-black/[8%] text-[var(--color-text-secondary)] border dark:border-white/10 border-black/10">
-                      {tx.category}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs dark:bg-white/8 bg-black/[8%] text-[var(--color-text-secondary)] border dark:border-white/10 border-black/10">
+                        {tx.category}
+                      </span>
+                      {tx.category_source === 'auto' && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                          自動
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-[var(--color-text-muted)] text-xs">—</span>
                   )}
