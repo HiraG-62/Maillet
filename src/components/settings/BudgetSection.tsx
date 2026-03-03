@@ -163,7 +163,7 @@ export function BudgetSection() {
               variant="default"
               size="sm"
               onClick={handleAddCategoryBudget}
-              className="shrink-0"
+              className="shrink-0 self-start sm:self-center"
             >
               追加
             </Button>
