@@ -76,7 +76,7 @@ export function SyncPanel() {
         <button
           onClick={() => void login()}
           disabled={authLoading || !isGoogleConfigured}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-[var(--color-text-primary)] font-medium text-sm hover:bg-[var(--color-surface)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white dark:bg-white text-gray-900 dark:text-gray-900 border border-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {authLoading ? (
             <RefreshCw size={16} className="animate-spin" />
