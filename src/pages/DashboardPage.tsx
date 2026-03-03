@@ -249,7 +249,7 @@ export default function DashboardPage() {
                   : 'var(--color-danger)';
               return (
                 <>
-                  <div className="flex justify-between items-center mb-1.5">
+                  <div className="flex flex-wrap justify-between items-center mb-1.5 gap-x-2 gap-y-0.5">
                     <span className="text-xs text-[var(--color-text-muted)]">使用枠</span>
                     <span className="text-xs font-medium" style={{ color: barColor }}>
                       {formatCurrency(monthlyStats.total ?? 0)} / {formatCurrency(monthlyBudget)}（{Math.round(ratio * 100)}%）
