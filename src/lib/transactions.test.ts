@@ -170,12 +170,21 @@ describe('getTransactionById', () => {
 describe('updateTransactionCategory', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('カテゴリを更新する', async () => {
+  it('カテゴリを更新する（デフォルトsource=manual）', async () => {
     mockExecuteDB.mockResolvedValueOnce({ lastId: 0, changes: 1 } as never);
     await updateTransactionCategory(1, '食費');
     expect(mockExecuteDB).toHaveBeenCalledWith(
-      'UPDATE card_transactions SET category = ? WHERE id = ?',
-      ['食費', 1]
+      'UPDATE card_transactions SET category = ?, category_source = ? WHERE id = ?',
+      ['食費', 'manual', 1]
+    );
+  });
+
+  it('source=autoでカテゴリを更新する', async () => {
+    mockExecuteDB.mockResolvedValueOnce({ lastId: 0, changes: 1 } as never);
+    await updateTransactionCategory(2, '交通費', 'auto');
+    expect(mockExecuteDB).toHaveBeenCalledWith(
+      'UPDATE card_transactions SET category = ?, category_source = ? WHERE id = ?',
+      ['交通費', 'auto', 2]
     );
   });
 });

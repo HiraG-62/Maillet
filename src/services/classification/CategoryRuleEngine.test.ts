@@ -1,8 +1,18 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest';
-import { matchMerchant, classifyByRules } from './CategoryRuleEngine';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { matchMerchant, classifyByRules, buildLearnedRules, autoClassifyNewTransactions } from './CategoryRuleEngine';
 import { normalizeMerchant } from '@/lib/normalize-merchant';
 import type { CategoryRule } from '@/types/settings';
+
+vi.mock('@/lib/database', () => ({
+  queryDB: vi.fn(),
+  executeDB: vi.fn().mockResolvedValue({ changes: 1 }),
+  saveDB: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/lib/transactions', () => ({
+  updateTransactionCategory: vi.fn().mockResolvedValue(undefined),
+}));
 
 function makeRule(overrides: Partial<CategoryRule> = {}): CategoryRule {
   return { id: '1', keyword: '', category: 'Food', ...overrides };
@@ -133,5 +143,135 @@ describe('classifyByRules', () => {
       makeRule({ id: '1', keyword: 'amazon', category: 'Shopping' }),
     ];
     expect(classifyByRules('', rules)).toBeNull();
+  });
+});
+
+describe('buildLearnedRules', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('generates rules from manual category assignments', async () => {
+    const { queryDB } = await import('@/lib/database');
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      ['AMAZON CO JP', '買い物'],
+      ['AMAZON CO JP', '買い物'],
+      ['STARBUCKS', '食費'],
+    ]);
+
+    const rules = await buildLearnedRules();
+    expect(rules).toHaveLength(2);
+    const amazonRule = rules.find(r => r.category === '買い物');
+    expect(amazonRule).toBeDefined();
+    expect(amazonRule!.source).toBe('system');
+    const sbRule = rules.find(r => r.category === '食費');
+    expect(sbRule).toBeDefined();
+  });
+
+  it('picks the most frequent category per merchant', async () => {
+    const { queryDB } = await import('@/lib/database');
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      ['LAWSON', '食費'],
+      ['LAWSON', 'コンビニ'],
+      ['LAWSON', 'コンビニ'],
+    ]);
+
+    const rules = await buildLearnedRules();
+    expect(rules).toHaveLength(1);
+    expect(rules[0].category).toBe('コンビニ');
+  });
+
+  it('returns empty array when no manual transactions exist', async () => {
+    const { queryDB } = await import('@/lib/database');
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+    const rules = await buildLearnedRules();
+    expect(rules).toEqual([]);
+  });
+
+  it('skips rows with empty merchant', async () => {
+    const { queryDB } = await import('@/lib/database');
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      ['', '食費'],
+      ['AMAZON', '買い物'],
+    ]);
+
+    const rules = await buildLearnedRules();
+    expect(rules).toHaveLength(1);
+    expect(rules[0].category).toBe('買い物');
+  });
+});
+
+describe('autoClassifyNewTransactions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('classifies uncategorized transactions using learned + settings rules', async () => {
+    const { queryDB } = await import('@/lib/database');
+    const { updateTransactionCategory } = await import('@/lib/transactions');
+
+    // First call: buildLearnedRules query
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      ['AMAZON CO JP', '買い物'],
+    ]);
+    // Second call: uncategorized transactions
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      [1, 'AMAZON CO JP'],
+      [2, 'UNKNOWN SHOP'],
+    ]);
+
+    const result = await autoClassifyNewTransactions([]);
+    expect(result.classified).toBe(1);
+    expect(updateTransactionCategory).toHaveBeenCalledWith(1, '買い物', 'auto');
+  });
+
+  it('returns classified:0 when all transactions already have categories', async () => {
+    const { queryDB } = await import('@/lib/database');
+
+    // buildLearnedRules query
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+    // uncategorized query returns empty
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+    const result = await autoClassifyNewTransactions([]);
+    expect(result.classified).toBe(0);
+  });
+
+  it('learned rules take priority over settings rules', async () => {
+    const { queryDB } = await import('@/lib/database');
+    const { updateTransactionCategory } = await import('@/lib/transactions');
+
+    // buildLearnedRules: AMAZON → '買い物' (learned)
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      ['AMAZON', '買い物'],
+    ]);
+    // uncategorized transactions
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      [1, 'AMAZON'],
+    ]);
+
+    const settingsRules: CategoryRule[] = [
+      { id: 's1', keyword: 'amazon', category: 'Shopping' },
+    ];
+
+    const result = await autoClassifyNewTransactions(settingsRules);
+    expect(result.classified).toBe(1);
+    // Learned rule '買い物' should win over settings 'Shopping'
+    expect(updateTransactionCategory).toHaveBeenCalledWith(1, '買い物', 'auto');
+  });
+
+  it('handles no matching rules gracefully', async () => {
+    const { queryDB } = await import('@/lib/database');
+    const { updateTransactionCategory } = await import('@/lib/transactions');
+
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+    (queryDB as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      [1, 'TOTALLY UNKNOWN'],
+    ]);
+
+    const result = await autoClassifyNewTransactions([]);
+    expect(result.classified).toBe(0);
+    expect(updateTransactionCategory).not.toHaveBeenCalled();
   });
 });

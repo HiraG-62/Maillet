@@ -119,7 +119,7 @@ export async function getTransactions(
   const offset = filter.offset ? `OFFSET ${filter.offset}` : '';
 
   const rows = await queryDB<
-    [number, string, number, string, string, string, string | null, string | null, string | null, string | null, number, string, string | null, string | null]
+    [number, string, number, string, string, string, string | null, string | null, string | null, string | null, number, string, string | null, string | null, string | null]
   >(
     `SELECT id, card_company, amount, merchant, transaction_date,
             description, category, email_subject, email_from,
@@ -134,7 +134,7 @@ export async function getTransactions(
   return rows.map(
     ([id, card_company, amount, merchant, transaction_date,
       description, category, email_subject, email_from,
-      gmail_message_id, is_verified, created_at, memo, tags]) => ({
+      gmail_message_id, is_verified, created_at, memo, tags, category_source]) => ({
       id,
       card_company,
       amount,
@@ -142,6 +142,7 @@ export async function getTransactions(
       transaction_date,
       description: description ?? '',
       category: category ?? null,
+      category_source: (category_source as 'manual' | 'auto' | null) ?? null,
       email_subject: email_subject ?? undefined,
       email_from: email_from ?? undefined,
       gmail_message_id: gmail_message_id ?? undefined,
@@ -156,7 +157,7 @@ export async function getTransactions(
 export async function getTransactionById(
   id: number
 ): Promise<CardTransaction | null> {
-  const row = await queryDB<[number, string, number, string, string, string, string | null, string | null, string | null, string | null, number, string, string | null, string | null]>(
+  const row = await queryDB<[number, string, number, string, string, string, string | null, string | null, string | null, string | null, number, string, string | null, string | null, string | null]>(
     `SELECT id, card_company, amount, merchant, transaction_date,
             description, category, email_subject, email_from,
             gmail_message_id, is_verified, created_at, memo, tags
@@ -166,7 +167,7 @@ export async function getTransactionById(
   if (row.length === 0) return null;
   const [rid, card_company, amount, merchant, transaction_date,
          description, category, email_subject, email_from,
-         gmail_message_id, is_verified, created_at, memo, tags] = row[0];
+         gmail_message_id, is_verified, created_at, memo, tags, category_source] = row[0];
   return {
     id: rid,
     card_company,
@@ -175,6 +176,7 @@ export async function getTransactionById(
     transaction_date,
     description: description ?? '',
     category: category ?? null,
+    category_source: (category_source as 'manual' | 'auto' | null) ?? null,
     email_subject: email_subject ?? undefined,
     email_from: email_from ?? undefined,
     gmail_message_id: gmail_message_id ?? undefined,
@@ -187,11 +189,12 @@ export async function getTransactionById(
 
 export async function updateTransactionCategory(
   id: number,
-  category: string
+  category: string,
+  source: 'manual' | 'auto' = 'manual'
 ): Promise<void> {
   await executeDB(
-    'UPDATE card_transactions SET category = ? WHERE id = ?',
-    [category, id]
+    'UPDATE card_transactions SET category = ?, category_source = ? WHERE id = ?',
+    [category, source, id]
   );
 }
 

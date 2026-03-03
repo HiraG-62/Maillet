@@ -6,6 +6,7 @@ export interface CardTransaction {
   transaction_date: string;
   description: string;
   category: string | null;
+  category_source: 'manual' | 'auto' | null;
   email_subject?: string;
   email_from?: string;
   gmail_message_id?: string;

@@ -1,6 +1,7 @@
 import { normalizeMerchant, fuzzyMatch } from '@/lib/normalize-merchant';
 import type { CategoryRule } from '@/types/settings';
 import { queryDB, executeDB, saveDB } from '@/lib/database';
+import { updateTransactionCategory } from '@/lib/transactions';
 
 /**
  * Match a normalized merchant name against a rule.
@@ -94,4 +95,88 @@ export async function retroactiveApply(
     await saveDB();
   }
   return { updated, skipped };
+}
+
+/**
+ * Build classification rules from past manual category assignments.
+ * For each merchant, picks the most frequently assigned category.
+ * Returns rules with source: 'system' to distinguish from user-created rules.
+ */
+export async function buildLearnedRules(): Promise<CategoryRule[]> {
+  const rows = await queryDB<[string, string]>(
+    `SELECT merchant, category FROM card_transactions
+     WHERE category IS NOT NULL AND category != ''
+     AND (category_source = 'manual' OR category_source IS NULL)`,
+    [],
+  );
+
+  // Group by merchant → count categories
+  const merchantCats = new Map<string, Map<string, number>>();
+  for (const [merchant, category] of rows) {
+    if (!merchant) continue;
+    const normalized = normalizeMerchant(merchant);
+    if (!normalized) continue;
+    let cats = merchantCats.get(normalized);
+    if (!cats) {
+      cats = new Map();
+      merchantCats.set(normalized, cats);
+    }
+    cats.set(category, (cats.get(category) ?? 0) + 1);
+  }
+
+  // Pick top category per merchant
+  const rules: CategoryRule[] = [];
+  let idx = 0;
+  for (const [merchant, cats] of merchantCats) {
+    let topCat = '';
+    let topCount = 0;
+    for (const [cat, count] of cats) {
+      if (count > topCount) {
+        topCat = cat;
+        topCount = count;
+      }
+    }
+    if (topCat) {
+      rules.push({
+        id: `learned_${idx++}`,
+        keyword: merchant,
+        category: topCat,
+        source: 'system',
+      });
+    }
+  }
+
+  return rules;
+}
+
+/**
+ * Auto-classify uncategorized transactions using learned + settings rules.
+ * Learned rules take priority (listed first).
+ */
+export async function autoClassifyNewTransactions(
+  settingsRules: CategoryRule[],
+): Promise<{ classified: number }> {
+  const learnedRules = await buildLearnedRules();
+  const combinedRules = [...learnedRules, ...settingsRules];
+
+  const rows = await queryDB<[number, string]>(
+    "SELECT id, merchant FROM card_transactions WHERE category IS NULL OR category = ''",
+    [],
+  );
+
+  let classified = 0;
+  for (const [id, merchant] of rows) {
+    const normalized = normalizeMerchant(merchant ?? '');
+    const category = classifyByRules(normalized, combinedRules);
+    if (category) {
+      await updateTransactionCategory(id, category, 'auto');
+      classified++;
+    }
+  }
+
+  if (classified > 0) {
+    await saveDB();
+  }
+
+  return { classified };
 }
