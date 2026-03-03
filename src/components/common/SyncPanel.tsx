@@ -231,6 +231,12 @@ export function SyncPanel() {
             <span className="text-[var(--color-primary)] text-right font-medium">{result.new_transactions}</span>
             <span>重複スキップ</span>
             <span className="text-[var(--color-text-primary)] text-right">{result.duplicates_skipped}</span>
+            {(result.auto_classified ?? 0) > 0 && (
+              <>
+                <span>自動カテゴリ設定</span>
+                <span className="text-blue-400 text-right font-medium">{result.auto_classified}</span>
+              </>
+            )}
             {result.parse_errors > 0 && (
               <>
                 <span className="text-amber-400">解析エラー</span>

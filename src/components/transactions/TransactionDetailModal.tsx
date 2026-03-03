@@ -110,7 +110,14 @@ export function TransactionDetailModal({
 
           {/* Category (editable) */}
           <div>
-            <label className="text-xs text-[var(--color-text-muted)] block mb-1">カテゴリ</label>
+            <label className="text-xs text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1">
+              カテゴリ
+              {transaction.category_source === 'auto' && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  自動分類済み
+                </span>
+              )}
+            </label>
             <Select value={category || '__none__'} onValueChange={setCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="カテゴリを選択" />
