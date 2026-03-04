@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import type { ClassificationProposal } from '@/types/classification';
 import { CATEGORIES } from '@/services/category';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -24,12 +23,6 @@ function confidenceColor(confidence: number): string {
   if (confidence >= 0.9) return 'text-[var(--color-primary)]';
   if (confidence >= 0.7) return 'text-amber-400';
   return 'text-[var(--color-text-muted)]';
-}
-
-function confidenceBarColor(confidence: number): string {
-  if (confidence >= 0.9) return '';
-  if (confidence >= 0.7) return '[&>div]:bg-amber-400';
-  return '[&>div]:bg-[var(--color-text-muted)]';
 }
 
 export function CategorySuggestPanel({ proposals, onApprove, onClose }: CategorySuggestPanelProps) {
@@ -69,51 +62,44 @@ export function CategorySuggestPanel({ proposals, onApprove, onClose }: Category
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
           AI カテゴリ提案
-          <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
-            ({sorted.length} 件)
+          <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">
+            {sorted.length} 件
           </span>
         </h3>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {visible.map((proposal, idx) => (
           <div
             key={proposal.merchantName}
-            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/60 px-3 py-2"
+            className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/60 px-4 py-3"
           >
-            {/* チェックボックス + 加盟店名 + 件数 + 承認種別 */}
-            <div className="flex items-start gap-2 sm:flex-1 sm:min-w-0">
-              <input
-                type="checkbox"
-                checked={checked[idx]}
-                onChange={() => handleCheck(idx)}
-                className="h-4 w-4 mt-0.5 shrink-0 cursor-pointer accent-[var(--color-primary)]"
-                aria-label={`${proposal.merchantName} を承認`}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
-                    {proposal.merchantName}
-                  </p>
-                  {proposal.transactionCount >= 3 ? (
-                    <span className="shrink-0 text-xs text-blue-400">📋 ルール追加</span>
-                  ) : (
-                    <span className="shrink-0 text-xs text-[var(--color-text-muted)]">✓ 取引のみ</span>
-                  )}
-                </div>
-                <p className="text-xs text-[var(--color-text-muted)]">
-                  {proposal.transactionCount} 件の取引に適用
-                </p>
-              </div>
+            {/* チェックボックス */}
+            <input
+              type="checkbox"
+              checked={checked[idx]}
+              onChange={() => handleCheck(idx)}
+              className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--color-primary)]"
+              aria-label={`${proposal.merchantName} を承認`}
+            />
+
+            {/* 加盟店名 + 件数 */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+                {proposal.merchantName}
+              </p>
+              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                {proposal.transactionCount} 件
+              </p>
             </div>
 
             {/* カテゴリドロップダウン */}
-            <div className="w-full sm:w-28 sm:shrink-0">
+            <div className="w-32 shrink-0">
               <Select
                 value={categories[idx]}
                 onValueChange={(v) => handleCategoryChange(idx, v)}
               >
-                <SelectTrigger className="h-8 text-xs px-2">
+                <SelectTrigger className="h-8 text-xs px-2 text-cyan-400 border-cyan-900/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -126,25 +112,9 @@ export function CategorySuggestPanel({ proposals, onApprove, onClose }: Category
               </Select>
             </div>
 
-            {/* 確信度バー + テキスト */}
-            <div className="flex items-center gap-2 sm:block sm:w-24 sm:shrink-0 sm:space-y-1">
-              <div className="flex-1">
-                <Progress
-                  value={Math.round(proposal.confidence * 100)}
-                  className={`h-1.5 ${confidenceBarColor(proposal.confidence)}`}
-                />
-              </div>
-              <p className={`text-xs sm:text-right ${confidenceColor(proposal.confidence)}`}>
-                {Math.round(proposal.confidence * 100)}%
-              </p>
-            </div>
-
-            {/* reasoning: desktop only */}
-            <p
-              className="hidden sm:block w-28 shrink-0 text-xs text-[var(--color-text-muted)] truncate"
-              title={proposal.reasoning}
-            >
-              {proposal.reasoning}
+            {/* 確信度（数値のみ、バーなし） */}
+            <p className={`text-xs shrink-0 w-8 text-right ${confidenceColor(proposal.confidence)}`}>
+              {Math.round(proposal.confidence * 100)}%
             </p>
           </div>
         ))}
