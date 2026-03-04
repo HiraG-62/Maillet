@@ -2,7 +2,8 @@ import type { GmailMessage, SyncResult, SyncProgress, GmailAuthConfig, SyncDateR
 import { parse_email_debug, detect_card_company } from '@/services/parsers';
 import { initDB, executeDB } from '@/lib/database';
 import { getSyncedMessageIds } from '@/lib/transactions';
-import { refreshToken } from './auth';
+import { getAccessToken, refreshToken } from './auth';
+import { loadRefreshToken, deleteRefreshToken } from './token-store';
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
@@ -30,7 +31,7 @@ async function gmailFetch(
   options: RequestInit = {},
   _retry = false
 ): Promise<Record<string, unknown>> {
-  const token = localStorage.getItem('gmail_access_token');
+  const token = getAccessToken();
   if (!token) throw new Error('Gmail未認証');
 
   const response = await fetch(`${GMAIL_API_BASE}${path}`, {
@@ -44,7 +45,7 @@ async function gmailFetch(
 
   if (response.status === 401) {
     if (!_retry) {
-      const storedRefreshToken = localStorage.getItem('gmail_refresh_token');
+      const storedRefreshToken = await loadRefreshToken();
       if (storedRefreshToken) {
         try {
           await refreshToken(storedRefreshToken, getGmailConfig());
@@ -54,8 +55,8 @@ async function gmailFetch(
         }
       }
     }
-    localStorage.removeItem('gmail_access_token');
-    localStorage.removeItem('gmail_refresh_token');
+    sessionStorage.removeItem('gmail_access_token');
+    await deleteRefreshToken();
     throw new Error('Gmail認証期限切れ。再認証が必要です。');
   }
 

@@ -1,8 +1,13 @@
 import type { GmailAuthConfig, OAuthToken, AuthState } from '@/types/gmail';
+import {
+  saveRefreshToken,
+  loadRefreshToken,
+  deleteRefreshToken,
+  migrateTokensFromLocalStorage,
+} from './token-store';
 
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'gmail_access_token',
-  REFRESH_TOKEN: 'gmail_refresh_token',
   EXPIRES_AT: 'gmail_expires_at',
   TOKEN_TYPE: 'gmail_token_type',
   SCOPE: 'gmail_scope',
@@ -97,7 +102,7 @@ export async function exchangeCodeForToken(
   }
 
   const token = (await response.json()) as OAuthToken;
-  saveToken(token);
+  await saveToken(token);
   sessionStorage.removeItem(STORAGE_KEYS.PKCE_VERIFIER);
   return token;
 }
@@ -130,60 +135,70 @@ export async function refreshToken(
   if (!token.refresh_token) {
     token.refresh_token = refreshTokenStr;
   }
-  saveToken(token);
+  await saveToken(token);
   return token;
 }
 
 /**
- * トークンをローカルストレージに保存する
+ * トークンを保存する
+ * access_token等の短命データ → sessionStorage
+ * refresh_token → IndexedDB暗号化保存
  */
-export function saveToken(token: OAuthToken): void {
-  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token.access_token);
-  localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, String(Date.now() + token.expires_in * 1000));
-  localStorage.setItem(STORAGE_KEYS.TOKEN_TYPE, token.token_type);
-  localStorage.setItem(STORAGE_KEYS.SCOPE, token.scope);
+export async function saveToken(token: OAuthToken): Promise<void> {
+  sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token.access_token);
+  sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, String(Date.now() + token.expires_in * 1000));
+  sessionStorage.setItem(STORAGE_KEYS.TOKEN_TYPE, token.token_type);
+  sessionStorage.setItem(STORAGE_KEYS.SCOPE, token.scope);
   if (token.refresh_token) {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token.refresh_token);
+    await saveRefreshToken(token.refresh_token);
   }
 }
 
 /**
- * ローカルストレージからアクセストークンを取得する
+ * sessionStorageからアクセストークンを取得する
  */
 export function getAccessToken(): string | null {
-  return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  return sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 }
 
 /**
  * トークンが有効かどうかを確認する（存在 + 有効期限）
  */
 export function isTokenValid(): boolean {
-  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  const token = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   if (!token) return false;
-  const expiresAt = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+  const expiresAt = sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
   if (!expiresAt) return false;
   return Date.now() < parseInt(expiresAt, 10);
 }
 
 /**
  * 現在の認証状態を取得する
+ * refresh_tokenはIndexedDBから非同期で読み取る
  */
-export function getAuthState(): AuthState {
+export async function getAuthState(): Promise<AuthState> {
+  await migrateTokensFromLocalStorage();
+
   const accessToken = getAccessToken();
-  const expiresAtStr = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+  const expiresAtStr = sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
   const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : null;
   const authenticated = isTokenValid();
 
   if (!authenticated || !accessToken) {
-    return { isAuthenticated: false, token: null, expiresAt: null };
+    const storedRefresh = await loadRefreshToken();
+    return {
+      isAuthenticated: false,
+      token: storedRefresh ? { access_token: '', expires_in: 0, token_type: 'Bearer', scope: '', refresh_token: storedRefresh } : null,
+      expiresAt: null,
+    };
   }
 
-  const storedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  const storedRefreshToken = await loadRefreshToken();
   const oauthToken: OAuthToken = {
     access_token: accessToken,
     expires_in: expiresAt ? Math.floor((expiresAt - Date.now()) / 1000) : 0,
-    token_type: localStorage.getItem(STORAGE_KEYS.TOKEN_TYPE) ?? 'Bearer',
-    scope: localStorage.getItem(STORAGE_KEYS.SCOPE) ?? '',
+    token_type: sessionStorage.getItem(STORAGE_KEYS.TOKEN_TYPE) ?? 'Bearer',
+    scope: sessionStorage.getItem(STORAGE_KEYS.SCOPE) ?? '',
     ...(storedRefreshToken ? { refresh_token: storedRefreshToken } : {}),
   };
 
@@ -193,13 +208,19 @@ export function getAuthState(): AuthState {
 /**
  * ログアウト（全トークン削除）
  */
-export function logout(): void {
-  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
-  localStorage.removeItem(STORAGE_KEYS.TOKEN_TYPE);
-  localStorage.removeItem(STORAGE_KEYS.SCOPE);
+export async function logout(): Promise<void> {
+  sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  sessionStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+  sessionStorage.removeItem(STORAGE_KEYS.TOKEN_TYPE);
+  sessionStorage.removeItem(STORAGE_KEYS.SCOPE);
   sessionStorage.removeItem(STORAGE_KEYS.PKCE_VERIFIER);
+  // Clean up any remaining localStorage keys from pre-migration
+  localStorage.removeItem('gmail_access_token');
+  localStorage.removeItem('gmail_refresh_token');
+  localStorage.removeItem('gmail_expires_at');
+  localStorage.removeItem('gmail_token_type');
+  localStorage.removeItem('gmail_scope');
+  await deleteRefreshToken();
 }
 
 /**

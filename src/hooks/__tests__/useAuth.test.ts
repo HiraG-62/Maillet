@@ -34,7 +34,8 @@ const authenticatedState: AuthState = {
 describe('useAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(authModule.getAuthState).mockReturnValue(unauthenticatedState);
+    vi.mocked(authModule.getAuthState).mockResolvedValue(unauthenticatedState);
+    vi.mocked(authModule.logout).mockResolvedValue(undefined);
     window.history.replaceState({}, '', '/');
   });
 
@@ -65,7 +66,7 @@ describe('useAuth', () => {
 
   describe('セッションストレージからのトークン復元', () => {
     it('getAuthState() が認証済み状態を返す場合、authState が更新される', async () => {
-      vi.mocked(authModule.getAuthState).mockReturnValue(authenticatedState);
+      vi.mocked(authModule.getAuthState).mockResolvedValue(authenticatedState);
 
       const { result } = renderHook(() => useAuth());
       await act(async () => {});
@@ -76,7 +77,7 @@ describe('useAuth', () => {
     });
 
     it('getAuthState() が未認証を返す場合は token=null', async () => {
-      vi.mocked(authModule.getAuthState).mockReturnValue(unauthenticatedState);
+      vi.mocked(authModule.getAuthState).mockResolvedValue(unauthenticatedState);
 
       const { result } = renderHook(() => useAuth());
       await act(async () => {});
@@ -88,15 +89,15 @@ describe('useAuth', () => {
 
   describe('logout', () => {
     it('logout() を呼ぶと未認証状態になる', async () => {
-      vi.mocked(authModule.getAuthState).mockReturnValue(authenticatedState);
+      vi.mocked(authModule.getAuthState).mockResolvedValue(authenticatedState);
 
       const { result } = renderHook(() => useAuth());
       await act(async () => {});
 
       expect(result.current.authState.isAuthenticated).toBe(true);
 
-      act(() => {
-        result.current.logout();
+      await act(async () => {
+        await result.current.logout();
       });
 
       expect(authModule.logout).toHaveBeenCalled();
@@ -105,7 +106,7 @@ describe('useAuth', () => {
     });
 
     it('logout() で error もクリアされる', async () => {
-      vi.mocked(authModule.getAuthState).mockReturnValue(unauthenticatedState);
+      vi.mocked(authModule.getAuthState).mockResolvedValue(unauthenticatedState);
       vi.mocked(authModule.startGmailAuth).mockRejectedValue(new Error('login failed'));
 
       const { result } = renderHook(() => useAuth());
@@ -116,8 +117,8 @@ describe('useAuth', () => {
       });
       expect(result.current.error).toBe('login failed');
 
-      act(() => {
-        result.current.logout();
+      await act(async () => {
+        await result.current.logout();
       });
       expect(result.current.error).toBeNull();
     });
@@ -126,8 +127,8 @@ describe('useAuth', () => {
       const { result } = renderHook(() => useAuth());
       await act(async () => {});
 
-      act(() => {
-        result.current.logout();
+      await act(async () => {
+        await result.current.logout();
       });
 
       expect(authModule.logout).toHaveBeenCalledOnce();
@@ -138,7 +139,7 @@ describe('useAuth', () => {
     it('URL に ?code= がある場合、handleAuthCallback を呼ぶ', async () => {
       window.history.replaceState({}, '', '/?code=test-auth-code&state=test-state');
       vi.mocked(authModule.handleAuthCallback).mockResolvedValue(null);
-      vi.mocked(authModule.getAuthState).mockReturnValue(authenticatedState);
+      vi.mocked(authModule.getAuthState).mockResolvedValue(authenticatedState);
 
       renderHook(() => useAuth());
       await act(async () => {});

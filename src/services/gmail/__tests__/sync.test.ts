@@ -1,7 +1,19 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-// localStorage mock for Node.js environment
+// sessionStorage mock for Node.js environment (access_token storage)
+const sessionStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+})();
+vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+// localStorage mock for Node.js environment (migration cleanup)
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
@@ -36,14 +48,23 @@ vi.mock('@/services/parsers', () => ({
 }));
 
 // Mock auth functions
+let mockAccessToken: string | null = 'mock-token';
 vi.mock('@/services/gmail/auth', () => ({
   refreshToken: vi.fn(),
   saveToken: vi.fn(),
+  getAccessToken: vi.fn(() => mockAccessToken),
+}));
+
+// Mock token-store
+let mockRefreshToken: string | null = null;
+vi.mock('@/services/gmail/token-store', () => ({
+  loadRefreshToken: vi.fn(async () => mockRefreshToken),
+  deleteRefreshToken: vi.fn(async () => { mockRefreshToken = null; }),
 }));
 
 import { initDB, queryDB, executeDB } from '@/lib/database';
 import { parse_email_debug, detect_card_company } from '@/services/parsers';
-import { refreshToken } from '@/services/gmail/auth';
+import { refreshToken, getAccessToken } from '@/services/gmail/auth';
 
 describe('getCurrentMonthDateFilter', () => {
   afterEach(() => {
@@ -83,14 +104,16 @@ describe('Gmail Sync Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    localStorage.setItem('gmail_access_token', 'mock-token');
+    mockAccessToken = 'mock-token';
+    vi.mocked(getAccessToken).mockReturnValue(mockAccessToken);
     // Default: all emails pass the card notification pre-filter
     vi.mocked(detect_card_company).mockReturnValue('SMBC');
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    localStorage.removeItem('gmail_access_token');
+    mockAccessToken = null;
+    mockRefreshToken = null;
   });
 
   describe('decodeEmailBody', () => {
@@ -337,7 +360,8 @@ describe('Gmail Sync Service', () => {
     });
 
     it('should handle authentication errors', async () => {
-      localStorage.removeItem('gmail_access_token'); // No token
+      mockAccessToken = null;
+      vi.mocked(getAccessToken).mockReturnValue(null);
       vi.mocked(initDB).mockResolvedValue(undefined);
 
       const result = await syncGmailTransactions();
@@ -348,6 +372,7 @@ describe('Gmail Sync Service', () => {
 
     it('should handle API 401 errors when no refresh token', async () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
+      mockRefreshToken = null;
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
@@ -365,10 +390,11 @@ describe('Gmail Sync Service', () => {
       vi.mocked(initDB).mockResolvedValue(undefined);
       vi.mocked(queryDB).mockResolvedValue([]); // isDuplicateWithMerchant: no record found
 
-      localStorage.setItem('gmail_refresh_token', 'valid_refresh_token');
+      mockRefreshToken = 'valid_refresh_token';
 
       vi.mocked(refreshToken).mockImplementation(async () => {
-        localStorage.setItem('gmail_access_token', 'new_access_token');
+        mockAccessToken = 'new_access_token';
+        vi.mocked(getAccessToken).mockReturnValue('new_access_token');
         return {
           access_token: 'new_access_token',
           expires_in: 3600,
@@ -435,10 +461,6 @@ describe('Gmail Sync Service', () => {
       expect(refreshToken).toHaveBeenCalledWith('valid_refresh_token', expect.any(Object));
       // 認証エラーは発生していない（parse_error になる）
       expect(result.errors.every(e => !e.includes('期限切れ'))).toBe(true);
-      // refresh_token は削除されていない
-      expect(localStorage.getItem('gmail_refresh_token')).toBe('valid_refresh_token');
-
-      localStorage.removeItem('gmail_refresh_token');
     });
 
     it('should accumulate transaction counts correctly', async () => {

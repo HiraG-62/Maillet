@@ -30,11 +30,17 @@ interface LKRow {
   updated_at: string;
 }
 
+export interface SecureStoreRow {
+  key: string;
+  value: unknown;
+}
+
 /* ── Dexie database ── */
 
 class MailletDB extends Dexie {
   card_transactions!: Table<CTRow, number>;
   llm_keys!: Table<LKRow, string>;
+  secure_store!: Table<SecureStoreRow, string>;
 
   constructor() {
     super('maillet-dexie');
@@ -54,10 +60,16 @@ class MailletDB extends Dexie {
         }
       });
     });
+    this.version(3).stores({
+      card_transactions:
+        '++id, &gmail_message_id, transaction_date, card_company, category, category_source',
+      llm_keys: 'provider',
+      secure_store: 'key',
+    });
   }
 }
 
-const db = new MailletDB();
+export const db = new MailletDB();
 let initialized = false;
 
 /* ── Helpers ── */
