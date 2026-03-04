@@ -246,6 +246,18 @@ describe('Gmail Sync Service', () => {
           status: 200,
           json: async () => ({ messages: [] }),
         })
+        // listMessages: query 4 (カード利用速報) → empty
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 5 (カードご利用通知) → empty
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
         // getMessageMetadata(msg_001)
         .mockResolvedValueOnce({
           ok: true,
@@ -298,6 +310,18 @@ describe('Gmail Sync Service', () => {
           status: 200,
           json: async () => ({ messages: [] }),
         })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 4 (カード利用速報) → empty
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 5 (カードご利用通知) → empty
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -420,6 +444,16 @@ describe('Gmail Sync Service', () => {
           ok: true, status: 200,
           json: async () => ({ messages: [] }),
         })
+        // listMessages: query 4 (カード利用速報) → empty
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 5 (カードご利用通知) → empty
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
         // getMessageMetadata(msg_001) → success
         .mockResolvedValueOnce({
           ok: true, status: 200,
@@ -483,6 +517,18 @@ describe('Gmail Sync Service', () => {
           status: 200,
           json: async () => ({ messages: [] }),
         })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 4 (カード利用速報) → empty
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 5 (カードご利用通知) → empty
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -588,6 +634,16 @@ describe('Gmail Sync Service', () => {
           ok: true, status: 200,
           json: async () => ({ messages: [] }),
         })
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 4 (カード利用速報) → empty
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 5 (カードご利用通知) → empty
         .mockResolvedValueOnce({
           ok: true, status: 200,
           json: async () => ({ messages: [] }),
