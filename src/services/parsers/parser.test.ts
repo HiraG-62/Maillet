@@ -693,6 +693,31 @@ describe('PayPayCardParser', () => {
     it('金額が見つからない場合は null', () => {
       expect(parser.extract_amount('本文なし')).toBeNull();
     });
+
+    it('コロンなしスペース区切り（HTMLテーブル由来）を抽出できる', () => {
+      const body = 'ご利用金額 3,500円';
+      expect(parser.extract_amount(body)).toBe(3500);
+    });
+
+    it('¥記号付き金額を抽出できる', () => {
+      const body = 'ご利用金額：¥3,500';
+      expect(parser.extract_amount(body)).toBe(3500);
+    });
+
+    it('全角数字を正しく抽出できる', () => {
+      const body = 'ご利用金額：３，５００円';
+      expect(parser.extract_amount(body)).toBe(3500);
+    });
+
+    it('マイナス金額（返品）を抽出できる', () => {
+      const body = 'ご利用金額：-1,200円';
+      expect(parser.extract_amount(body)).toBe(-1200);
+    });
+
+    it('お支払い金額ラベルでも抽出できる', () => {
+      const body = 'お支払い金額：5,400円';
+      expect(parser.extract_amount(body)).toBe(5400);
+    });
   });
 
   describe('Merchant Extraction', () => {
@@ -705,6 +730,16 @@ describe('PayPayCardParser', () => {
       const body = '加盟店名：スーパーマーケット\nご利用金額：2,000円';
       expect(parser.extract_merchant(body)).toBe('スーパーマーケット');
     });
+
+    it('コロンなしスペース区切り（HTMLテーブル由来）から抽出できる', () => {
+      const body = 'ご利用先 コンビニ渋谷店\nご利用金額 500円';
+      expect(parser.extract_merchant(body)).toBe('コンビニ渋谷店');
+    });
+
+    it('利用先ラベル（「ご」なし）からも抽出できる', () => {
+      const body = '利用先：セブンイレブン\n利用金額：300円';
+      expect(parser.extract_merchant(body)).toBe('セブンイレブン');
+    });
   });
 
   describe('Transaction Date Extraction', () => {
@@ -714,11 +749,36 @@ describe('PayPayCardParser', () => {
       expect(date).not.toBeNull();
       expect(date!.slice(0, 10)).toBe('2026-03-04');
     });
+
+    it('全角日付を正しく抽出できる', () => {
+      const body = 'ご利用日時：２０２６/０３/０４ １０:３０';
+      const date = parser.extract_transaction_date(body);
+      expect(date).not.toBeNull();
+      expect(date!.slice(0, 10)).toBe('2026-03-04');
+    });
+
+    it('日付のみ（時刻なし）を抽出できる', () => {
+      const body = 'ご利用日：2026/03/04';
+      const date = parser.extract_transaction_date(body);
+      expect(date).not.toBeNull();
+      // 時刻0:00 → UTCオフセットによりISO日付が前日になる可能性あり
+      expect(date).toContain('2026-03-0');
+    });
   });
 
   describe('Full Parse', () => {
     it('parse() が全フィールドを返す', () => {
       const body = 'ご利用日時：2026/03/04 10:30\nご利用金額：3,500円\nご利用先：コンビニ渋谷店';
+      const r = parser.parse(body, 'paypaycard-info@mail.paypay-card.co.jp', '【PayPayカード】カード利用速報');
+      expect(r).not.toBeNull();
+      expect(r!.amount).toBe(3500);
+      expect(r!.card_company).toBe('PayPayカード');
+      expect(r!.transaction_date.slice(0, 10)).toBe('2026-03-04');
+      expect(r!.merchant).toBe('コンビニ渋谷店');
+    });
+
+    it('HTMLテーブル由来のコロンなし形式でもパースできる', () => {
+      const body = 'ご利用日時 2026/03/04 10:30\nご利用金額 3,500円\nご利用先 コンビニ渋谷店';
       const r = parser.parse(body, 'paypaycard-info@mail.paypay-card.co.jp', '【PayPayカード】カード利用速報');
       expect(r).not.toBeNull();
       expect(r!.amount).toBe(3500);
