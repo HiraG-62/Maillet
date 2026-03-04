@@ -18,15 +18,17 @@ export class PayPayCardParser extends BaseCardParser {
   extract_amount(email_body: string): number | null {
     const normalized = this._normalize(email_body);
 
-    // パターン1: ラベル + コロン（注記あり/なし）
-    // 例: ご利用金額：3,500円 / 金額：¥980 / ご利用金額（税込）：5,400円
+    // パターン1（実メール形式）: ラベルなし単独行「600円」「1,200円」
+    const m0 = normalized.match(/^([-]?[0-9,]+)円$/m);
+    if (m0) return this._validate_amount(parseAmountStr(m0[1]));
+
+    // パターン2: ラベル + コロン（旧形式フォールバック）
     const m1 = normalized.match(
       /(?:ご?利用金額|金額|お支払い金額)[^:：\n]{0,20}[:：]\s*(?:¥\s*)?([-]?[0-9,]+)\s*円?/
     );
     if (m1) return this._validate_amount(parseAmountStr(m1[1]));
 
-    // パターン2: コロンなしスペース区切り（HTMLテーブルのstripHtml後）
-    // 例: ご利用金額 3,500円
+    // パターン3: コロンなしスペース区切り（旧形式フォールバック）
     const m2 = normalized.match(
       /(?:ご?利用金額|金額|お支払い金額)[ \t]{1,5}(?:¥\s*)?([-]?[0-9,]+)\s*円?/
     );
@@ -36,15 +38,24 @@ export class PayPayCardParser extends BaseCardParser {
   }
 
   override extract_merchant(email_body: string): string | null {
-    // パターン1: コロン付き「ご利用先：店名」「加盟店名：店名」「利用先：店名」
+    // パターン1（実メール形式）: 「利用速報」ヘッダ後の最初の非空行が店名
+    const m0 = email_body.match(
+      /(?:利用速報|PayPayカード[^\n]*速報)[^\n]*\n\s*\n([^\n]+)/
+    );
+    if (m0) {
+      const s = m0[1].replace(/[\r\n]/g, '').replace(/\s+/g, ' ').trim();
+      // 日時行や金額行でないことを確認
+      if (s && !/^\d{4}年/.test(s) && !/^\d[\d,]*円$/.test(s)) return s;
+    }
+
+    // パターン2: コロン付き「ご利用先：店名」（旧形式フォールバック）
     const m1 = email_body.match(/(?:ご?利用先|加盟店名?)[:：]\s*(.+?)(?=\n|$)/);
     if (m1) {
       const s = m1[1].replace(/[\r\n]/g, '').replace(/\s+/g, ' ').trim();
       if (s) return s;
     }
 
-    // パターン2: コロンなしスペース区切り（HTMLテーブル由来）
-    // 例: ご利用先 コンビニ渋谷店
+    // パターン3: コロンなしスペース区切り（旧形式フォールバック）
     const m2 = email_body.match(/(?:ご?利用先|加盟店名?)[ \t\u3000]+(.+?)(?=\n|$)/);
     if (m2) {
       const s = m2[1].replace(/[\r\n]/g, '').replace(/\s+/g, ' ').trim();
@@ -57,14 +68,19 @@ export class PayPayCardParser extends BaseCardParser {
   override extract_transaction_date(email_body: string): string | null {
     const normalized = this._normalize(email_body);
 
-    // パターン1: 日付+時刻（コロン付き/スペース区切り）
-    // 例: ご利用日時：2026/03/04 10:30 / 利用日 2026/03/04 10:30
+    // パターン1（実メール形式）: 「2026年3月2日 14:03」
+    const m0 = normalized.match(
+      /(\d{4})年(\d{1,2})月(\d{1,2})日\s+(\d{1,2}):(\d{2})/
+    );
+    if (m0) return toISOLocal(+m0[1], +m0[2], +m0[3], +m0[4], +m0[5]);
+
+    // パターン2: ラベル付き YYYY/MM/DD HH:MM（旧形式フォールバック）
     const m = normalized.match(
       /(?:ご?利用日時?|利用日)[:：\s]\s*(\d{4})\/(\d{2})\/(\d{2})[\s]+(\d{2}):(\d{2})/
     );
     if (m) return toISOLocal(+m[1], +m[2], +m[3], +m[4], +m[5]);
 
-    // パターン2: 日付のみ（時刻なし）
+    // パターン3: ラベル付き日付のみ（旧形式フォールバック）
     const m2 = normalized.match(
       /(?:ご?利用日時?|利用日)[:：\s]\s*(\d{4})\/(\d{2})\/(\d{2})/
     );

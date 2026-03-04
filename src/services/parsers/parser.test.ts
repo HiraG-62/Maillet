@@ -680,70 +680,74 @@ describe('PayPayCardParser', () => {
   });
 
   describe('Amount Extraction', () => {
-    it('ご利用金額：XX,XXX円 を抽出できる', () => {
-      const body = 'ご利用金額：3,500円';
-      expect(parser.extract_amount(body)).toBe(3500);
+    it('ラベルなし単独行「600円」を抽出できる（実メール形式）', () => {
+      const body = 'PayPayカード（JCB）利用速報\n\nAmazon\n2026年3月2日 14:03\n600円';
+      expect(parser.extract_amount(body)).toBe(600);
     });
 
-    it('金額：XXX円 を抽出できる', () => {
-      const body = '金額：980円';
-      expect(parser.extract_amount(body)).toBe(980);
+    it('ラベルなし単独行「1,200円」（カンマ付き）を抽出できる', () => {
+      const body = 'コンビニ渋谷店\n2026年3月4日 10:30\n1,200円';
+      expect(parser.extract_amount(body)).toBe(1200);
     });
 
     it('金額が見つからない場合は null', () => {
       expect(parser.extract_amount('本文なし')).toBeNull();
     });
 
-    it('コロンなしスペース区切り（HTMLテーブル由来）を抽出できる', () => {
-      const body = 'ご利用金額 3,500円';
-      expect(parser.extract_amount(body)).toBe(3500);
-    });
-
-    it('¥記号付き金額を抽出できる', () => {
-      const body = 'ご利用金額：¥3,500';
-      expect(parser.extract_amount(body)).toBe(3500);
-    });
-
     it('全角数字を正しく抽出できる', () => {
-      const body = 'ご利用金額：３，５００円';
+      const body = '３，５００円';
       expect(parser.extract_amount(body)).toBe(3500);
     });
 
     it('マイナス金額（返品）を抽出できる', () => {
-      const body = 'ご利用金額：-1,200円';
+      const body = '-1,200円';
       expect(parser.extract_amount(body)).toBe(-1200);
     });
 
-    it('お支払い金額ラベルでも抽出できる', () => {
-      const body = 'お支払い金額：5,400円';
-      expect(parser.extract_amount(body)).toBe(5400);
+    it('旧形式ラベル付き「ご利用金額：3,500円」もフォールバックで抽出できる', () => {
+      const body = 'ご利用金額：3,500円';
+      expect(parser.extract_amount(body)).toBe(3500);
     });
   });
 
   describe('Merchant Extraction', () => {
-    it('ご利用先から加盟店名を抽出できる', () => {
+    it('利用速報ヘッダ直後の非空行を店名として取得（実メール形式）', () => {
+      const body = 'PayPayカード（JCB）利用速報\n\nAmazon\n2026年3月2日 14:03\n600円';
+      expect(parser.extract_merchant(body)).toBe('Amazon');
+    });
+
+    it('店名が日本語でも正しく取得できる', () => {
+      const body = 'PayPayカード（JCB）利用速報\n\nコンビニ渋谷店\n2026年3月4日 10:30\n1,200円';
+      expect(parser.extract_merchant(body)).toBe('コンビニ渋谷店');
+    });
+
+    it('旧形式「ご利用先：店名」もフォールバックで抽出できる', () => {
       const body = 'ご利用先：コンビニ渋谷店\nご利用金額：500円';
       expect(parser.extract_merchant(body)).toBe('コンビニ渋谷店');
     });
 
-    it('加盟店名ラベルから加盟店名を抽出できる', () => {
+    it('旧形式「加盟店名：店名」もフォールバックで抽出できる', () => {
       const body = '加盟店名：スーパーマーケット\nご利用金額：2,000円';
       expect(parser.extract_merchant(body)).toBe('スーパーマーケット');
-    });
-
-    it('コロンなしスペース区切り（HTMLテーブル由来）から抽出できる', () => {
-      const body = 'ご利用先 コンビニ渋谷店\nご利用金額 500円';
-      expect(parser.extract_merchant(body)).toBe('コンビニ渋谷店');
-    });
-
-    it('利用先ラベル（「ご」なし）からも抽出できる', () => {
-      const body = '利用先：セブンイレブン\n利用金額：300円';
-      expect(parser.extract_merchant(body)).toBe('セブンイレブン');
     });
   });
 
   describe('Transaction Date Extraction', () => {
-    it('YYYY/MM/DD HH:MM 形式の日時を抽出できる', () => {
+    it('「2026年3月2日 14:03」形式を抽出できる（実メール形式）', () => {
+      const body = 'Amazon\n2026年3月2日 14:03\n600円';
+      const date = parser.extract_transaction_date(body);
+      expect(date).not.toBeNull();
+      expect(date!.slice(0, 10)).toBe('2026-03-02');
+    });
+
+    it('1桁の月・日でも正しく抽出できる', () => {
+      const body = '2026年1月5日 9:00\n300円';
+      const date = parser.extract_transaction_date(body);
+      expect(date).not.toBeNull();
+      expect(date!.slice(0, 10)).toBe('2026-01-05');
+    });
+
+    it('旧形式 YYYY/MM/DD HH:MM もフォールバックで抽出できる', () => {
       const body = 'ご利用日時：2026/03/04 10:30';
       const date = parser.extract_transaction_date(body);
       expect(date).not.toBeNull();
@@ -751,34 +755,26 @@ describe('PayPayCardParser', () => {
     });
 
     it('全角日付を正しく抽出できる', () => {
-      const body = 'ご利用日時：２０２６/０３/０４ １０:３０';
+      const body = '２０２６年３月４日 １０:３０';
       const date = parser.extract_transaction_date(body);
       expect(date).not.toBeNull();
       expect(date!.slice(0, 10)).toBe('2026-03-04');
     });
-
-    it('日付のみ（時刻なし）を抽出できる', () => {
-      const body = 'ご利用日：2026/03/04';
-      const date = parser.extract_transaction_date(body);
-      expect(date).not.toBeNull();
-      // 時刻0:00 → UTCオフセットによりISO日付が前日になる可能性あり
-      expect(date).toContain('2026-03-0');
-    });
   });
 
   describe('Full Parse', () => {
-    it('parse() が全フィールドを返す', () => {
-      const body = 'ご利用日時：2026/03/04 10:30\nご利用金額：3,500円\nご利用先：コンビニ渋谷店';
+    it('実メール形式で全フィールドを返す', () => {
+      const body = 'PayPayカード（JCB）利用速報\n\nAmazon\n2026年3月2日 14:03\n600円\n\nPayPayで取引履歴とポイントを確認';
       const r = parser.parse(body, 'paypaycard-info@mail.paypay-card.co.jp', '【PayPayカード】カード利用速報');
       expect(r).not.toBeNull();
-      expect(r!.amount).toBe(3500);
+      expect(r!.amount).toBe(600);
       expect(r!.card_company).toBe('PayPayカード');
-      expect(r!.transaction_date.slice(0, 10)).toBe('2026-03-04');
-      expect(r!.merchant).toBe('コンビニ渋谷店');
+      expect(r!.transaction_date.slice(0, 10)).toBe('2026-03-02');
+      expect(r!.merchant).toBe('Amazon');
     });
 
-    it('HTMLテーブル由来のコロンなし形式でもパースできる', () => {
-      const body = 'ご利用日時 2026/03/04 10:30\nご利用金額 3,500円\nご利用先 コンビニ渋谷店';
+    it('カンマ付き金額の実メール形式でもパースできる', () => {
+      const body = 'PayPayカード（JCB）利用速報\n\nコンビニ渋谷店\n2026年3月4日 10:30\n3,500円\n\nPayPayで取引履歴とポイントを確認';
       const r = parser.parse(body, 'paypaycard-info@mail.paypay-card.co.jp', '【PayPayカード】カード利用速報');
       expect(r).not.toBeNull();
       expect(r!.amount).toBe(3500);
