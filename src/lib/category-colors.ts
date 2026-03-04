@@ -9,6 +9,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   '通信費': '#9966FF',     // 紫系
   '医療': '#FF6699',       // ピンク系
   'ショッピング': '#45B7D1', // 水色系
+  'おしゃれ': '#66BB6A',   // 緑系
   'その他': '#C9CBCF',     // グレー系
 };
 
