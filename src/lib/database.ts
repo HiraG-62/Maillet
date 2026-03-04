@@ -261,6 +261,17 @@ async function queryCardTx<T>(s: string, params: unknown[]): Promise<T[]> {
     return r ? [[r.id]] as unknown as T[] : [];
   }
 
+  /* ── SELECT id FROM ... WHERE merchant = ? ── */
+  if (s.includes('SELECT id FROM') && s.includes('WHERE merchant')) {
+    const merchantParam = params[0] as string;
+    let all = await db.card_transactions.toArray();
+    all = all.filter((t) => t.merchant === merchantParam);
+    if (s.includes('category IS NULL') || s.includes("category = ''")) {
+      all = all.filter((t) => t.category == null || t.category === '');
+    }
+    return all.map((t) => [t.id]) as unknown as T[];
+  }
+
   /* ── SELECT merchant, category (for learned rules) ── */
   if (s.includes('SELECT merchant, category')) {
     let all = await db.card_transactions.toArray();
