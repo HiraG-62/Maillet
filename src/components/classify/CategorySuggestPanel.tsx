@@ -69,55 +69,59 @@ export function CategorySuggestPanel({ proposals, onApprove, onClose }: Category
       </div>
 
       <div className="space-y-3">
-        {visible.map((proposal, idx) => (
-          <div
-            key={proposal.merchantName}
-            className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/60 px-4 py-3"
-          >
-            {/* チェックボックス */}
-            <input
-              type="checkbox"
-              checked={checked[idx]}
-              onChange={() => handleCheck(idx)}
-              className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--color-primary)]"
-              aria-label={`${proposal.merchantName} を承認`}
-            />
+        {visible.map((proposal, idx) => {
+          const nameClass = proposal.merchantName.length > 12 ? 'text-xs' : 'text-sm';
+          return (
+            <div
+              key={proposal.merchantName}
+              className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/60 px-4 py-3"
+            >
+              {/* チェックボックス */}
+              <input
+                type="checkbox"
+                checked={checked[idx]}
+                onChange={() => handleCheck(idx)}
+                className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--color-primary)]"
+                aria-label={`${proposal.merchantName} を承認`}
+              />
 
-            {/* 加盟店名 + 件数 */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-text-primary)] break-words">
-                {proposal.merchantName}
-              </p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                {proposal.transactionCount} 件
-              </p>
+              {/* 2段コンテンツエリア */}
+              <div className="flex-1 min-w-0">
+                {/* 上段: 店舗名（1行・フォントスケール） */}
+                <p className={`w-full font-medium whitespace-nowrap overflow-hidden ${nameClass} text-[var(--color-text-primary)]`}>
+                  {proposal.merchantName}
+                </p>
+
+                {/* 下段: カテゴリ + 件数 + マッチ度 */}
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-32 shrink-0">
+                    <Select
+                      value={categories[idx]}
+                      onValueChange={(v) => handleCategoryChange(idx, v)}
+                    >
+                      <SelectTrigger className="h-8 text-xs px-2 text-cyan-400 border-cyan-900/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_KEYS.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    {proposal.transactionCount} 件
+                  </p>
+                  <p className={`text-xs ${confidenceColor(proposal.confidence)}`}>
+                    {Math.round(proposal.confidence * 100)}%
+                  </p>
+                </div>
+              </div>
             </div>
-
-            {/* カテゴリドロップダウン */}
-            <div className="w-32 shrink-0">
-              <Select
-                value={categories[idx]}
-                onValueChange={(v) => handleCategoryChange(idx, v)}
-              >
-                <SelectTrigger className="h-8 text-xs px-2 text-cyan-400 border-cyan-900/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORY_KEYS.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 確信度（数値のみ、バーなし） */}
-            <p className={`text-xs shrink-0 w-8 text-right ${confidenceColor(proposal.confidence)}`}>
-              {Math.round(proposal.confidence * 100)}%
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {hasMore && (
