@@ -85,7 +85,7 @@ export function CategorySuggestPanel({ proposals, onApprove, onClose }: Category
 
             {/* 加盟店名 + 件数 */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+              <p className="text-sm font-semibold text-[var(--color-text-primary)] break-words">
                 {proposal.merchantName}
               </p>
               <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
