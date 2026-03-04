@@ -23,6 +23,7 @@ const CARD_EMAIL_QUERIES = [
   'subject:ご利用代金明細',
   'subject:カード利用速報',      // PayPayカード「【PayPayカード】カード利用速報」・dカード対応
   'subject:カードご利用通知',    // JCB「カードご利用通知」対応
+  'from:paypaycard-info@mail.paypay-card.co.jp',  // PayPayカード送信元アドレス（件名ベースでヒットしない場合の補完）
 ];
 
 /**

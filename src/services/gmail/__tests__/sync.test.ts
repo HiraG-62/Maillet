@@ -258,6 +258,12 @@ describe('Gmail Sync Service', () => {
           status: 200,
           json: async () => ({ messages: [] }),
         })
+        // listMessages: query 6 (from:paypaycard-info) → empty
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
         // getMessageMetadata(msg_001)
         .mockResolvedValueOnce({
           ok: true,
@@ -322,6 +328,12 @@ describe('Gmail Sync Service', () => {
           json: async () => ({ messages: [] }),
         })
         // listMessages: query 5 (カードご利用通知) → empty
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 6 (from:paypaycard-info) → empty
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -534,6 +546,12 @@ describe('Gmail Sync Service', () => {
           status: 200,
           json: async () => ({ messages: [] }),
         })
+        // listMessages: query 6 (from:paypaycard-info) → empty
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
+        })
         // getMessageMetadata(msg_001) — parallel batch
         .mockResolvedValueOnce({
           ok: true,
@@ -644,6 +662,11 @@ describe('Gmail Sync Service', () => {
           json: async () => ({ messages: [] }),
         })
         // listMessages: query 5 (カードご利用通知) → empty
+        .mockResolvedValueOnce({
+          ok: true, status: 200,
+          json: async () => ({ messages: [] }),
+        })
+        // listMessages: query 6 (from:paypaycard-info) → empty
         .mockResolvedValueOnce({
           ok: true, status: 200,
           json: async () => ({ messages: [] }),
