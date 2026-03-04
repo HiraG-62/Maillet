@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { HelpTooltip } from '@/components/ui/HelpTooltip';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { applyCategoriesToDB, CATEGORIES } from '@/services/category';
@@ -61,9 +62,10 @@ export function CategoryRuleEditor() {
   return (
     <div className="space-y-4">
       {/* 拡張3: ユーザールール優先の説明 */}
-      <p className="text-xs text-[var(--color-text-muted)]">
-        ユーザー定義ルールはデフォルトルールより優先されます。
-      </p>
+      <div className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
+        <span>カスタムルール</span>
+        <HelpTooltip content="ユーザー定義ルールはデフォルトルールより優先されます。" />
+      </div>
 
       {/* 既存ルール一覧（折りたたみ） */}
       {categoryRules?.length === 0 ? (
@@ -148,7 +150,7 @@ export function CategoryRuleEditor() {
 
       {/* 拡張4: 再分類ボタン */}
       <div className="pt-2 border-t border-[var(--color-border)]">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
             onClick={handleReclassify}
             variant="outline"
@@ -157,15 +159,13 @@ export function CategoryRuleEditor() {
           >
             {isReclassifying ? '再分類中...' : '全取引を再分類'}
           </Button>
+          <HelpTooltip content="未分類の取引にカテゴリを自動付与します（既分類は変更しません）。" />
           {reclassifyResult && (
             <span className="text-xs text-[var(--color-text-muted)]">
               {reclassifyResult.updated} 件更新、{reclassifyResult.skipped} 件スキップ
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-          未分類の取引にカテゴリを自動付与します（既分類は変更しません）。
-        </p>
       </div>
 
       {/* 拡張2: デフォルトルール一覧（折りたたみ） */}
