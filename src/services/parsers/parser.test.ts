@@ -7,6 +7,9 @@ import { JCBParser } from './jcb';
 import { RakutenParser } from './rakuten';
 import { AMEXParser } from './amex';
 import { DCardParser } from './dcard';
+import { PayPayCardParser } from './paypay';
+import { AuPayCardParser } from './aupay';
+import { EposCardParser } from './epos';
 import { parse_email, detect_card_company, is_trusted_domain } from './index';
 
 // ────────────────────────────────────────────────
@@ -650,5 +653,204 @@ describe('汎用店舗名抽出テスト (T-PARSE-160〜161)', () => {
   it('T-PARSE-161: 店舗名抽出失敗ケース', () => {
     const body = 'カードをご利用いただきました。\n金額: 3,000円';
     expect(parser.extract_merchant(body)).toBeNull();
+  });
+});
+
+describe('PayPayCardParser', () => {
+  const parser = new PayPayCardParser();
+
+  describe('Domain Validation', () => {
+    it('mail.paypay-card.co.jp を信頼できるドメインとして認識する', () => {
+      expect(parser.is_trusted_domain('paypaycard-info@mail.paypay-card.co.jp')).toBe(true);
+    });
+
+    it('偽装ドメインはフィッシング扱い', () => {
+      expect(parser.is_trusted_domain('phishing@fake-paypay.com')).toBe(false);
+    });
+  });
+
+  describe('Subject Detection', () => {
+    it('【PayPayカード】カード利用速報 でパース判定できる', () => {
+      expect(parser.can_parse('paypaycard-info@mail.paypay-card.co.jp', '【PayPayカード】カード利用速報')).toBe(true);
+    });
+
+    it('無関係の件名はパースしない', () => {
+      expect(parser.can_parse('paypaycard-info@mail.paypay-card.co.jp', '無関係の件名')).toBe(false);
+    });
+  });
+
+  describe('Amount Extraction', () => {
+    it('ご利用金額：XX,XXX円 を抽出できる', () => {
+      const body = 'ご利用金額：3,500円';
+      expect(parser.extract_amount(body)).toBe(3500);
+    });
+
+    it('金額：XXX円 を抽出できる', () => {
+      const body = '金額：980円';
+      expect(parser.extract_amount(body)).toBe(980);
+    });
+
+    it('金額が見つからない場合は null', () => {
+      expect(parser.extract_amount('本文なし')).toBeNull();
+    });
+  });
+
+  describe('Merchant Extraction', () => {
+    it('ご利用先から加盟店名を抽出できる', () => {
+      const body = 'ご利用先：コンビニ渋谷店\nご利用金額：500円';
+      expect(parser.extract_merchant(body)).toBe('コンビニ渋谷店');
+    });
+
+    it('加盟店名ラベルから加盟店名を抽出できる', () => {
+      const body = '加盟店名：スーパーマーケット\nご利用金額：2,000円';
+      expect(parser.extract_merchant(body)).toBe('スーパーマーケット');
+    });
+  });
+
+  describe('Transaction Date Extraction', () => {
+    it('YYYY/MM/DD HH:MM 形式の日時を抽出できる', () => {
+      const body = 'ご利用日時：2026/03/04 10:30';
+      const date = parser.extract_transaction_date(body);
+      expect(date).not.toBeNull();
+      expect(date!.slice(0, 10)).toBe('2026-03-04');
+    });
+  });
+
+  describe('Full Parse', () => {
+    it('parse() が全フィールドを返す', () => {
+      const body = 'ご利用日時：2026/03/04 10:30\nご利用金額：3,500円\nご利用先：コンビニ渋谷店';
+      const r = parser.parse(body, 'paypaycard-info@mail.paypay-card.co.jp', '【PayPayカード】カード利用速報');
+      expect(r).not.toBeNull();
+      expect(r!.amount).toBe(3500);
+      expect(r!.card_company).toBe('PayPayカード');
+      expect(r!.transaction_date.slice(0, 10)).toBe('2026-03-04');
+      expect(r!.merchant).toBe('コンビニ渋谷店');
+    });
+  });
+});
+
+describe('AuPayCardParser', () => {
+  const parser = new AuPayCardParser();
+
+  describe('Domain Validation', () => {
+    it('system.kddi-fs.com を信頼できるドメインとして認識する', () => {
+      expect(parser.is_trusted_domain('notify@system.kddi-fs.com')).toBe(true);
+    });
+
+    it('email.kddi-fs.com を信頼できるドメインとして認識する', () => {
+      expect(parser.is_trusted_domain('notify@email.kddi-fs.com')).toBe(true);
+    });
+
+    it('偽装ドメインはフィッシング扱い', () => {
+      expect(parser.is_trusted_domain('phishing@fake-kddi.com')).toBe(false);
+    });
+  });
+
+  describe('Subject Detection', () => {
+    it('【ご利用速報】au PAY カード でパース判定できる', () => {
+      expect(parser.can_parse('notify@system.kddi-fs.com', '【ご利用速報】au PAY カード')).toBe(true);
+    });
+
+    it('【ご利用詳細】au PAY カード でパース判定できる', () => {
+      expect(parser.can_parse('notify@system.kddi-fs.com', '【ご利用詳細】au PAY カード')).toBe(true);
+    });
+  });
+
+  describe('Amount Extraction', () => {
+    it('ご利用金額：XX,XXX円 を抽出できる', () => {
+      const body = 'ご利用金額：5,000円';
+      expect(parser.extract_amount(body)).toBe(5000);
+    });
+
+    it('金額が見つからない場合は null', () => {
+      expect(parser.extract_amount('本文なし')).toBeNull();
+    });
+  });
+
+  describe('Merchant Extraction', () => {
+    it('ご利用内容から加盟店名を抽出できる', () => {
+      const body = 'ご利用内容：イオンモール\nご利用金額：5,000円';
+      expect(parser.extract_merchant(body)).toBe('イオンモール');
+    });
+  });
+
+  describe('Transaction Date Extraction', () => {
+    it('YYYY/MM/DD HH:MM 形式の日時を抽出できる', () => {
+      const body = 'ご利用日時：2026/03/04 15:00';
+      const date = parser.extract_transaction_date(body);
+      expect(date).not.toBeNull();
+      expect(date!.slice(0, 10)).toBe('2026-03-04');
+    });
+  });
+
+  describe('Full Parse', () => {
+    it('parse() が全フィールドを返す', () => {
+      const body = 'ご利用日時：2026/03/04 15:00\nご利用金額：5,000円\nご利用内容：イオンモール';
+      const r = parser.parse(body, 'notify@system.kddi-fs.com', '【ご利用速報】au PAY カード');
+      expect(r).not.toBeNull();
+      expect(r!.amount).toBe(5000);
+      expect(r!.card_company).toBe('au PAYカード');
+      expect(r!.transaction_date.slice(0, 10)).toBe('2026-03-04');
+      expect(r!.merchant).toBe('イオンモール');
+    });
+  });
+});
+
+describe('EposCardParser', () => {
+  const parser = new EposCardParser();
+
+  describe('Domain Validation', () => {
+    it('01epos.jp を信頼できるドメインとして認識する', () => {
+      expect(parser.is_trusted_domain('info@01epos.jp')).toBe(true);
+    });
+
+    it('偽装ドメインはフィッシング扱い', () => {
+      expect(parser.is_trusted_domain('phishing@fake-epos.com')).toBe(false);
+    });
+  });
+
+  describe('Subject Detection', () => {
+    it('エポスカードご利用のお知らせ でパース判定できる', () => {
+      expect(parser.can_parse('info@01epos.jp', 'エポスカードご利用のお知らせ')).toBe(true);
+    });
+
+    it('エポスカード でパース判定できる', () => {
+      expect(parser.can_parse('info@01epos.jp', '【エポスカード】ご利用速報')).toBe(true);
+    });
+
+    it('無関係の件名はパースしない', () => {
+      expect(parser.can_parse('info@01epos.jp', '無関係の件名')).toBe(false);
+    });
+  });
+
+  describe('Amount Extraction', () => {
+    it('ご利用金額：XX,XXX円 を抽出できる', () => {
+      const body = 'ご利用金額：2,800円';
+      expect(parser.extract_amount(body)).toBe(2800);
+    });
+
+    it('金額が見つからない場合は null', () => {
+      expect(parser.extract_amount('本文なし')).toBeNull();
+    });
+  });
+
+  describe('Transaction Date Extraction', () => {
+    it('YYYY/MM/DD HH:MM 形式の日時を抽出できる', () => {
+      const body = 'ご利用日時：2026/03/04 12:00';
+      const date = parser.extract_transaction_date(body);
+      expect(date).not.toBeNull();
+      expect(date!.slice(0, 10)).toBe('2026-03-04');
+    });
+  });
+
+  describe('Full Parse', () => {
+    it('parse() が全フィールドを返す', () => {
+      const body = 'ご利用日時：2026/03/04 12:00\nご利用金額：2,800円\nご利用先：スーパーマーケット';
+      const r = parser.parse(body, 'info@01epos.jp', 'エポスカードご利用のお知らせ');
+      expect(r).not.toBeNull();
+      expect(r!.amount).toBe(2800);
+      expect(r!.card_company).toBe('エポスカード');
+      expect(r!.transaction_date.slice(0, 10)).toBe('2026-03-04');
+    });
   });
 });
