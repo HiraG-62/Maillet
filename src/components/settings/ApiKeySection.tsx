@@ -21,7 +21,10 @@ const PROVIDER_LABELS: Record<LLMProvider, string> = {
 };
 
 export function ApiKeySection() {
-  const [selectedProvider, setSelectedProvider] = useState<LLMProvider>('openai');
+  const storedProvider = useSettingsStore((state) => state.llm_provider);
+  const [selectedProvider, setSelectedProvider] = useState<LLMProvider>(
+    () => storedProvider ?? 'openai'
+  );
   const [apiKey, setApiKey] = useState('');
   const [userPin, setUserPin] = useState('');
   const [keyExists, setKeyExists] = useState(false);
@@ -115,7 +118,14 @@ export function ApiKeySection() {
           <label className="block text-sm text-[var(--color-text-secondary)] mb-2">
             プロバイダー
           </label>
-          <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as LLMProvider)}>
+          <Select
+            value={selectedProvider}
+            onValueChange={(v) => {
+              const provider = v as LLMProvider;
+              setSelectedProvider(provider);
+              useSettingsStore.getState().updateSettings({ llm_provider: provider });
+            }}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
