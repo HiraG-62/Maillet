@@ -250,6 +250,17 @@ async function processMessage(msg: { id: string }): Promise<ProcessResult> {
 
     // Step 3: Full body fetch (only for confirmed card notification emails)
     const body = await getMessageBody(msg.id);
+
+    // PayPayカード デバッグ（MLT-029b — 確認後削除）
+    if (fromAddress.includes('paypay') || subject.includes('PayPay')) {
+      console.log('=== PayPay DEBUG ===');
+      console.log('From:', fromAddress);
+      console.log('Subject:', subject);
+      console.log('Body (first 2000 chars):', body.slice(0, 2000));
+      console.log('Body (2000-4000):', body.slice(2000, 4000));
+      console.log('=== /PayPay DEBUG ===');
+    }
+
     const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
 
     if (!parsed) {
