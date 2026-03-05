@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { useChartColors } from '@/hooks/useChartColors';
 import { getCategoryColor } from '@/lib/category-colors';
+import { formatCurrency } from '@/lib/utils';
 
 interface CategoryDataPoint {
   name: string;
@@ -51,7 +52,7 @@ const CustomTooltip = ({
           {payload[0].name}
         </p>
         <p style={{ color: accentColor, fontWeight: 'bold', fontSize: '14px' }}>
-          ¥{payload[0].value.toLocaleString('ja-JP')}
+          {formatCurrency(payload[0].value)}
         </p>
       </div>
     );
@@ -107,7 +108,7 @@ function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
               <span style={{ color: legendTextColor, fontSize: '11px' }}>{String(entry.value)}</span>
               {item && (
                 <span style={{ color: legendMutedColor, fontSize: '11px' }}>
-                  ¥{item.value.toLocaleString('ja-JP')}
+                  {formatCurrency(item.value)}
                 </span>
               )}
             </li>
@@ -150,7 +151,7 @@ function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
                 const totalStr =
                   total >= 10000
                     ? `¥${(total / 10000).toFixed(1)}万`
-                    : `¥${total.toLocaleString()}`;
+                    : formatCurrency(total);
                 return (
                   <text>
                     <tspan

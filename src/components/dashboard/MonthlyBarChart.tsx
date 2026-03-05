@@ -10,6 +10,7 @@ import {
   Cell,
 } from 'recharts';
 import { useChartColors, hexToRgba } from '@/hooks/useChartColors';
+import { formatCurrency } from '@/lib/utils';
 
 interface MonthlyDataPoint {
   month: string;
@@ -65,7 +66,7 @@ const CustomTooltip = ({
         </p>
         {entry && (
           <p style={{ color: accentColor, fontWeight: 'bold', fontSize: '14px', margin: 0 }}>
-            ¥{entry.value.toLocaleString('ja-JP')}
+            {formatCurrency(entry.value)}
           </p>
         )}
       </div>
