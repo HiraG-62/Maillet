@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, X, Tag, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { Search, X, Tag, ChevronDown, ArrowUpDown, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -76,10 +76,19 @@ export function FilterBar({
   onReset,
 }: FilterBarProps) {
   const [tagMenuOpen, setTagMenuOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const monthOptions = getPast12Months();
   const hasActiveFilter =
     selectedMonth !== 'all' || selectedCard !== 'all' || searchQuery.trim() !== '' || selectedCategory !== '' || selectedTags.length > 0;
+
+  const activeFilterCount = [
+    selectedCard !== 'all',
+    selectedCategory !== '',
+    selectedTags.length > 0,
+    selectedMonth !== 'all',
+    sortKey !== 'date_desc',
+  ].filter(Boolean).length;
 
   function toggleTag(tag: string) {
     if (!onTagsChange) return;
@@ -103,7 +112,46 @@ export function FilterBar({
 
   return (
     <div className="float-card p-3">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+      {/* Top row: Search (always visible) + mobile filter toggle */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)] pointer-events-none" />
+          <Input
+            type="text"
+            placeholder="加盟店・説明で検索..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9 bg-transparent dark:border-white/10 border-black/10 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)]/50 focus:ring-1 focus:ring-[var(--color-primary)]/30"
+          />
+        </div>
+
+        {/* Filter toggle button — mobile only */}
+        <button
+          onClick={() => setIsFilterOpen((v) => !v)}
+          className={`md:hidden flex items-center gap-1.5 px-3 py-2 rounded-md border text-sm transition-colors shrink-0 ${
+            activeFilterCount > 0
+              ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+              : 'dark:border-white/10 border-black/10 bg-transparent text-[var(--color-text-secondary)]'
+          }`}
+          aria-expanded={isFilterOpen}
+          aria-label="フィルタを展開/縮小"
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span>フィルタ</span>
+          {activeFilterCount > 0 && (
+            <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[var(--color-primary)] text-white text-[10px] font-bold leading-none">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Filter controls: collapsible on mobile, always visible on desktop */}
+      <div
+        className={`${
+          isFilterOpen ? 'flex flex-col gap-3 mt-3' : 'hidden'
+        } md:flex md:flex-row md:items-center md:gap-3 md:mt-3`}
+      >
         {/* Month selector */}
         <Select value={selectedMonth || 'all'} onValueChange={onMonthChange}>
           <SelectTrigger
@@ -245,18 +293,6 @@ export function FilterBar({
             ))}
           </SelectContent>
         </Select>
-
-        {/* Free-word search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)] pointer-events-none" />
-          <Input
-            type="text"
-            placeholder="加盟店・説明で検索..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 bg-transparent dark:border-white/10 border-black/10 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)]/50 focus:ring-1 focus:ring-[var(--color-primary)]/30"
-          />
-        </div>
 
         {/* Reset button — visible only when a filter is active */}
         {hasActiveFilter && onReset && (
