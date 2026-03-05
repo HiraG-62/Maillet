@@ -40,6 +40,7 @@ export default function TransactionsPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mobileDisplayCount, setMobileDisplayCount] = useState(50);
 
   const handleTransactionClick = useCallback((tx: CardTransaction) => {
     setSelectedTransaction(tx);
@@ -96,6 +97,11 @@ export default function TransactionsPage() {
       return true;
     });
   }, [transactions, selectedMonth, selectedCard, searchQuery, selectedCategory, selectedTags]);
+
+  // フィルター変更時にモバイル表示件数をリセット
+  useEffect(() => {
+    setMobileDisplayCount(50);
+  }, [selectedMonth, selectedCard, searchQuery, selectedCategory, selectedTags]);
 
   function handleReset() {
     setSelectedMonth('all');
@@ -170,12 +176,23 @@ export default function TransactionsPage() {
                     new Date(b.transaction_date ?? '').getTime() -
                     new Date(a.transaction_date ?? '').getTime()
                 )
+                .slice(0, mobileDisplayCount)
                 .map((tx, idx) => (
                   <div key={tx.id ?? idx} onClick={() => handleTransactionClick(tx)} className="cursor-pointer">
                     <TransactionCard transaction={tx} />
                   </div>
                 ))}
             </div>
+            {filtered.length > mobileDisplayCount && (
+              <div className="p-4 flex justify-center border-t dark:border-white/5 border-black/5">
+                <button
+                  onClick={() => setMobileDisplayCount((c) => c + 50)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 transition-colors"
+                >
+                  もっと見る（残り{filtered.length - mobileDisplayCount}件）
+                </button>
+              </div>
+            )}
           </div>
 
           {/* PC: table */}

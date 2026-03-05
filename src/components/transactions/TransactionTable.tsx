@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { CardTransaction } from '@/types/transaction';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { formatDateFull } from '@/lib/utils';
@@ -52,6 +52,12 @@ const LARGE_AMOUNT_THRESHOLD = 50000;
 export function TransactionTable({ transactions, onRowClick }: TransactionTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [displayCount, setDisplayCount] = useState(50);
+
+  // データ変更時（フィルター変更による props 変化）に表示件数リセット
+  useEffect(() => {
+    setDisplayCount(50);
+  }, [transactions]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -74,6 +80,8 @@ export function TransactionTable({ transactions, onRowClick }: TransactionTableP
     if (sortKey === 'amount') return (a.amount - b.amount) * dir;
     return (new Date(a.transaction_date || '1970-01-01').getTime() - new Date(b.transaction_date || '1970-01-01').getTime()) * dir;
   });
+
+  const displayedRows = sorted.slice(0, displayCount);
 
   return (
     <div className="overflow-hidden">
@@ -110,7 +118,7 @@ export function TransactionTable({ transactions, onRowClick }: TransactionTableP
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sorted.map((tx, idx) => {
+          {displayedRows.map((tx, idx) => {
             const cardStyle = getCardBadgeStyle(tx.card_company);
             const isLarge = Math.abs(tx.amount) >= LARGE_AMOUNT_THRESHOLD;
             return (
@@ -169,6 +177,16 @@ export function TransactionTable({ transactions, onRowClick }: TransactionTableP
           })}
         </TableBody>
       </Table>
+      {sorted.length > displayCount && (
+        <div className="p-4 flex justify-center border-t dark:border-white/5 border-black/5">
+          <button
+            onClick={() => setDisplayCount((c) => c + 50)}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 transition-colors"
+          >
+            もっと見る（残り{sorted.length - displayCount}件）
+          </button>
+        </div>
+      )}
     </div>
   );
 }
