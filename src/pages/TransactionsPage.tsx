@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTransactionStore } from '@/stores/transaction-store';
-import { FilterBar } from '@/components/transactions/FilterBar';
+import { FilterBar, type SortKey } from '@/components/transactions/FilterBar';
 import { TransactionCard } from '@/components/transactions/TransactionCard';
 import { TransactionTable } from '@/components/transactions/TransactionTable';
 import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
@@ -41,6 +41,7 @@ export default function TransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mobileDisplayCount, setMobileDisplayCount] = useState(50);
+  const [sortKey, setSortKey] = useState<SortKey>('date_desc');
 
   const handleTransactionClick = useCallback((tx: CardTransaction) => {
     setSelectedTransaction(tx);
@@ -98,6 +99,26 @@ export default function TransactionsPage() {
     });
   }, [transactions, selectedMonth, selectedCard, searchQuery, selectedCategory, selectedTags]);
 
+  const sortedFiltered = useMemo(() => {
+    const arr = [...filtered];
+    switch (sortKey) {
+      case 'date_asc':
+        arr.sort((a, b) => new Date(a.transaction_date ?? '').getTime() - new Date(b.transaction_date ?? '').getTime());
+        break;
+      case 'amount_desc':
+        arr.sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
+        break;
+      case 'amount_asc':
+        arr.sort((a, b) => (a.amount ?? 0) - (b.amount ?? 0));
+        break;
+      case 'date_desc':
+      default:
+        arr.sort((a, b) => new Date(b.transaction_date ?? '').getTime() - new Date(a.transaction_date ?? '').getTime());
+        break;
+    }
+    return arr;
+  }, [filtered, sortKey]);
+
   // フィルター変更時にモバイル表示件数をリセット
   useEffect(() => {
     setMobileDisplayCount(50);
@@ -109,6 +130,7 @@ export default function TransactionsPage() {
     setSearchQuery('');
     setSelectedCategory('');
     setSelectedTags([]);
+    setSortKey('date_desc');
   }
 
   return (
@@ -122,7 +144,7 @@ export default function TransactionsPage() {
         </span>
         {filtered.length > 0 && (
           <button
-            onClick={() => downloadCsv(filtered, { filename: `transactions_${selectedMonth}.csv` })}
+            onClick={() => downloadCsv(sortedFiltered, { filename: `transactions_${selectedMonth}.csv` })}
             className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 transition-colors"
             title="フィルタ済みデータをCSVエクスポート"
           >
@@ -141,11 +163,13 @@ export default function TransactionsPage() {
         availableCards={availableCards}
         availableTags={availableTags}
         selectedTags={selectedTags}
+        sortKey={sortKey}
         onMonthChange={setSelectedMonth}
         onCardChange={setSelectedCard}
         onSearchChange={setSearchQuery}
         onCategoryChange={setSelectedCategory}
         onTagsChange={setSelectedTags}
+        onSortChange={setSortKey}
         onReset={handleReset}
       />
 
@@ -169,13 +193,7 @@ export default function TransactionsPage() {
           {/* Mobile: card list */}
           <div className="float-card p-0 overflow-hidden md:hidden">
             <div className="flex flex-col divide-y dark:divide-white/5 divide-black/5">
-              {filtered
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(b.transaction_date ?? '').getTime() -
-                    new Date(a.transaction_date ?? '').getTime()
-                )
+              {sortedFiltered
                 .slice(0, mobileDisplayCount)
                 .map((tx, idx) => (
                   <div key={tx.id ?? idx} onClick={() => handleTransactionClick(tx)} className="cursor-pointer">
@@ -197,7 +215,7 @@ export default function TransactionsPage() {
 
           {/* PC: table */}
           <div className="float-card p-0 overflow-hidden hidden md:block">
-            <TransactionTable transactions={filtered} onRowClick={handleTransactionClick} />
+            <TransactionTable transactions={sortedFiltered} onRowClick={handleTransactionClick} />
           </div>
         </>
       )}

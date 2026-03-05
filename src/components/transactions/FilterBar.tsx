@@ -1,4 +1,5 @@
-import { Search, X } from 'lucide-react';
+import { useState } from 'react';
+import { Search, X, Tag, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -7,6 +8,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+export type SortKey = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
 
 interface FilterBarProps {
   selectedMonth: string;
@@ -17,11 +28,13 @@ interface FilterBarProps {
   availableCards?: string[];
   availableTags?: string[];
   selectedTags?: string[];
+  sortKey?: SortKey;
   onMonthChange: (month: string) => void;
   onCardChange: (card: string) => void;
   onSearchChange: (query: string) => void;
   onCategoryChange: (category: string) => void;
   onTagsChange?: (tags: string[]) => void;
+  onSortChange?: (sort: SortKey) => void;
   onReset?: () => void;
 }
 
@@ -37,6 +50,13 @@ function getPast12Months(): Array<{ value: string; label: string }> {
   return months;
 }
 
+const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
+  { value: 'date_desc', label: '日付 (新→古)' },
+  { value: 'date_asc', label: '日付 (古→新)' },
+  { value: 'amount_desc', label: '金額 (高→低)' },
+  { value: 'amount_asc', label: '金額 (低→高)' },
+];
+
 export function FilterBar({
   selectedMonth,
   selectedCard,
@@ -46,16 +66,40 @@ export function FilterBar({
   availableCards = [],
   availableTags = [],
   selectedTags = [],
+  sortKey = 'date_desc',
   onMonthChange,
   onCardChange,
   onSearchChange,
   onCategoryChange,
   onTagsChange,
+  onSortChange,
   onReset,
 }: FilterBarProps) {
+  const [tagMenuOpen, setTagMenuOpen] = useState(false);
+
   const monthOptions = getPast12Months();
   const hasActiveFilter =
     selectedMonth !== 'all' || selectedCard !== 'all' || searchQuery.trim() !== '' || selectedCategory !== '' || selectedTags.length > 0;
+
+  function toggleTag(tag: string) {
+    if (!onTagsChange) return;
+    if (selectedTags.includes(tag)) {
+      onTagsChange(selectedTags.filter((t) => t !== tag));
+    } else {
+      onTagsChange([...selectedTags, tag]);
+    }
+  }
+
+  function clearTags() {
+    onTagsChange?.([]);
+  }
+
+  const tagLabel =
+    selectedTags.length === 0
+      ? 'タグ'
+      : selectedTags.length === 1
+        ? selectedTags[0]
+        : `タグ ${selectedTags.length}件`;
 
   return (
     <div className="float-card p-3">
@@ -128,24 +172,76 @@ export function FilterBar({
           </SelectContent>
         </Select>
 
-        {/* Tag selector */}
-        <Select
-          value={selectedTags[0] ?? '__all__'}
-          onValueChange={(v) => onTagsChange?.(v === '__all__' ? [] : [v])}
-        >
+        {/* Tag MultiSelect via DropdownMenu + Checkbox */}
+        <DropdownMenu open={tagMenuOpen} onOpenChange={setTagMenuOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={`flex items-center justify-between gap-2 w-full md:w-36 px-3 py-2 rounded-md border text-sm transition-colors ${
+                selectedTags.length > 0
+                  ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                  : 'dark:border-white/10 border-black/10 bg-transparent text-[var(--color-text-primary)]'
+              }`}
+            >
+              <span className="flex items-center gap-1.5 truncate">
+                <Tag className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{tagLabel}</span>
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48" align="start">
+            {availableTags.length === 0 ? (
+              <div className="px-2 py-3 text-sm text-[var(--color-text-muted)] text-center">
+                タグなし
+              </div>
+            ) : (
+              <>
+                <DropdownMenuLabel className="flex items-center justify-between">
+                  <span>タグ選択</span>
+                  {selectedTags.length > 0 && (
+                    <button
+                      onClick={(e) => { e.preventDefault(); clearTags(); }}
+                      className="text-xs text-[var(--color-primary)] hover:underline"
+                    >
+                      クリア
+                    </button>
+                  )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {availableTags.map((tag) => (
+                  <DropdownMenuCheckboxItem
+                    key={tag}
+                    checked={selectedTags.includes(tag)}
+                    onCheckedChange={() => toggleTag(tag)}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {tag}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Sort dropdown (mobile + PC common) */}
+        <Select value={sortKey} onValueChange={(v) => onSortChange?.(v as SortKey)}>
           <SelectTrigger
-            className={`w-full md:w-32 bg-transparent text-[var(--color-text-primary)] transition-colors ${
-              selectedTags.length > 0
+            className={`w-full md:w-36 bg-transparent text-[var(--color-text-primary)] transition-colors ${
+              sortKey !== 'date_desc'
                 ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
                 : 'dark:border-white/10 border-black/10'
             }`}
           >
-            <SelectValue placeholder="タグ" />
+            <span className="flex items-center gap-1.5">
+              <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+              <SelectValue />
+            </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">全タグ</SelectItem>
-            {availableTags.map((tag) => (
-              <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+            {SORT_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
