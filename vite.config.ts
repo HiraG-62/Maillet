@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig(({ command }) => ({
-  base: command === 'serve' ? '/' : '/Maillet/',
+  base: command === 'serve' ? '/' : process.env.GITHUB_ACTIONS ? '/Maillet/' : '/',
   plugins: [
     react(),
     tailwindcss(),
