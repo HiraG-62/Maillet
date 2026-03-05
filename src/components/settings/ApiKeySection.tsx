@@ -172,13 +172,18 @@ export function ApiKeySection() {
               onChange={(e) => setApiKey(e.target.value)}
               disabled={loading}
             />
-            <Input
-              type="password"
-              placeholder="PIN（4文字以上）"
-              value={userPin}
-              onChange={(e) => setUserPin(e.target.value)}
-              disabled={loading}
-            />
+            <div>
+              <Input
+                type="password"
+                placeholder="PIN（4文字以上）"
+                value={userPin}
+                onChange={(e) => setUserPin(e.target.value)}
+                disabled={loading}
+              />
+              <p className="mt-1.5 text-xs text-[var(--color-text-muted)] leading-relaxed">
+                PINはAPIキーをAES-256で暗号化するための合言葉です。忘れた場合はAPIキーを再設定してください。
+              </p>
+            </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             {message && <p className="text-[var(--color-success)] text-sm">{message}</p>}
             <div className="flex gap-2">

@@ -45,7 +45,7 @@ export function Layout({ children }: LayoutProps) {
       <Sidebar />
 
       {/* Main content area */}
-      <main className="md:ml-56 min-h-screen pt-14 pb-20 md:pt-0 md:pb-0">
+      <main className="md:ml-14 lg:ml-56 min-h-screen pt-14 pb-20 md:pt-0 md:pb-0">
         {children}
       </main>
 
