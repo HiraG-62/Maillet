@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { useChartColors } from '@/hooks/useChartColors';
 import { getCategoryColor } from '@/lib/category-colors';
+import { formatCurrency } from '@/lib/utils';
 
 interface CategoryDataPoint {
   name: string;
@@ -27,26 +28,31 @@ const CustomTooltip = ({
   active,
   payload,
   accentColor,
+  isDark,
 }: {
   active?: boolean;
   payload?: Array<{ name: string; value: number }>;
   accentColor?: string;
+  isDark?: boolean;
 }) => {
   if (active && payload && payload.length) {
+    const bgColor = isDark ? '#1e293b' : '#ffffff';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    const labelColor = isDark ? '#94a3b8' : '#64748b';
     return (
       <div
         style={{
-          backgroundColor: '#1e293b',
-          border: '1px solid rgba(255,255,255,0.1)',
+          backgroundColor: bgColor,
+          border: `1px solid ${borderColor}`,
           borderRadius: '8px',
           padding: '8px 12px',
         }}
       >
-        <p style={{ color: '#94a3b8', marginBottom: '4px', fontSize: '12px' }}>
+        <p style={{ color: labelColor, marginBottom: '4px', fontSize: '12px' }}>
           {payload[0].name}
         </p>
         <p style={{ color: accentColor, fontWeight: 'bold', fontSize: '14px' }}>
-          ¥{payload[0].value.toLocaleString('ja-JP')}
+          {formatCurrency(payload[0].value)}
         </p>
       </div>
     );
@@ -54,8 +60,9 @@ const CustomTooltip = ({
   return null;
 };
 
-export default function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
+function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
   const { tooltipAccent } = useChartColors();
+  const sortedData = [...data].sort((a, b) => b.value - a.value);
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
@@ -101,7 +108,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
               <span style={{ color: legendTextColor, fontSize: '11px' }}>{String(entry.value)}</span>
               {item && (
                 <span style={{ color: legendMutedColor, fontSize: '11px' }}>
-                  ¥{item.value.toLocaleString('ja-JP')}
+                  {formatCurrency(item.value)}
                 </span>
               )}
             </li>
@@ -115,7 +122,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
         <Pie
-          data={data}
+          data={sortedData}
           dataKey="value"
           nameKey="name"
           cx="50%"
@@ -123,8 +130,10 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
           outerRadius={80}
           innerRadius={44}
           paddingAngle={2}
+          startAngle={90}
+          endAngle={-270}
         >
-          {data.map((entry, index) => (
+          {sortedData.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
               fill={entry.color ?? getCategoryColor(entry.name)}
@@ -142,7 +151,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
                 const totalStr =
                   total >= 10000
                     ? `¥${(total / 10000).toFixed(1)}万`
-                    : `¥${total.toLocaleString()}`;
+                    : formatCurrency(total);
                 return (
                   <text>
                     <tspan
@@ -155,7 +164,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
                     >
                       {totalStr}
                     </tspan>
-                    <tspan x={cx} y={cy + 8} textAnchor="middle" fontSize={10} fill="#94a3b8">
+                    <tspan x={cx} y={cy + 8} textAnchor="middle" fontSize={10} fill={isDark ? '#94a3b8' : '#64748b'}>
                       合計
                     </tspan>
                   </text>
@@ -164,10 +173,12 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
             />
           )}
         </Pie>
-        <Tooltip content={<CustomTooltip accentColor={tooltipAccent} />} />
+        <Tooltip content={<CustomTooltip accentColor={tooltipAccent} isDark={isDark} />} />
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Legend content={renderLegend as any} />
       </PieChart>
     </ResponsiveContainer>
   );
 }
+
+export default memo(CategoryPieChart);

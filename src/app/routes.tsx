@@ -6,6 +6,9 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const TransactionsPage = lazy(() => import('@/pages/TransactionsPage'));
 const SummaryPage = lazy(() => import('@/pages/SummaryPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
+const TermsOfServicePage = lazy(() => import('@/pages/TermsOfServicePage'));
+const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 const Fallback = () => (
   <div className="flex h-screen items-center justify-center text-[var(--color-primary)]">読み込み中...</div>
@@ -16,4 +19,7 @@ export const routes: RouteObject[] = [
   { path: '/transactions', element: <Suspense fallback={<Fallback />}><TransactionsPage /></Suspense>, errorElement: <RouteErrorElement /> },
   { path: '/summary', element: <Suspense fallback={<Fallback />}><SummaryPage /></Suspense>, errorElement: <RouteErrorElement /> },
   { path: '/settings', element: <Suspense fallback={<Fallback />}><SettingsPage /></Suspense>, errorElement: <RouteErrorElement /> },
+  { path: '/terms', element: <Suspense fallback={<Fallback />}><TermsOfServicePage /></Suspense>, errorElement: <RouteErrorElement /> },
+  { path: '/privacy', element: <Suspense fallback={<Fallback />}><PrivacyPolicyPage /></Suspense>, errorElement: <RouteErrorElement /> },
+  { path: '*', element: <Suspense fallback={<Fallback />}><NotFoundPage /></Suspense> },
 ];

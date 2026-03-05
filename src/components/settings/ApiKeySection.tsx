@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LLMProvider } from '@/types/llm';
 import { saveKey, deleteKey, hasKey } from '@/services/llm/key-store';
+import { useSettingsStore } from '@/stores/settings-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,7 +21,10 @@ const PROVIDER_LABELS: Record<LLMProvider, string> = {
 };
 
 export function ApiKeySection() {
-  const [selectedProvider, setSelectedProvider] = useState<LLMProvider>('openai');
+  const storedProvider = useSettingsStore((state) => state.llm_provider);
+  const [selectedProvider, setSelectedProvider] = useState<LLMProvider>(
+    () => storedProvider ?? 'openai'
+  );
   const [apiKey, setApiKey] = useState('');
   const [userPin, setUserPin] = useState('');
   const [keyExists, setKeyExists] = useState(false);
@@ -69,6 +73,7 @@ export function ApiKeySection() {
     setLoading(true);
     try {
       await saveKey(selectedProvider, apiKey, userPin);
+      useSettingsStore.getState().updateSettings({ llm_provider: selectedProvider });
       setMessage('✅ APIキーを保存しました');
       setApiKey('');
       setUserPin('');
@@ -113,7 +118,14 @@ export function ApiKeySection() {
           <label className="block text-sm text-[var(--color-text-secondary)] mb-2">
             プロバイダー
           </label>
-          <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as LLMProvider)}>
+          <Select
+            value={selectedProvider}
+            onValueChange={(v) => {
+              const provider = v as LLMProvider;
+              setSelectedProvider(provider);
+              useSettingsStore.getState().updateSettings({ llm_provider: provider });
+            }}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -160,13 +172,18 @@ export function ApiKeySection() {
               onChange={(e) => setApiKey(e.target.value)}
               disabled={loading}
             />
-            <Input
-              type="password"
-              placeholder="PIN（4文字以上）"
-              value={userPin}
-              onChange={(e) => setUserPin(e.target.value)}
-              disabled={loading}
-            />
+            <div>
+              <Input
+                type="password"
+                placeholder="PIN（4文字以上）"
+                value={userPin}
+                onChange={(e) => setUserPin(e.target.value)}
+                disabled={loading}
+              />
+              <p className="mt-1.5 text-xs text-[var(--color-text-muted)] leading-relaxed">
+                PINはAPIキーをAES-256で暗号化するための合言葉です。忘れた場合はAPIキーを再設定してください。
+              </p>
+            </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             {message && <p className="text-[var(--color-success)] text-sm">{message}</p>}
             <div className="flex gap-2">

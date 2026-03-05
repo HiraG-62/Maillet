@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { HelpTooltip } from '@/components/ui/HelpTooltip';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { applyCategoriesToDB, CATEGORIES } from '@/services/category';
@@ -22,6 +23,7 @@ export function CategoryRuleEditor() {
   const { setTransactions } = useTransactionStore();
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isDefaultOpen, setIsDefaultOpen] = useState(false);
   const [isReclassifying, setIsReclassifying] = useState(false);
   const [reclassifyResult, setReclassifyResult] = useState<{
@@ -60,38 +62,50 @@ export function CategoryRuleEditor() {
   return (
     <div className="space-y-4">
       {/* 拡張3: ユーザールール優先の説明 */}
-      <p className="text-xs text-[var(--color-text-muted)]">
-        ユーザー定義ルールはデフォルトルールより優先されます。
-      </p>
+      <div className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
+        <span>カスタムルール</span>
+        <HelpTooltip content="ユーザー定義ルールはデフォルトルールより優先されます。" />
+      </div>
 
-      {/* 既存ルール一覧 */}
+      {/* 既存ルール一覧（折りたたみ） */}
       {categoryRules?.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">
           ルールがありません。キーワードとカテゴリを入力して追加してください。
         </p>
       ) : (
-        <div className="space-y-2">
-          {categoryRules?.map((rule) => (
-            <div
-              key={rule.id}
-              className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/80 px-3 py-2"
-            >
-              <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
-                {rule.keyword}
-              </span>
-              <span className="text-[var(--color-text-muted)] text-xs">→</span>
-              <span className="text-sm font-medium text-[var(--color-primary)]">
-                {rule.category}
-              </span>
-              <button
-                onClick={() => removeCategoryRule(rule.id)}
-                className="ml-1 p-1 rounded hover:bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
-                aria-label={`${rule.keyword} ルールを削除`}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+        <div>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            <span>{categoryRules?.length}件のルール</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {isExpanded && (
+            <div className="mt-2 space-y-2">
+              {categoryRules?.map((rule) => (
+                <div
+                  key={rule.id}
+                  className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/80 px-3 py-2"
+                >
+                  <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
+                    {rule.keyword}
+                  </span>
+                  <span className="text-[var(--color-text-muted)] text-xs">→</span>
+                  <span className="text-sm font-medium text-[var(--color-primary)]">
+                    {rule.category}
+                  </span>
+                  <button
+                    onClick={() => removeCategoryRule(rule.id)}
+                    className="ml-1 p-1 rounded hover:bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
+                    aria-label={`${rule.keyword} ルールを削除`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -136,7 +150,7 @@ export function CategoryRuleEditor() {
 
       {/* 拡張4: 再分類ボタン */}
       <div className="pt-2 border-t border-[var(--color-border)]">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
             onClick={handleReclassify}
             variant="outline"
@@ -145,15 +159,13 @@ export function CategoryRuleEditor() {
           >
             {isReclassifying ? '再分類中...' : '全取引を再分類'}
           </Button>
+          <HelpTooltip content="未分類の取引にカテゴリを自動付与します（既分類は変更しません）。" />
           {reclassifyResult && (
             <span className="text-xs text-[var(--color-text-muted)]">
               {reclassifyResult.updated} 件更新、{reclassifyResult.skipped} 件スキップ
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-          未分類の取引にカテゴリを自動付与します（既分類は変更しません）。
-        </p>
       </div>
 
       {/* 拡張2: デフォルトルール一覧（折りたたみ） */}

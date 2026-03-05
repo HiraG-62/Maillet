@@ -35,9 +35,9 @@ export function CategoryBudgetProgress({
 
           return (
             <div key={category}>
-              <div className="flex justify-between items-center mb-1.5">
-                <span className="text-sm text-[var(--color-text-primary)]">{category}</span>
-                <span className="text-xs font-medium" style={{ color: barColor }}>
+              <div className="flex justify-between items-center mb-1.5 gap-2">
+                <span className="text-sm text-[var(--color-text-primary)] min-w-0 truncate">{category}</span>
+                <span className="text-xs font-medium shrink-0 text-right" style={{ color: barColor }}>
                   {formatCurrency(spent)} / {formatCurrency(budget)}（{Math.round(ratio * 100)}%）
                 </span>
               </div>

@@ -21,9 +21,11 @@
   border-top: 3px solid var(--card-border-color);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.float-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
+@media (hover: hover) {
+  .float-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+  }
 }
 
 /* 浮遊カード — ボーダーなし（内部コンテナ用） */
@@ -31,6 +33,16 @@
   background: var(--color-surface);
   border-radius: 16px;
   box-shadow: var(--shadow-md);
+}
+
+/* グラスモーフィズムカード — ダッシュボードセクション用 */
+.glass-card {
+  background: var(--color-surface);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* ピル型ナビアクティブ */

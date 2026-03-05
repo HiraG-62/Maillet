@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import type { ClassificationProposal } from '@/types/classification';
 import { CATEGORIES } from '@/services/category';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -24,12 +23,6 @@ function confidenceColor(confidence: number): string {
   if (confidence >= 0.9) return 'text-[var(--color-primary)]';
   if (confidence >= 0.7) return 'text-amber-400';
   return 'text-[var(--color-text-muted)]';
-}
-
-function confidenceBarColor(confidence: number): string {
-  if (confidence >= 0.9) return '';
-  if (confidence >= 0.7) return '[&>div]:bg-amber-400';
-  return '[&>div]:bg-[var(--color-text-muted)]';
 }
 
 export function CategorySuggestPanel({ proposals, onApprove, onClose }: CategorySuggestPanelProps) {
@@ -69,76 +62,66 @@ export function CategorySuggestPanel({ proposals, onApprove, onClose }: Category
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
           AI カテゴリ提案
-          <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
-            ({sorted.length} 件)
+          <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">
+            {sorted.length} 件
           </span>
         </h3>
       </div>
 
-      <div className="space-y-2">
-        {visible.map((proposal, idx) => (
-          <div
-            key={proposal.merchantName}
-            className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/60 px-3 py-2"
-          >
-            {/* チェックボックス */}
-            <input
-              type="checkbox"
-              checked={checked[idx]}
-              onChange={() => handleCheck(idx)}
-              className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
-              aria-label={`${proposal.merchantName} を承認`}
-            />
-
-            {/* 加盟店名 + 件数 */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-                {proposal.merchantName}
-              </p>
-              <p className="text-xs text-[var(--color-text-muted)]">
-                {proposal.transactionCount} 件の取引に適用
-              </p>
-            </div>
-
-            {/* カテゴリドロップダウン */}
-            <div className="w-28 shrink-0">
-              <Select
-                value={categories[idx]}
-                onValueChange={(v) => handleCategoryChange(idx, v)}
-              >
-                <SelectTrigger className="h-8 text-xs px-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORY_KEYS.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 確信度バー + テキスト */}
-            <div className="w-24 shrink-0 space-y-1">
-              <Progress
-                value={Math.round(proposal.confidence * 100)}
-                className={`h-1.5 ${confidenceBarColor(proposal.confidence)}`}
-              />
-              <p className={`text-xs text-right ${confidenceColor(proposal.confidence)}`}>
-                {Math.round(proposal.confidence * 100)}%
-              </p>
-            </div>
-
-            {/* reasoning */}
-            <p
-              className="hidden sm:block w-28 shrink-0 text-xs text-[var(--color-text-muted)] truncate"
-              title={proposal.reasoning}
+      <div className="space-y-3">
+        {visible.map((proposal, idx) => {
+          const nameClass = proposal.merchantName.length > 12 ? 'text-xs' : 'text-sm';
+          return (
+            <div
+              key={proposal.merchantName}
+              className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]/60 px-4 py-3"
             >
-              {proposal.reasoning}
-            </p>
-          </div>
-        ))}
+              {/* チェックボックス */}
+              <input
+                type="checkbox"
+                checked={checked[idx]}
+                onChange={() => handleCheck(idx)}
+                className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--color-primary)]"
+                aria-label={`${proposal.merchantName} を承認`}
+              />
+
+              {/* 2段コンテンツエリア */}
+              <div className="flex-1 min-w-0">
+                {/* 上段: 店舗名（1行・フォントスケール） */}
+                <p className={`w-full font-medium whitespace-nowrap overflow-hidden ${nameClass} text-[var(--color-text-primary)]`}>
+                  {proposal.merchantName}
+                </p>
+
+                {/* 下段: カテゴリ + 件数 + マッチ度 */}
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-32 shrink-0">
+                    <Select
+                      value={categories[idx]}
+                      onValueChange={(v) => handleCategoryChange(idx, v)}
+                    >
+                      <SelectTrigger className="h-8 text-xs px-2 text-cyan-400 border-cyan-900/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_KEYS.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    {proposal.transactionCount} 件
+                  </p>
+                  <p className={`text-xs ${confidenceColor(proposal.confidence)}`}>
+                    {Math.round(proposal.confidence * 100)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {hasMore && (

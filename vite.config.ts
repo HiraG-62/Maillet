@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig(({ command }) => ({
-  base: command === 'serve' ? '/' : '/Maillet/',
+  base: command === 'serve' ? '/' : process.env.GITHUB_ACTIONS ? '/Maillet/' : '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -25,13 +25,25 @@ export default defineConfig(({ command }) => ({
             src: 'icon-192x192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable',
           },
           {
             src: 'icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

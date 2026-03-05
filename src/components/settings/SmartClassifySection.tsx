@@ -12,6 +12,9 @@ import { KeyStoreError } from '@/types/llm';
 import type { ClassificationProposal } from '@/types/classification';
 import { CategorySuggestPanel } from '@/components/classify/CategorySuggestPanel';
 import { RuleConfirmModal } from '@/components/classify/RuleConfirmModal';
+import { queryDB, executeDB, saveDB } from '@/lib/database';
+
+const RULE_THRESHOLD = 3;
 
 type State = 'idle' | 'pin_input' | 'loading' | 'showing_proposals' | 'done' | 'error';
 
@@ -58,20 +61,44 @@ export function SmartClassifySection() {
 
   const handleApprove = async (approvedProposals: ClassificationProposal[]) => {
     const { addCategoryRule } = useSettingsStore.getState();
+    let directUpdated = 0;
+
     for (const p of approvedProposals) {
-      addCategoryRule({
-        keyword: p.merchantName,
-        category: p.suggestedCategory,
-        source: 'ai',
-        confidence: p.confidence,
-        userConfirmed: true,
-        createdAt: new Date().toISOString(),
-      });
+      if (p.transactionCount >= RULE_THRESHOLD) {
+        // 3件以上: ルール追加（ruleKeyword優先）
+        addCategoryRule({
+          keyword: p.ruleKeyword ?? p.merchantName,
+          category: p.suggestedCategory,
+          source: 'ai',
+          confidence: p.confidence,
+          userConfirmed: true,
+          createdAt: new Date().toISOString(),
+        });
+      } else {
+        // 3件未満: 取引データを直接UPDATE（ルール追加なし）
+        const rows = await queryDB<[number]>(
+          "SELECT id FROM card_transactions WHERE merchant = ? AND (category IS NULL OR category = '')",
+          [p.merchantName]
+        );
+        for (const [id] of rows) {
+          await executeDB(
+            'UPDATE card_transactions SET category = ?, category_source = ? WHERE id = ?',
+            [p.suggestedCategory, 'ai', id]
+          );
+          directUpdated++;
+        }
+      }
     }
+
+    // ルール追加分を遡及適用
     const allRules = useSettingsStore.getState().categoryRules;
     const result = await retroactiveApply(allRules);
-    setUpdatedCount(result.updated);
-    setUnclassifiedCount(prev => Math.max(0, prev - result.updated));
+    const totalUpdated = result.updated + directUpdated;
+    if (directUpdated > 0) {
+      await saveDB();
+    }
+    setUpdatedCount(totalUpdated);
+    setUnclassifiedCount(prev => Math.max(0, prev - totalUpdated));
     setState('done');
   };
 

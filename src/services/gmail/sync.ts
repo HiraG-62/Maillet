@@ -2,7 +2,8 @@ import type { GmailMessage, SyncResult, SyncProgress, GmailAuthConfig, SyncDateR
 import { parse_email_debug, detect_card_company } from '@/services/parsers';
 import { initDB, executeDB } from '@/lib/database';
 import { getSyncedMessageIds } from '@/lib/transactions';
-import { refreshToken } from './auth';
+import { getAccessToken, refreshToken } from './auth';
+import { loadRefreshToken, deleteRefreshToken } from './token-store';
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
@@ -20,6 +21,9 @@ const CARD_EMAIL_QUERIES = [
   'subject:ご利用のお知らせ',
   'subject:カードご利用確認',
   'subject:ご利用代金明細',
+  'subject:カード利用速報',      // PayPayカード「【PayPayカード】カード利用速報」・dカード対応
+  'subject:カードご利用通知',    // JCB「カードご利用通知」対応
+  'from:paypaycard-info@mail.paypay-card.co.jp',  // PayPayカード送信元アドレス（件名ベースでヒットしない場合の補完）
 ];
 
 /**
@@ -30,7 +34,7 @@ async function gmailFetch(
   options: RequestInit = {},
   _retry = false
 ): Promise<Record<string, unknown>> {
-  const token = localStorage.getItem('gmail_access_token');
+  const token = getAccessToken();
   if (!token) throw new Error('Gmail未認証');
 
   const response = await fetch(`${GMAIL_API_BASE}${path}`, {
@@ -44,7 +48,7 @@ async function gmailFetch(
 
   if (response.status === 401) {
     if (!_retry) {
-      const storedRefreshToken = localStorage.getItem('gmail_refresh_token');
+      const storedRefreshToken = await loadRefreshToken();
       if (storedRefreshToken) {
         try {
           await refreshToken(storedRefreshToken, getGmailConfig());
@@ -54,8 +58,8 @@ async function gmailFetch(
         }
       }
     }
-    localStorage.removeItem('gmail_access_token');
-    localStorage.removeItem('gmail_refresh_token');
+    sessionStorage.removeItem('gmail_access_token');
+    await deleteRefreshToken();
     throw new Error('Gmail認証期限切れ。再認証が必要です。');
   }
 
@@ -246,6 +250,7 @@ async function processMessage(msg: { id: string }): Promise<ProcessResult> {
 
     // Step 3: Full body fetch (only for confirmed card notification emails)
     const body = await getMessageBody(msg.id);
+
     const { result: parsed, debug: parseDebug } = parse_email_debug(fromAddress, subject, body);
 
     if (!parsed) {
@@ -353,6 +358,18 @@ export async function syncGmailTransactions(
       // Rate limit between batches (1 second per batch of 5)
       if (i + BATCH_SIZE < newMessages.length) {
         await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    if (result.new_transactions > 0) {
+      try {
+        const { useSettingsStore } = await import('@/stores/settings-store');
+        const settingsRules = useSettingsStore.getState().categoryRules ?? [];
+        const { autoClassifyNewTransactions } = await import('@/services/classification');
+        const classifyResult = await autoClassifyNewTransactions(settingsRules);
+        result.auto_classified = classifyResult.classified;
+      } catch (err) {
+        result.errors.push(`Auto-classify warning: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 

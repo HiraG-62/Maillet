@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// sessionStorage mock for Node.js environment (PKCE_VERIFIER のみ使用)
+// sessionStorage mock for Node.js environment
 const sessionStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
@@ -13,7 +13,7 @@ const sessionStorageMock = (() => {
 })();
 vi.stubGlobal('sessionStorage', sessionStorageMock);
 
-// localStorage mock for Node.js environment (token storage)
+// localStorage mock for Node.js environment (migration cleanup)
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
@@ -24,6 +24,15 @@ const localStorageMock = (() => {
   };
 })();
 vi.stubGlobal('localStorage', localStorageMock);
+
+// Mock token-store module (IndexedDB not available in node tests)
+let mockRefreshToken: string | null = null;
+vi.mock('../token-store', () => ({
+  saveRefreshToken: vi.fn(async (token: string) => { mockRefreshToken = token; }),
+  loadRefreshToken: vi.fn(async () => mockRefreshToken),
+  deleteRefreshToken: vi.fn(async () => { mockRefreshToken = null; }),
+  migrateTokensFromLocalStorage: vi.fn(async () => {}),
+}));
 
 import {
   generateCodeVerifier,
@@ -165,27 +174,27 @@ describe('buildAuthUrl', () => {
 // ---- isTokenValid ----
 
 describe('isTokenValid', () => {
-  beforeEach(() => { logout(); sessionStorageMock.clear(); });
-  afterEach(() => { logout(); sessionStorageMock.clear(); });
+  beforeEach(async () => { await logout(); sessionStorageMock.clear(); mockRefreshToken = null; });
+  afterEach(async () => { await logout(); sessionStorageMock.clear(); mockRefreshToken = null; });
 
   it('トークンがない場合は false を返す', () => {
     expect(isTokenValid()).toBe(false);
   });
 
-  it('有効なトークンが保存されている場合は true を返す', () => {
-    saveToken(makeToken());
+  it('有効なトークンが保存されている場合は true を返す', async () => {
+    await saveToken(makeToken());
     expect(isTokenValid()).toBe(true);
   });
 
-  it('有効期限切れのトークンは false を返す', () => {
+  it('有効期限切れのトークンは false を返す', async () => {
     // expires_in: -1 で即期限切れのトークンを保存
-    saveToken(makeToken({ expires_in: -1 }));
+    await saveToken(makeToken({ expires_in: -1 }));
     expect(isTokenValid()).toBe(false);
   });
 
-  it('logout 後は false を返す', () => {
-    saveToken(makeToken());
-    logout();
+  it('logout 後は false を返す', async () => {
+    await saveToken(makeToken());
+    await logout();
     expect(isTokenValid()).toBe(false);
   });
 });
@@ -193,32 +202,32 @@ describe('isTokenValid', () => {
 // ---- saveToken / getAccessToken / logout ----
 
 describe('saveToken / getAccessToken / logout', () => {
-  beforeEach(() => { logout(); sessionStorageMock.clear(); });
-  afterEach(() => { logout(); sessionStorageMock.clear(); });
+  beforeEach(async () => { await logout(); sessionStorageMock.clear(); mockRefreshToken = null; });
+  afterEach(async () => { await logout(); sessionStorageMock.clear(); mockRefreshToken = null; });
 
-  it('saveToken でアクセストークンが保存される', () => {
-    saveToken(makeToken({ access_token: 'my-access-token' }));
+  it('saveToken でアクセストークンが保存される', async () => {
+    await saveToken(makeToken({ access_token: 'my-access-token' }));
     expect(getAccessToken()).toBe('my-access-token');
   });
 
-  it('saveToken でリフレッシュトークンが保存される', () => {
-    saveToken(makeToken({ refresh_token: 'my-refresh-token' }));
-    // getAuthState 経由でリフレッシュトークンが正しく保存されたか確認
-    const state = getAuthState();
+  it('saveToken でリフレッシュトークンが保存される', async () => {
+    await saveToken(makeToken({ refresh_token: 'my-refresh-token' }));
+    const state = await getAuthState();
     expect(state.token?.refresh_token).toBe('my-refresh-token');
   });
 
-  it('refresh_token がない場合は保存しない', () => {
-    saveToken(makeToken());
-    const state = getAuthState();
+  it('refresh_token がない場合は保存しない', async () => {
+    await saveToken(makeToken());
+    const state = await getAuthState();
     expect(state.token?.refresh_token).toBeUndefined();
   });
 
-  it('logout でトークンが削除される', () => {
-    saveToken(makeToken({ refresh_token: 'refresh' }));
-    logout();
+  it('logout でトークンが削除される', async () => {
+    await saveToken(makeToken({ refresh_token: 'refresh' }));
+    await logout();
     expect(getAccessToken()).toBeNull();
-    expect(getAuthState().isAuthenticated).toBe(false);
+    const state = await getAuthState();
+    expect(state.isAuthenticated).toBe(false);
     expect(isTokenValid()).toBe(false);
   });
 });
@@ -226,34 +235,34 @@ describe('saveToken / getAccessToken / logout', () => {
 // ---- getAuthState ----
 
 describe('getAuthState', () => {
-  beforeEach(() => { logout(); sessionStorageMock.clear(); });
-  afterEach(() => { logout(); sessionStorageMock.clear(); });
+  beforeEach(async () => { await logout(); sessionStorageMock.clear(); mockRefreshToken = null; });
+  afterEach(async () => { await logout(); sessionStorageMock.clear(); mockRefreshToken = null; });
 
-  it('未認証時は isAuthenticated=false を返す', () => {
-    const state = getAuthState();
+  it('未認証時は isAuthenticated=false を返す', async () => {
+    const state = await getAuthState();
     expect(state.isAuthenticated).toBe(false);
     expect(state.token).toBeNull();
     expect(state.expiresAt).toBeNull();
   });
 
-  it('有効なトークン時は isAuthenticated=true を返す', () => {
-    saveToken(makeToken());
-    const state = getAuthState();
+  it('有効なトークン時は isAuthenticated=true を返す', async () => {
+    await saveToken(makeToken());
+    const state = await getAuthState();
     expect(state.isAuthenticated).toBe(true);
     expect(state.token).not.toBeNull();
     expect(state.expiresAt).not.toBeNull();
   });
 
-  it('expiresAt は将来の時刻を指す', () => {
-    saveToken(makeToken({ expires_in: 3600 }));
-    const state = getAuthState();
+  it('expiresAt は将来の時刻を指す', async () => {
+    await saveToken(makeToken({ expires_in: 3600 }));
+    const state = await getAuthState();
     expect(state.expiresAt).toBeGreaterThan(Date.now());
   });
 
-  it('logout 後は未認証状態に戻る', () => {
-    saveToken(makeToken());
-    logout();
-    const state = getAuthState();
+  it('logout 後は未認証状態に戻る', async () => {
+    await saveToken(makeToken());
+    await logout();
+    const state = await getAuthState();
     expect(state.isAuthenticated).toBe(false);
   });
 });

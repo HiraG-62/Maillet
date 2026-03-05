@@ -11,6 +11,7 @@ const navItems = [
 export function BottomNav() {
   return (
     <nav
+      aria-label="メインナビゲーション"
       className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16 flex items-stretch bg-[var(--color-surface)] border-t border-[var(--color-border)]"
       style={{ boxShadow: '0 -2px 12px rgba(0,0,0,0.06)' }}
     >
@@ -23,14 +24,14 @@ export function BottomNav() {
         >
           {({ isActive }) => (
             <span
-              className={`flex flex-col items-center gap-1 transition-all duration-200 text-xs font-medium ${
+              className={`flex flex-col items-center gap-0.5 transition-all duration-200 px-3 py-1 ${
                 isActive
                   ? 'nav-pill-active text-[var(--color-primary)]'
-                  : 'text-[var(--color-text-muted)] px-3 py-1.5'
+                  : 'text-[var(--color-text-muted)]'
               }`}
             >
               <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-              {isActive && <span>{label}</span>}
+              <span className={`text-[10px] font-medium leading-tight ${isActive ? '' : 'opacity-70'}`}>{label}</span>
             </span>
           )}
         </NavLink>

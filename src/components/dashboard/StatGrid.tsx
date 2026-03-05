@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { TrendingUp, ShoppingCart, BarChart2, Wallet } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { useSettingsStore } from '@/stores/settings-store';
@@ -12,7 +12,7 @@ function getCurrentMonth(): string {
   return `${y}-${m}`;
 }
 
-export function StatGrid() {
+export const StatGrid = memo(function StatGrid() {
   const transactions = useTransactionStore((s) => s.transactions);
   const monthlyBudget = useSettingsStore((s) => s.monthly_budget);
 
@@ -69,4 +69,4 @@ export function StatGrid() {
       />
     </div>
   );
-}
+});

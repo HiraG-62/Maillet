@@ -18,6 +18,7 @@ export interface SyncResult {
   duplicates_skipped: number;
   parse_errors: number;
   errors: string[];
+  auto_classified?: number;
 }
 
 export interface SyncProgress {

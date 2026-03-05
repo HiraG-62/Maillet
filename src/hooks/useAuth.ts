@@ -20,7 +20,7 @@ interface UseAuthReturn {
   isLoading: boolean;
   error: string | null;
   login: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
 }
 
@@ -54,7 +54,7 @@ export function useAuth(): UseAuthReturn {
           setIsLoading(false);
         }
       }
-      setAuthState(getAuthState());
+      setAuthState(await getAuthState());
     };
     init();
   }, []);
@@ -71,8 +71,8 @@ export function useAuth(): UseAuthReturn {
     // startGmailAuth redirects the page; isLoading stays true if redirect succeeds
   }, []);
 
-  const logout = useCallback(() => {
-    authLogout();
+  const logout = useCallback(async () => {
+    await authLogout();
     setAuthState({ isAuthenticated: false, token: null, expiresAt: null });
     setError(null);
   }, []);
@@ -86,7 +86,7 @@ export function useAuth(): UseAuthReturn {
     setError(null);
     try {
       await authRefreshToken(authState.token.refresh_token, GMAIL_CONFIG);
-      setAuthState(getAuthState());
+      setAuthState(await getAuthState());
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTransactionStore } from '@/stores/transaction-store';
-import { FilterBar } from '@/components/transactions/FilterBar';
+import { FilterBar, type SortKey } from '@/components/transactions/FilterBar';
 import { TransactionCard } from '@/components/transactions/TransactionCard';
 import { TransactionTable } from '@/components/transactions/TransactionTable';
 import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
@@ -13,7 +13,6 @@ import { downloadCsv } from '@/services/csvExport';
 export default function TransactionsPage() {
   const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
 
-  // マウント時にDBからデータを読み込む（ページ遷移後もデータを保持）
   useEffect(() => {
     setLoading(true);
     initDB()
@@ -37,8 +36,12 @@ export default function TransactionsPage() {
   const [selectedCard, setSelectedCard] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mobileDisplayCount, setMobileDisplayCount] = useState(50);
+  const [sortKey, setSortKey] = useState<SortKey>('date_desc');
 
   const handleTransactionClick = useCallback((tx: CardTransaction) => {
     setSelectedTransaction(tx);
@@ -56,10 +59,20 @@ export default function TransactionsPage() {
     return cats.sort();
   }, [transactions]);
 
+  const availableCards = useMemo(() => {
+    return [...new Set(transactions.map(t => t.card_company).filter(Boolean))] as string[];
+  }, [transactions]);
+
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    transactions.forEach((tx) => (tx.tags ?? []).forEach((t) => tagSet.add(t)));
+    return [...tagSet].sort();
+  }, [transactions]);
+
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (selectedMonth !== 'all') {
-        const txMonth = (tx.transaction_date ?? '').slice(0, 7); // "YYYY-MM"
+        const txMonth = (tx.transaction_date ?? '').slice(0, 7);
         if (txMonth !== selectedMonth) return false;
       }
       if (selectedCard !== 'all') {
@@ -72,17 +85,84 @@ export default function TransactionsPage() {
         if (!inMerchant && !inDesc) return false;
       }
       if (selectedCategory) {
-        if (tx.category !== selectedCategory) return false;
+        if (selectedCategory === '__unclassified__') {
+          if (tx.category && tx.category !== '') return false;
+        } else {
+          if (tx.category !== selectedCategory) return false;
+        }
+      }
+      if (selectedTags.length > 0) {
+        const txTags = tx.tags ?? [];
+        if (!selectedTags.every((tag) => txTags.includes(tag))) return false;
       }
       return true;
     });
-  }, [transactions, selectedMonth, selectedCard, searchQuery, selectedCategory]);
+  }, [transactions, selectedMonth, selectedCard, searchQuery, selectedCategory, selectedTags]);
+
+  const sortedFiltered = useMemo(() => {
+    const arr = [...filtered];
+    switch (sortKey) {
+      case 'date_asc':
+        arr.sort((a, b) => new Date(a.transaction_date ?? '').getTime() - new Date(b.transaction_date ?? '').getTime());
+        break;
+      case 'amount_desc':
+        arr.sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
+        break;
+      case 'amount_asc':
+        arr.sort((a, b) => (a.amount ?? 0) - (b.amount ?? 0));
+        break;
+      case 'date_desc':
+      default:
+        arr.sort((a, b) => new Date(b.transaction_date ?? '').getTime() - new Date(a.transaction_date ?? '').getTime());
+        break;
+    }
+    return arr;
+  }, [filtered, sortKey]);
+
+  useEffect(() => {
+    if (!selectedTransaction) {
+      setSelectedIndex(-1);
+      return;
+    }
+    const idx = sortedFiltered.findIndex((tx) => tx.id === selectedTransaction.id);
+    setSelectedIndex(idx);
+  }, [selectedTransaction, sortedFiltered]);
+
+  const handlePrev = useCallback(() => {
+    setSelectedIndex((idx) => {
+      if (idx <= 0) return idx;
+      return idx - 1;
+    });
+  }, []);
+
+  const handleNext = useCallback(() => {
+    setSelectedIndex((idx) => {
+      if (idx < 0 || idx >= sortedFiltered.length - 1) return idx;
+      return idx + 1;
+    });
+  }, [sortedFiltered.length]);
+
+  useEffect(() => {
+    if (selectedIndex >= 0 && selectedIndex < sortedFiltered.length) {
+      const tx = sortedFiltered[selectedIndex];
+      if (tx && tx.id !== selectedTransaction?.id) {
+        setSelectedTransaction(tx);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex]);
+
+  useEffect(() => {
+    setMobileDisplayCount(50);
+  }, [selectedMonth, selectedCard, searchQuery, selectedCategory, selectedTags]);
 
   function handleReset() {
     setSelectedMonth('all');
     setSelectedCard('all');
     setSearchQuery('');
     setSelectedCategory('');
+    setSelectedTags([]);
+    setSortKey('date_desc');
   }
 
   return (
@@ -96,7 +176,7 @@ export default function TransactionsPage() {
         </span>
         {filtered.length > 0 && (
           <button
-            onClick={() => downloadCsv(filtered, { filename: `transactions_${selectedMonth}.csv` })}
+            onClick={() => downloadCsv(sortedFiltered, { filename: `transactions_${selectedMonth}.csv` })}
             className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 transition-colors"
             title="フィルタ済みデータをCSVエクスポート"
           >
@@ -112,10 +192,16 @@ export default function TransactionsPage() {
         searchQuery={searchQuery}
         categories={categories}
         selectedCategory={selectedCategory}
+        availableCards={availableCards}
+        availableTags={availableTags}
+        selectedTags={selectedTags}
+        sortKey={sortKey}
         onMonthChange={setSelectedMonth}
         onCardChange={setSelectedCard}
         onSearchChange={setSearchQuery}
         onCategoryChange={setSelectedCategory}
+        onTagsChange={setSelectedTags}
+        onSortChange={setSortKey}
         onReset={handleReset}
       />
 
@@ -130,8 +216,22 @@ export default function TransactionsPage() {
             <Receipt className="w-8 h-8 text-[var(--color-text-muted)]" />
           </div>
           <div className="text-center">
-            <p className="text-[var(--color-text-secondary)] font-medium">取引データがありません</p>
-            <p className="text-[var(--color-text-muted)] text-sm mt-1">フィルターを変更するか、メールを同期してください</p>
+            {transactions.length > 0 ? (
+              <>
+                <p className="text-[var(--color-text-secondary)] font-medium">条件に一致する取引がありません</p>
+                <button
+                  onClick={handleReset}
+                  className="text-[var(--color-primary)] text-sm mt-1 hover:underline"
+                >
+                  フィルターをリセットしてください
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-[var(--color-text-secondary)] font-medium">取引データがありません</p>
+                <p className="text-[var(--color-text-muted)] text-sm mt-1">Gmail同期を実行してください</p>
+              </>
+            )}
           </div>
         </div>
       ) : (
@@ -139,24 +239,29 @@ export default function TransactionsPage() {
           {/* Mobile: card list */}
           <div className="float-card p-0 overflow-hidden md:hidden">
             <div className="flex flex-col divide-y dark:divide-white/5 divide-black/5">
-              {filtered
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(b.transaction_date ?? '').getTime() -
-                    new Date(a.transaction_date ?? '').getTime()
-                )
+              {sortedFiltered
+                .slice(0, mobileDisplayCount)
                 .map((tx, idx) => (
                   <div key={tx.id ?? idx} onClick={() => handleTransactionClick(tx)} className="cursor-pointer">
                     <TransactionCard transaction={tx} />
                   </div>
                 ))}
             </div>
+            {filtered.length > mobileDisplayCount && (
+              <div className="p-4 flex justify-center border-t dark:border-white/5 border-black/5">
+                <button
+                  onClick={() => setMobileDisplayCount((c) => c + 50)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 transition-colors"
+                >
+                  もっと見る（残り{filtered.length - mobileDisplayCount}件）
+                </button>
+              </div>
+            )}
           </div>
 
           {/* PC: table */}
           <div className="float-card p-0 overflow-hidden hidden md:block">
-            <TransactionTable transactions={filtered} onRowClick={handleTransactionClick} />
+            <TransactionTable transactions={sortedFiltered} onRowClick={handleTransactionClick} />
           </div>
         </>
       )}
@@ -166,6 +271,10 @@ export default function TransactionsPage() {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSaved={handleModalSaved}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        hasPrev={selectedIndex > 0}
+        hasNext={selectedIndex >= 0 && selectedIndex < sortedFiltered.length - 1}
       />
     </div>
   );

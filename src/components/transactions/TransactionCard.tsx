@@ -1,6 +1,8 @@
 import type { CardTransaction } from '@/types/transaction';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { formatDateFull } from '@/lib/utils';
+import { TagBadge } from '@/components/transactions/TagBadge';
+import { getCategoryColor } from '@/lib/category-colors';
 import {
   ShoppingBag,
   Plane,
@@ -25,36 +27,6 @@ function getCardBorderClass(cardCompany: string | null | undefined): string {
   return 'border-l-purple-500';
 }
 
-interface CategoryStyle {
-  bg: string;
-  text: string;
-}
-
-function getCategoryStyle(category: string | null | undefined): CategoryStyle {
-  const c = (category ?? '').toLowerCase();
-  if (c.includes('食') || c.includes('グルメ') || c.includes('飲食') || c.includes('レストラン')) {
-    return { bg: 'bg-orange-500/20', text: 'dark:text-orange-300 text-orange-700' };
-  }
-  if (c.includes('ショッピング') || c.includes('購入') || c.includes('買い物')) {
-    return { bg: 'bg-pink-500/20', text: 'dark:text-pink-300 text-pink-700' };
-  }
-  if (c.includes('交通') || c.includes('移動') || c.includes('電車') || c.includes('バス')) {
-    return { bg: 'bg-blue-500/20', text: 'dark:text-blue-300 text-blue-700' };
-  }
-  if (c.includes('旅行') || c.includes('飛行機') || c.includes('ホテル')) {
-    return { bg: 'bg-sky-500/20', text: 'dark:text-sky-300 text-sky-700' };
-  }
-  if (c.includes('エンタメ') || c.includes('娯楽') || c.includes('映画')) {
-    return { bg: 'bg-purple-500/20', text: 'dark:text-purple-300 text-purple-700' };
-  }
-  if (c.includes('健康') || c.includes('医療') || c.includes('病院')) {
-    return { bg: 'bg-[var(--color-primary)]/20', text: 'text-[var(--color-primary)]' };
-  }
-  if (c.includes('通信') || c.includes('サブスク')) {
-    return { bg: 'bg-[var(--color-primary)]/20', text: 'text-[var(--color-primary)]' };
-  }
-  return { bg: 'dark:bg-white/10 bg-black/10', text: 'text-[var(--color-text-secondary)]' };
-}
 
 function getCategoryIcon(category: string | null | undefined) {
   const c = (category ?? '').toLowerCase();
@@ -80,9 +52,11 @@ function getCategoryIcon(category: string | null | undefined) {
   return <CreditCard className={cls} />;
 }
 
+const LARGE_AMOUNT_THRESHOLD = 50000;
+
 export function TransactionCard({ transaction }: TransactionCardProps) {
   const borderClass = getCardBorderClass(transaction.card_company);
-  const catStyle = getCategoryStyle(transaction.category);
+  const isLarge = Math.abs(transaction.amount) >= LARGE_AMOUNT_THRESHOLD;
 
   return (
     <div
@@ -101,15 +75,39 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           <CurrencyDisplay
             amount={transaction.amount}
             size="md"
-            className={transaction.amount < 0 ? 'dark:text-orange-400 text-orange-600' : undefined}
+            className={[
+              transaction.amount < 0 ? 'dark:text-orange-400 text-orange-600' : '',
+              isLarge ? 'font-bold' : '',
+            ].filter(Boolean).join(' ') || undefined}
           />
           {transaction.category && (
-            <span
-              className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${catStyle.bg} ${catStyle.text}`}
-            >
-              {getCategoryIcon(transaction.category)}
-              {transaction.category}
-            </span>
+            <div className="flex items-center gap-1">
+              <span
+                className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: getCategoryColor(transaction.category) + '33',
+                  color: getCategoryColor(transaction.category),
+                }}
+              >
+                {getCategoryIcon(transaction.category)}
+                {transaction.category}
+              </span>
+              {transaction.category_source === 'auto' && (
+                <span className="text-[9px] px-1 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  自動
+                </span>
+              )}
+            </div>
+          )}
+          {(transaction.tags ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-1 justify-end mt-1">
+              {(transaction.tags ?? []).slice(0, 3).map((tag) => (
+                <TagBadge key={tag} tag={tag} />
+              ))}
+              {(transaction.tags ?? []).length > 3 && (
+                <span className="text-[9px] text-[var(--color-text-muted)]">+{(transaction.tags ?? []).length - 3}</span>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -4,6 +4,9 @@ import { JCBParser } from './jcb';
 import { RakutenParser } from './rakuten';
 import { AMEXParser } from './amex';
 import { DCardParser } from './dcard';
+import { PayPayCardParser } from './paypay';
+import { AuPayCardParser } from './aupay';
+import { EposCardParser } from './epos';
 
 export { BaseCardParser } from './base';
 export type { ParsedTransaction } from './base';
@@ -12,6 +15,9 @@ export { JCBParser } from './jcb';
 export { RakutenParser } from './rakuten';
 export { AMEXParser } from './amex';
 export { DCardParser } from './dcard';
+export { PayPayCardParser } from './paypay';
+export { AuPayCardParser } from './aupay';
+export { EposCardParser } from './epos';
 
 const PARSERS: BaseCardParser[] = [
   new SMBCParser(),
@@ -19,6 +25,9 @@ const PARSERS: BaseCardParser[] = [
   new RakutenParser(),
   new AMEXParser(),
   new DCardParser(),
+  new PayPayCardParser(),
+  new AuPayCardParser(),
+  new EposCardParser(),
 ];
 
 export function get_parser(card_company: string): BaseCardParser | null {

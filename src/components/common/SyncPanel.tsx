@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
 import { RefreshCw, LogIn, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
@@ -42,11 +42,23 @@ export function SyncPanel() {
   const [period, setPeriod] = useState<SyncPeriod>('current');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
 
   const dateRange = useMemo(
     () => periodToDateRange(period, customStart, customEnd),
     [period, customStart, customEnd]
   );
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const isGoogleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
@@ -64,7 +76,7 @@ export function SyncPanel() {
           </p>
         ) : (
           <p className="text-sm text-[var(--color-text-muted)]">
-            Gmail連携は設定が必要です。管理者にお問い合わせください。
+            Gmail連携が設定されていません。設定画面から連携してください。
           </p>
         )}
         {authError && (
@@ -76,7 +88,7 @@ export function SyncPanel() {
         <button
           onClick={() => void login()}
           disabled={authLoading || !isGoogleConfigured}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-[var(--color-text-primary)] font-medium text-sm hover:bg-[var(--color-surface)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white dark:bg-white text-gray-900 dark:text-gray-900 border border-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {authLoading ? (
             <RefreshCw size={16} className="animate-spin" />
@@ -162,11 +174,19 @@ export function SyncPanel() {
         )}
       </div>
 
+      {/* Offline warning */}
+      {isOffline && (
+        <p className="text-sm text-red-400 flex items-center gap-1">
+          <AlertCircle size={14} />
+          オフライン — 同期できません
+        </p>
+      )}
+
       {/* Sync button or cancel */}
       {!isSyncing ? (
         <button
           onClick={() => void startSync(dateRange)}
-          disabled={isSyncing || (period === 'custom' && (!customStart || !customEnd))}
+          disabled={isSyncing || isOffline || (period === 'custom' && (!customStart || !customEnd))}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)] font-medium text-sm hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <RefreshCw size={16} />
@@ -231,6 +251,12 @@ export function SyncPanel() {
             <span className="text-[var(--color-primary)] text-right font-medium">{result.new_transactions}</span>
             <span>重複スキップ</span>
             <span className="text-[var(--color-text-primary)] text-right">{result.duplicates_skipped}</span>
+            {(result.auto_classified ?? 0) > 0 && (
+              <>
+                <span>自動カテゴリ設定</span>
+                <span className="text-blue-400 text-right font-medium">{result.auto_classified}</span>
+              </>
+            )}
             {result.parse_errors > 0 && (
               <>
                 <span className="text-amber-400">解析エラー</span>

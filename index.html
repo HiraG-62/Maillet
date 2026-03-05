@@ -1,12 +1,25 @@
 <!doctype html>
 <html lang="ja">
   <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-9WD9jx/s4Kr1wkhUgUnq5NbGYFybUG0a6zBXoEt8BwQ='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://gmail.googleapis.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://*.openrouter.ai; frame-src 'none'; object-src 'none'; base-uri 'self';" />
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maillet</title>
+    <!-- OGP / SNS シェア用メタタグ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Maillet — Smart spending tracker from your inbox" />
+    <meta property="og:description" content="Gmailのカード利用通知を自動で収集・分類。支出をスマートに管理するプライベートPWA。" />
+    <meta property="og:url" content="https://maillet.app/" />
+    <meta property="og:image" content="https://maillet.app/icon-512x512.png" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Maillet — Smart spending tracker from your inbox" />
+    <meta name="twitter:description" content="Gmailのカード利用通知を自動で収集・分類するプライベートPWA。" />
+    <meta name="description" content="Gmailのカード利用通知を自動で収集・分類。支出をスマートに管理するプライベートPWA。" />
+    <meta name="theme-color" content="#0a0f1e" />
     <script>
       // GitHub Pages SPA routing decode
       (function(l) {

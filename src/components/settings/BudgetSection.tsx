@@ -139,11 +139,11 @@ export function BudgetSection() {
 
         {/* 新規追加行 */}
         {availableCategories.length > 0 && (
-          <div className="flex items-start gap-2 mb-3">
+          <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center">
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              className="flex-1 h-9 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text-primary)] text-sm px-2"
+              className="w-full h-9 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text-primary)] text-sm px-2 sm:flex-1"
             >
               <option value="">カテゴリを選択</option>
               {availableCategories.map((c) => (
@@ -157,13 +157,12 @@ export function BudgetSection() {
               onChange={(e) => setNewAmount(e.target.value)}
               min="0"
               step="1"
-              className="w-32 shrink-0"
+              className="w-full sm:w-32 sm:shrink-0"
             />
             <Button
               variant="default"
-              size="sm"
               onClick={handleAddCategoryBudget}
-              className="shrink-0"
+              className="shrink-0 self-start sm:self-center"
             >
               追加
             </Button>

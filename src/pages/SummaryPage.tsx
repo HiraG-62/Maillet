@@ -71,7 +71,7 @@ export default function SummaryPage() {
   }, [availableMonths, selectedMonth]);
 
   const monthlyData = useMemo(() => {
-    const last6 = getLastNMonths(defaultMonth, 6);
+    const last6 = getLastNMonths(selectedMonth, 6);
     const totals: Record<string, number> = {};
     transactions.forEach((t) => {
       const m = toYearMonth(t.transaction_date);
@@ -83,7 +83,7 @@ export default function SummaryPage() {
       month: m,
       total_amount: totals[m] ?? 0,
     }));
-  }, [transactions]);
+  }, [transactions, selectedMonth]);
 
   const categoryData = useMemo(() => {
     const filtered = transactions.filter(
@@ -143,7 +143,7 @@ export default function SummaryPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="max-w-2xl mx-auto px-6 py-8">
       {/* Page header with gradient title */}
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 rounded-lg bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-primary-hover)]/20 border border-[var(--color-primary)]/20">
@@ -220,8 +220,8 @@ export default function SummaryPage() {
               <tr className="border-b dark:border-white/10 border-black/10">
                 <th className="text-left py-2 text-[var(--color-text-secondary)] font-medium">カテゴリ</th>
                 <th className="text-right py-2 text-[var(--color-text-secondary)] font-medium">金額</th>
-                <th className="text-right py-2 text-[var(--color-text-secondary)] font-medium">前月</th>
-                <th className="text-right py-2 text-[var(--color-text-secondary)] font-medium">前月比</th>
+                <th className="hidden sm:table-cell text-right py-2 text-[var(--color-text-secondary)] font-medium">前月</th>
+                <th className="hidden sm:table-cell text-right py-2 text-[var(--color-text-secondary)] font-medium">前月比</th>
               </tr>
             </thead>
             <tbody>
@@ -234,14 +234,14 @@ export default function SummaryPage() {
                     <td className="py-2.5 text-right">
                       <CurrencyDisplay amount={item.value} size="sm" className="text-[var(--color-primary)]" />
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="hidden sm:table-cell py-2.5 text-right">
                       {prev > 0 ? (
                         <CurrencyDisplay amount={prev} size="sm" variant="muted" />
                       ) : (
                         <span className="text-xs text-[var(--color-text-muted)]">—</span>
                       )}
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="hidden sm:table-cell py-2.5 text-right">
                       {change ? (
                         <span
                           className={`text-xs font-medium ${
@@ -265,7 +265,7 @@ export default function SummaryPage() {
                 <td className="py-2.5 text-right font-semibold">
                   <CurrencyDisplay amount={categoryData.reduce((s, d) => s + d.value, 0)} size="sm" className="text-[var(--color-primary)]" />
                 </td>
-                <td className="py-2.5 text-right font-semibold">
+                <td className="hidden sm:table-cell py-2.5 text-right font-semibold">
                   {(() => {
                     const prevTotal = Object.values(prevCategoryTotals).reduce((s, v) => s + v, 0);
                     return prevTotal > 0
@@ -273,7 +273,7 @@ export default function SummaryPage() {
                       : <span className="text-xs text-[var(--color-text-muted)]">—</span>;
                   })()}
                 </td>
-                <td className="py-2.5 text-right font-semibold">
+                <td className="hidden sm:table-cell py-2.5 text-right font-semibold">
                   {(() => {
                     const curTotal = categoryData.reduce((s, d) => s + d.value, 0);
                     const prevTotal = Object.values(prevCategoryTotals).reduce((s, v) => s + v, 0);

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { CreditCard, ShoppingBag, Utensils, Train, Zap } from 'lucide-react';
 import type { CardTransaction } from '@/types/transaction';
 import { formatDateShort } from '@/lib/utils';
@@ -45,7 +46,7 @@ function getCategoryIcon(category: string | null | undefined) {
   return <CreditCard size={14} className="text-[var(--color-text-secondary)] shrink-0" />;
 }
 
-export function RecentTransactions({ transactions, limit = 10 }: RecentTransactionsProps) {
+export const RecentTransactions = memo(function RecentTransactions({ transactions, limit = 10 }: RecentTransactionsProps) {
   const sorted = [...transactions]
     .sort((a, b) => (b.transaction_date ?? '').localeCompare(a.transaction_date ?? ''))
     .slice(0, limit);
@@ -82,4 +83,4 @@ export function RecentTransactions({ transactions, limit = 10 }: RecentTransacti
       })}
     </ul>
   );
-}
+});

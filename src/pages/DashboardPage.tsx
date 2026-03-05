@@ -1,13 +1,13 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
-import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
 import { formatDateRelative, formatCurrency } from '@/lib/utils';
+import { getCategoryEmoji } from '@/lib/category-utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { CategoryBudgetProgress } from '@/components/dashboard/CategoryBudgetProgress';
 import { CategoryHealthBadge } from '@/components/dashboard/CategoryHealthBadge';
@@ -39,49 +39,16 @@ function addMonths(ym: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function getCategoryEmoji(category: string | null | undefined): string {
-  if (!category) return '💳';
-  const lower = category.toLowerCase();
-  if (lower.includes('食') || lower.includes('飲食') || lower.includes('グルメ')) return '🍽️';
-  if (lower.includes('交通') || lower.includes('鉄道')) return '🚃';
-  if (lower.includes('ショッピング') || lower.includes('衣')) return '🛍️';
-  if (lower.includes('光熱') || lower.includes('電気') || lower.includes('水道')) return '⚡';
-  if (lower.includes('通信') || lower.includes('携帯')) return '📱';
-  if (lower.includes('医療') || lower.includes('健康')) return '🏥';
-  if (lower.includes('娯楽') || lower.includes('エンタメ')) return '🎬';
-  return '💳';
-}
 
 export default function DashboardPage() {
-  const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
+  const { transactions, isLoading, dbWarning, setTransactions } = useTransactionStore();
   const monthlyBudget = useSettingsStore((s) => s.monthly_budget);
   const categoryBudgets = useSettingsStore((s) => s.categoryBudgets);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
-  const [dbWarning, setDbWarning] = useState<string | null>(null);
-  const { error: authError } = useAuth();
+  const { authState, error: authError } = useAuth();
   const { isSyncing, result, progress, startSync } = useSync();
   const { subscriptions, isLoading: subsLoading } = useSubscriptions(transactions);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setLoading(true);
-    initDB()
-      .then((res) => {
-        if (res?.warning) {
-          setDbWarning(res.warning);
-        }
-        return getTransactions();
-      })
-      .then((data) => {
-        setTransactions(data ?? []);
-      })
-      .catch((err) => {
-        console.error('[DashboardPage] DB init/load failed:', err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [setTransactions, setLoading]);
 
   const monthlyStats = useMemo(() => {
     const filtered = transactions.filter(
@@ -168,7 +135,8 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setSelectedMonth((m) => addMonths(m, 1))}
-              className="p-1.5 rounded-full hover:bg-[var(--color-primary-light)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+              disabled={selectedMonth >= getCurrentMonth()}
+              className="p-1.5 rounded-full hover:bg-[var(--color-primary-light)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-muted)]"
               aria-label="次の月"
             >
               <ChevronRight size={16} />
@@ -208,9 +176,7 @@ export default function DashboardPage() {
                 );
               })()
             ) : (
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                （前月データなし）
-              </span>
+              null
             )}
           </div>
         )}
@@ -249,7 +215,7 @@ export default function DashboardPage() {
                   : 'var(--color-danger)';
               return (
                 <>
-                  <div className="flex justify-between items-center mb-1.5">
+                  <div className="flex flex-wrap justify-between items-center mb-1.5 gap-x-2 gap-y-0.5">
                     <span className="text-xs text-[var(--color-text-muted)]">使用枠</span>
                     <span className="text-xs font-medium" style={{ color: barColor }}>
                       {formatCurrency(monthlyStats.total ?? 0)} / {formatCurrency(monthlyBudget)}（{Math.round(ratio * 100)}%）
@@ -277,16 +243,24 @@ export default function DashboardPage() {
         <div className="flex justify-around text-center">
           <div>
             <p className="text-xs text-[var(--color-text-muted)] mb-1">利用件数</p>
-            <p className="text-lg font-bold text-[var(--color-text-primary)]">
-              {monthlyStats.count}<span className="text-sm font-normal text-[var(--color-text-muted)] ml-0.5">件</span>
-            </p>
+            {isLoading ? (
+              <div className="h-7 w-12 mx-auto rounded bg-[var(--color-primary-light)] animate-pulse" />
+            ) : (
+              <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                {monthlyStats.count}<span className="text-sm font-normal text-[var(--color-text-muted)] ml-0.5">件</span>
+              </p>
+            )}
           </div>
           <div className="w-px bg-[var(--color-border)]" />
           <div>
             <p className="text-xs text-[var(--color-text-muted)] mb-1">平均</p>
-            <p className="text-lg font-bold text-[var(--color-text-primary)]">
-              <CurrencyDisplay amount={monthlyStats.average} size="sm" />
-            </p>
+            {isLoading ? (
+              <div className="h-7 w-16 mx-auto rounded bg-[var(--color-primary-light)] animate-pulse" />
+            ) : (
+              <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                <CurrencyDisplay amount={monthlyStats.average} size="sm" />
+              </p>
+            )}
           </div>
           {monthlyBudget > 0 && (
             <>
@@ -311,6 +285,7 @@ export default function DashboardPage() {
         <CategoryHealthBadge />
       </div>
 
+
       {/* ===== Category Budget Progress (F-001b) ===== */}
       {!isLoading && Object.keys(categoryBudgets).length > 0 && (
         <CategoryBudgetProgress
@@ -320,9 +295,11 @@ export default function DashboardPage() {
       )}
 
       {/* ===== Subscription Detection (F-002b) ===== */}
-      <div className="mb-8 slide-up" style={{ animationDelay: '0.05s' }}>
-        <SubscriptionWidget subscriptions={subscriptions} isLoading={subsLoading} />
-      </div>
+      {!isEmpty && (
+        <div className="mb-8 slide-up" style={{ animationDelay: '0.05s' }}>
+          <SubscriptionWidget subscriptions={subscriptions} isLoading={subsLoading} />
+        </div>
+      )}
 
       {/* ===== Recent Transactions ===== */}
       {!isEmpty && recentTransactions.length > 0 && (
@@ -363,23 +340,44 @@ export default function DashboardPage() {
       {isEmpty && (
         <div className="float-card p-12 text-center mb-8 fade-in">
           <div className="text-4xl mb-3">📭</div>
-          <p className="text-[var(--color-text-secondary)] text-lg mb-2">データがありません</p>
-          <p className="text-[var(--color-text-muted)] text-sm mb-6">
-            Gmailからカード利用通知を同期して始めましょう
-          </p>
-          <button
-            onClick={() => void startSync()}
-            disabled={isSyncing}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
-            style={{
-              backgroundColor: 'var(--color-primary)',
-              color: 'var(--color-text-inverse)',
-              opacity: isSyncing ? 0.6 : 1,
-              cursor: isSyncing ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSyncing ? '同期中...' : 'Gmailから同期する'}
-          </button>
+          {!authState.isAuthenticated ? (
+            <>
+              <p className="text-[var(--color-text-secondary)] text-lg mb-2">データがありません</p>
+              <p className="text-[var(--color-text-muted)] text-sm mb-6">
+                まずGmailを連携してください
+              </p>
+              <button
+                onClick={() => navigate('/settings')}
+                className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'var(--color-text-inverse)',
+                }}
+              >
+                設定画面へ →
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-[var(--color-text-secondary)] text-lg mb-2">取引が見つかりませんでした</p>
+              <p className="text-[var(--color-text-muted)] text-sm mb-6">
+                Gmail同期を実行してください
+              </p>
+              <button
+                onClick={() => void startSync()}
+                disabled={isSyncing}
+                className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'var(--color-text-inverse)',
+                  opacity: isSyncing ? 0.6 : 1,
+                  cursor: isSyncing ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isSyncing ? '同期中...' : 'Gmailから同期する'}
+              </button>
+            </>
+          )}
         </div>
       )}
 

@@ -15,7 +15,7 @@ export interface AppSettings {
   monthly_budget: number;
   currency: 'JPY';
   theme: 'dark' | 'light';
-  llm_provider: 'anthropic' | 'openai' | null;
+  llm_provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | null;
   gmail_connected: boolean;
   categoryRules: CategoryRule[];
   categoryBudgets: Record<string, number>;

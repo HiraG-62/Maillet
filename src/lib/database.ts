@@ -10,6 +10,7 @@ interface CTRow {
   transaction_date: string;
   description: string;
   category: string | null;
+  category_source: string | null;
   email_subject: string | null;
   email_from: string | null;
   gmail_message_id: string | null;
@@ -29,11 +30,17 @@ interface LKRow {
   updated_at: string;
 }
 
+export interface SecureStoreRow {
+  key: string;
+  value: unknown;
+}
+
 /* ── Dexie database ── */
 
 class MailletDB extends Dexie {
   card_transactions!: Table<CTRow, number>;
   llm_keys!: Table<LKRow, string>;
+  secure_store!: Table<SecureStoreRow, string>;
 
   constructor() {
     super('maillet-dexie');
@@ -42,10 +49,27 @@ class MailletDB extends Dexie {
         '++id, &gmail_message_id, transaction_date, card_company, category',
       llm_keys: 'provider',
     });
+    this.version(2).stores({
+      card_transactions:
+        '++id, &gmail_message_id, transaction_date, card_company, category, category_source',
+      llm_keys: 'provider',
+    }).upgrade(tx => {
+      return tx.table('card_transactions').toCollection().modify(row => {
+        if (row.category_source === undefined) {
+          row.category_source = null;
+        }
+      });
+    });
+    this.version(3).stores({
+      card_transactions:
+        '++id, &gmail_message_id, transaction_date, card_company, category, category_source',
+      llm_keys: 'provider',
+      secure_store: 'key',
+    });
   }
 }
 
-const db = new MailletDB();
+export const db = new MailletDB();
 let initialized = false;
 
 /* ── Helpers ── */
@@ -59,6 +83,7 @@ function toTuple(t: CTRow): unknown[] {
     t.id, t.card_company, t.amount, t.merchant, t.transaction_date,
     t.description, t.category, t.email_subject, t.email_from,
     t.gmail_message_id, t.is_verified, t.created_at, t.memo, t.tags,
+    t.category_source ?? null,
   ];
 }
 
@@ -112,6 +137,7 @@ async function migrateFromOldIDB(): Promise<void> {
         transaction_date: (r[4] as string) ?? '1970-01-01T00:00:00.000Z',
         description: (r[5] as string) ?? '',
         category: r[6] as string | null,
+        category_source: null,
         email_subject: r[7] as string | null,
         email_from: r[8] as string | null,
         gmail_message_id: r[9] as string | null,
@@ -245,6 +271,27 @@ async function queryCardTx<T>(s: string, params: unknown[]): Promise<T[]> {
       .equals(params[0] as string)
       .first();
     return r ? [[r.id]] as unknown as T[] : [];
+  }
+
+  /* ── SELECT id FROM ... WHERE merchant = ? ── */
+  if (s.includes('SELECT id FROM') && s.includes('WHERE merchant')) {
+    const merchantParam = params[0] as string;
+    let all = await db.card_transactions.toArray();
+    all = all.filter((t) => t.merchant === merchantParam);
+    if (s.includes('category IS NULL') || s.includes("category = ''")) {
+      all = all.filter((t) => t.category == null || t.category === '');
+    }
+    return all.map((t) => [t.id]) as unknown as T[];
+  }
+
+  /* ── SELECT merchant, category (for learned rules) ── */
+  if (s.includes('SELECT merchant, category')) {
+    let all = await db.card_transactions.toArray();
+    all = all.filter((t) => t.category != null && t.category !== '');
+    if (s.includes('category_source')) {
+      all = all.filter((t) => t.category_source == null || t.category_source === 'manual');
+    }
+    return all.map((t) => [t.merchant, t.category]) as unknown as T[];
   }
 
   /* ── SELECT id, merchant ── */
@@ -448,6 +495,7 @@ export async function executeDB(
     const obj: Record<string, unknown> = {
       description: '',
       category: null,
+      category_source: null,
       email_subject: null,
       email_from: null,
       gmail_message_id: undefined,
@@ -480,14 +528,22 @@ export async function executeDB(
     return { changes: 1 };
   }
 
-  /* ── UPDATE card_transactions SET col = ? WHERE id = ? ── */
+  /* ── UPDATE card_transactions SET col(s) = ? WHERE id = ? ── */
   if (s.startsWith('UPDATE') && s.includes('card_transactions') && s.includes('WHERE id')) {
-    const setMatch = s.match(/SET\s+(\w+)\s*=\s*\?/i);
-    if (setMatch) {
-      await db.card_transactions.update(params[1] as number, {
-        [setMatch[1]]: params[0],
-      });
-      return { changes: 1 };
+    const setClause = s.match(/SET\s+(.*?)\s+WHERE/i);
+    if (setClause) {
+      const colRegex = /(\w+)\s*=\s*\?/g;
+      const updates: Record<string, unknown> = {};
+      let colMatch: RegExpExecArray | null;
+      let idx = 0;
+      while ((colMatch = colRegex.exec(setClause[1])) !== null) {
+        updates[colMatch[1]] = params[idx++];
+      }
+      const idParam = params[idx] as number;
+      if (Object.keys(updates).length > 0) {
+        await db.card_transactions.update(idParam, updates);
+        return { changes: 1 };
+      }
     }
     return { changes: 0 };
   }

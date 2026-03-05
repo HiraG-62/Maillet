@@ -1,5 +1,6 @@
 import React from 'react';
-import { Bot, Database, List, Mail, Settings, Sparkles, Sun, Wallet } from 'lucide-react';
+import { Link } from 'react-router';
+import { Bot, Database, List, Mail, Settings, Sun, Wallet } from 'lucide-react';
 import { SyncPanel } from '@/components/common/SyncPanel';
 import { BudgetSection } from '@/components/settings/BudgetSection';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
@@ -53,6 +54,23 @@ export default function SettingsPage() {
       </SectionCard>
 
       <SectionCard
+        icon={<List className="w-4 h-4 text-[var(--color-primary)]" />}
+        label="カテゴリ設定"
+      >
+        {/* 上部: SmartClassify AI実行 */}
+        <SmartClassifySection />
+        {/* 下部: ルール一覧（折りたたみ） */}
+        <CategoryRuleEditor />
+      </SectionCard>
+
+      <SectionCard
+        icon={<Database className="w-4 h-4 text-[var(--color-primary)]" />}
+        label="データ管理"
+      >
+        <ExportSection />
+      </SectionCard>
+
+      <SectionCard
         icon={<Bot className="w-4 h-4 text-[var(--color-primary)]" />}
         label="AI 設定"
       >
@@ -66,26 +84,15 @@ export default function SettingsPage() {
         <ThemeSection />
       </SectionCard>
 
-      <SectionCard
-        icon={<List className="w-4 h-4 text-[var(--color-primary)]" />}
-        label="カテゴリ分類ルール"
-      >
-        <CategoryRuleEditor />
-      </SectionCard>
-
-      <SectionCard
-        icon={<Sparkles className="w-4 h-4 text-[var(--color-primary)]" />}
-        label="AIカテゴリ整理（SmartClassify）"
-      >
-        <SmartClassifySection />
-      </SectionCard>
-
-      <SectionCard
-        icon={<Database className="w-4 h-4 text-[var(--color-primary)]" />}
-        label="データ管理"
-      >
-        <ExportSection />
-      </SectionCard>
+      <div className="flex justify-center gap-4 mt-2 mb-6 text-xs text-[var(--color-text-muted)]">
+        <Link to="/privacy" className="hover:text-[var(--color-text-secondary)] transition-colors">
+          プライバシーポリシー
+        </Link>
+        <span>·</span>
+        <Link to="/terms" className="hover:text-[var(--color-text-secondary)] transition-colors">
+          利用規約
+        </Link>
+      </div>
     </div>
   );
 }
