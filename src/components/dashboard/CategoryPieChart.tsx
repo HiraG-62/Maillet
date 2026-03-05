@@ -56,6 +56,7 @@ const CustomTooltip = ({
 
 export default function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
   const { tooltipAccent } = useChartColors();
+  const sortedData = [...data].sort((a, b) => b.value - a.value);
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
@@ -115,7 +116,7 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
         <Pie
-          data={data}
+          data={sortedData}
           dataKey="value"
           nameKey="name"
           cx="50%"
@@ -123,8 +124,10 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
           outerRadius={80}
           innerRadius={44}
           paddingAngle={2}
+          startAngle={90}
+          endAngle={-270}
         >
-          {data.map((entry, index) => (
+          {sortedData.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
               fill={entry.color ?? getCategoryColor(entry.name)}
