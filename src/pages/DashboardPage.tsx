@@ -1,11 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import { BarChart2, PieChart, Clock, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { BarChart2, PieChart, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTransactionStore } from '@/stores/transaction-store';
 import { StatGrid, MonthlyBarChart, CategoryPieChart } from '@/components/dashboard';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { useAuth } from '@/hooks/useAuth';
-import { useSync } from '@/hooks/useSync';
 import { initDB } from '@/lib/database';
 import { getTransactions } from '@/lib/transactions';
 
@@ -35,9 +33,7 @@ function addMonths(ym: string, delta: number): string {
 export default function DashboardPage() {
   const { transactions, isLoading, dbWarning } = useTransactionStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
-  const { authState, isLoading: authLoading, error: authError } = useAuth();
-  const { startSync, isSyncing, result, progress } = useSync();
-  const navigate = useNavigate();
+  const { error: authError } = useAuth();
 
   // DEBUG-091: 殿のデバッグ用。本番削除予定
   useEffect(() => {
@@ -103,70 +99,6 @@ export default function DashboardPage() {
           ⚠️ {dbWarning}
         </div>
       )}
-
-      {/* Header row: Maillet logo + settings/sync actions */}
-      <div className="flex items-center justify-between mb-6">
-        {/* Maillet branding */}
-        <div className="flex items-center gap-2">
-          <span
-            className="text-2xl font-black tracking-tight bg-gradient-to-r from-[var(--color-primary)] to-cyan-400 bg-clip-text text-transparent"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            Maillet
-          </span>
-        </div>
-
-        {/* Actions: settings + sync */}
-        <div className="flex items-center gap-2">
-          <button
-            className="p-2 rounded-lg border dark:border-white/10 border-black/10 dark:bg-white/5 bg-black/5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/10 transition-colors"
-            onClick={() => navigate('/settings')}
-            aria-label="設定"
-          >
-            <Settings size={16} />
-          </button>
-
-          <div className="flex flex-col items-end gap-1">
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border dark:border-white/10 border-black/10 dark:bg-white/5 bg-black/5 text-[var(--color-text-secondary)] text-sm hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSyncing || authLoading}
-              onClick={() => {
-                if (authLoading) return;
-                if (!authState.isAuthenticated) {
-                  navigate('/settings');
-                  return;
-                }
-                startSync();
-              }}
-            >
-              <svg
-                className={`w-4 h-4 ${isSyncing || authLoading ? 'animate-spin' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              {isSyncing ? '同期中...' : authLoading ? '認証中...' : '同期'}
-            </button>
-            {isSyncing && progress.total > 0 && (
-              <span className="text-xs text-cyan-400">
-                {progress.current}/{progress.total}件 処理中
-              </span>
-            )}
-            {result && !isSyncing && (
-              <span className="text-xs text-[var(--color-text-muted)]">
-                新規 {result.new_transactions}件 取得
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Hero Balance Section */}
       <div className="glass-card mb-6 py-8 px-6 text-center">
