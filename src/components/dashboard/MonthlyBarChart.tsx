@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -74,7 +74,7 @@ const CustomTooltip = ({
   return null;
 };
 
-export default function MonthlyBarChart({ data, height = 200 }: MonthlyBarChartProps) {
+function MonthlyBarChart({ data, height = 200 }: MonthlyBarChartProps) {
   const { barShades, tooltipAccent } = useChartColors();
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   useEffect(() => {
@@ -123,3 +123,5 @@ export default function MonthlyBarChart({ data, height = 200 }: MonthlyBarChartP
     </ResponsiveContainer>
   );
 }
+
+export default memo(MonthlyBarChart);

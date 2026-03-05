@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -59,7 +59,7 @@ const CustomTooltip = ({
   return null;
 };
 
-export default function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
+function CategoryPieChart({ data, height = 200 }: CategoryPieChartProps) {
   const { tooltipAccent } = useChartColors();
   const sortedData = [...data].sort((a, b) => b.value - a.value);
   const total = data.reduce((sum, d) => sum + d.value, 0);
@@ -179,3 +179,5 @@ export default function CategoryPieChart({ data, height = 200 }: CategoryPieChar
     </ResponsiveContainer>
   );
 }
+
+export default memo(CategoryPieChart);

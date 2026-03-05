@@ -146,7 +146,8 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setSelectedMonth((m) => addMonths(m, 1))}
-              className="p-1.5 rounded-full hover:bg-[var(--color-primary-light)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+              disabled={selectedMonth >= getCurrentMonth()}
+              className="p-1.5 rounded-full hover:bg-[var(--color-primary-light)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-muted)]"
               aria-label="次の月"
             >
               <ChevronRight size={16} />
@@ -253,16 +254,24 @@ export default function DashboardPage() {
         <div className="flex justify-around text-center">
           <div>
             <p className="text-xs text-[var(--color-text-muted)] mb-1">利用件数</p>
-            <p className="text-lg font-bold text-[var(--color-text-primary)]">
-              {monthlyStats.count}<span className="text-sm font-normal text-[var(--color-text-muted)] ml-0.5">件</span>
-            </p>
+            {isLoading ? (
+              <div className="h-7 w-12 mx-auto rounded bg-[var(--color-primary-light)] animate-pulse" />
+            ) : (
+              <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                {monthlyStats.count}<span className="text-sm font-normal text-[var(--color-text-muted)] ml-0.5">件</span>
+              </p>
+            )}
           </div>
           <div className="w-px bg-[var(--color-border)]" />
           <div>
             <p className="text-xs text-[var(--color-text-muted)] mb-1">平均</p>
-            <p className="text-lg font-bold text-[var(--color-text-primary)]">
-              <CurrencyDisplay amount={monthlyStats.average} size="sm" />
-            </p>
+            {isLoading ? (
+              <div className="h-7 w-16 mx-auto rounded bg-[var(--color-primary-light)] animate-pulse" />
+            ) : (
+              <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                <CurrencyDisplay amount={monthlyStats.average} size="sm" />
+              </p>
+            )}
           </div>
           {monthlyBudget > 0 && (
             <>
