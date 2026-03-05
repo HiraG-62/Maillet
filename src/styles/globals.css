@@ -33,6 +33,16 @@
   box-shadow: var(--shadow-md);
 }
 
+/* グラスモーフィズムカード — ダッシュボードセクション用 */
+.glass-card {
+  background: var(--color-surface);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 /* ピル型ナビアクティブ */
 .nav-pill-active {
   background: var(--color-primary-light);

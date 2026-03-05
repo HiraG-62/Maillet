@@ -152,7 +152,7 @@ export default function DashboardPage() {
       </div>
 
       {/* StatGrid */}
-      <div className="mb-6">
+      <div className="glass-card p-4 mb-6">
         <StatGrid />
       </div>
 
