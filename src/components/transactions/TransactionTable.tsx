@@ -145,7 +145,10 @@ export function TransactionTable({ transactions, onRowClick }: TransactionTableP
                   <CurrencyDisplay
                     amount={tx.amount}
                     size="sm"
-                    className={isLarge ? 'dark:text-orange-300 text-orange-600' : tx.amount < 0 ? 'dark:text-orange-400 text-orange-600' : undefined}
+                    className={[
+                      tx.amount < 0 ? 'dark:text-orange-400 text-orange-600' : '',
+                      isLarge ? 'font-bold' : '',
+                    ].filter(Boolean).join(' ') || undefined}
                   />
                 </TableCell>
                 <TableCell className="text-[var(--color-text-primary)] text-sm font-medium">{tx.merchant}</TableCell>

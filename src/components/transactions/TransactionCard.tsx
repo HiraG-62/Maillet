@@ -52,8 +52,11 @@ function getCategoryIcon(category: string | null | undefined) {
   return <CreditCard className={cls} />;
 }
 
+const LARGE_AMOUNT_THRESHOLD = 50000;
+
 export function TransactionCard({ transaction }: TransactionCardProps) {
   const borderClass = getCardBorderClass(transaction.card_company);
+  const isLarge = Math.abs(transaction.amount) >= LARGE_AMOUNT_THRESHOLD;
 
   return (
     <div
@@ -72,7 +75,10 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           <CurrencyDisplay
             amount={transaction.amount}
             size="md"
-            className={transaction.amount < 0 ? 'dark:text-orange-400 text-orange-600' : undefined}
+            className={[
+              transaction.amount < 0 ? 'dark:text-orange-400 text-orange-600' : '',
+              isLarge ? 'font-bold' : '',
+            ].filter(Boolean).join(' ') || undefined}
           />
           {transaction.category && (
             <div className="flex items-center gap-1">

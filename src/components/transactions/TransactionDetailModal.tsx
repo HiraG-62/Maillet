@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { CardTransaction } from '@/types/transaction';
 import { CATEGORIES } from '@/services/category';
-import { updateTransactionCategory, updateTransactionMemo, updateTransactionTags, getTransactions } from '@/lib/transactions';
+import { updateTransactionCategory, updateTransactionMemo, updateTransactionTags, getTransactions, deleteTransaction } from '@/lib/transactions';
 import { TagBadge } from '@/components/transactions/TagBadge';
 import { saveDB } from '@/lib/database';
 import { formatDateFull, formatCurrency } from '@/lib/utils';
@@ -11,7 +11,7 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 
 const CATEGORY_KEYS = Object.keys(CATEGORIES);
 
@@ -34,6 +34,8 @@ export function TransactionDetailModal({
   const [tagInput, setTagInput] = useState('');
   const [allTags, setAllTags] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (transaction) {
@@ -50,6 +52,22 @@ export function TransactionDetailModal({
       setAllTags([...tagSet]);
     }).catch(() => {});
   }, []);
+
+  async function handleDelete() {
+    if (!transaction?.id) return;
+    setIsDeleting(true);
+    try {
+      await deleteTransaction(transaction.id);
+      await saveDB();
+      onSaved();
+      onOpenChange(false);
+    } catch (err) {
+      console.error('[TransactionDetailModal] Delete failed:', err);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }
 
   async function handleSave() {
     if (!transaction?.id) return;
@@ -179,11 +197,40 @@ export function TransactionDetailModal({
           </div>
         </div>
 
-        {/* Save button */}
-        <div className="mt-6 flex justify-end">
+        {/* Actions */}
+        <div className="mt-6 flex justify-between items-center">
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isSaving || isDeleting}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-red-500 hover:bg-red-500/10 border border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              削除
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--color-text-secondary)]">本当に削除しますか？</span>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                削除する
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="px-3 py-1.5 rounded-md text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-border)]/30 disabled:opacity-50 transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          )}
           <button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || isDeleting}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSaving ? (
