@@ -11,7 +11,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
+  const { transactions, isLoading, setTransactions, setLoading, setDbWarning } = useTransactionStore();
   const initRef = useRef(false);
 
   useEffect(() => {
@@ -19,7 +19,12 @@ export function Layout({ children }: LayoutProps) {
     initRef.current = true;
     setLoading(true);
     initDB()
-      .then(() => getTransactions())
+      .then((res) => {
+        if (res?.warning) {
+          setDbWarning(res.warning);
+        }
+        return getTransactions();
+      })
       .then((data) => {
         setTransactions(data ?? []);
       })
