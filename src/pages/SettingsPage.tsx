@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router';
 import { Bot, Database, List, Mail, Settings, Sun, Wallet } from 'lucide-react';
 import { SyncPanel } from '@/components/common/SyncPanel';
 import { BudgetSection } from '@/components/settings/BudgetSection';
@@ -82,6 +83,16 @@ export default function SettingsPage() {
       >
         <ExportSection />
       </SectionCard>
+
+      <div className="flex justify-center gap-4 mt-2 mb-6 text-xs text-[var(--color-text-muted)]">
+        <Link to="/privacy" className="hover:text-[var(--color-text-secondary)] transition-colors">
+          プライバシーポリシー
+        </Link>
+        <span>·</span>
+        <Link to="/terms" className="hover:text-[var(--color-text-secondary)] transition-colors">
+          利用規約
+        </Link>
+      </div>
     </div>
   );
 }
