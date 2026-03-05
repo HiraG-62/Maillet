@@ -83,16 +83,22 @@ export async function exchangeCodeForToken(
   verifier: string,
   config: GmailAuthConfig
 ): Promise<OAuthToken> {
-  const response = await fetch('https://oauth2.googleapis.com/token', {
+  if (window.location.hostname.endsWith('.github.io')) {
+    throw new AuthError(
+      'OAuth認証はNetlify環境でのみ利用可能です。本番サイトでお試しください。',
+      'NETLIFY_ONLY'
+    );
+  }
+
+  const response = await fetch('/api/auth-token', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       code,
       client_id: config.clientId,
       redirect_uri: config.redirectUri,
       code_verifier: verifier,
       grant_type: 'authorization_code',
-      ...(config.clientSecret ? { client_secret: config.clientSecret } : {}),
     }),
   });
 
@@ -114,14 +120,20 @@ export async function refreshToken(
   refreshTokenStr: string,
   config: GmailAuthConfig
 ): Promise<OAuthToken> {
-  const response = await fetch('https://oauth2.googleapis.com/token', {
+  if (window.location.hostname.endsWith('.github.io')) {
+    throw new AuthError(
+      'OAuth認証はNetlify環境でのみ利用可能です。本番サイトでお試しください。',
+      'NETLIFY_ONLY'
+    );
+  }
+
+  const response = await fetch('/api/auth-token', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       refresh_token: refreshTokenStr,
       client_id: config.clientId,
       grant_type: 'refresh_token',
-      ...(config.clientSecret ? { client_secret: config.clientSecret } : {}),
     }),
   });
 
