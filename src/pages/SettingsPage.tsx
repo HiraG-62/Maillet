@@ -54,20 +54,6 @@ export default function SettingsPage() {
       </SectionCard>
 
       <SectionCard
-        icon={<Bot className="w-4 h-4 text-[var(--color-primary)]" />}
-        label="AI 設定"
-      >
-        <ApiKeySection />
-      </SectionCard>
-
-      <SectionCard
-        icon={<Sun className="w-4 h-4 text-[var(--color-primary)]" />}
-        label="テーマ"
-      >
-        <ThemeSection />
-      </SectionCard>
-
-      <SectionCard
         icon={<List className="w-4 h-4 text-[var(--color-primary)]" />}
         label="カテゴリ設定"
       >
@@ -82,6 +68,20 @@ export default function SettingsPage() {
         label="データ管理"
       >
         <ExportSection />
+      </SectionCard>
+
+      <SectionCard
+        icon={<Bot className="w-4 h-4 text-[var(--color-primary)]" />}
+        label="AI 設定"
+      >
+        <ApiKeySection />
+      </SectionCard>
+
+      <SectionCard
+        icon={<Sun className="w-4 h-4 text-[var(--color-primary)]" />}
+        label="テーマ"
+      >
+        <ThemeSection />
       </SectionCard>
 
       <div className="flex justify-center gap-4 mt-2 mb-6 text-xs text-[var(--color-text-muted)]">
