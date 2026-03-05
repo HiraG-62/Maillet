@@ -57,6 +57,10 @@ export default function TransactionsPage() {
     return cats.sort();
   }, [transactions]);
 
+  const availableCards = useMemo(() => {
+    return [...new Set(transactions.map(t => t.card_company).filter(Boolean))] as string[];
+  }, [transactions]);
+
   const availableTags = useMemo(() => {
     const tagSet = new Set<string>();
     transactions.forEach((tx) => (tx.tags ?? []).forEach((t) => tagSet.add(t)));
@@ -79,7 +83,11 @@ export default function TransactionsPage() {
         if (!inMerchant && !inDesc) return false;
       }
       if (selectedCategory) {
-        if (tx.category !== selectedCategory) return false;
+        if (selectedCategory === '__unclassified__') {
+          if (tx.category && tx.category !== '') return false;
+        } else {
+          if (tx.category !== selectedCategory) return false;
+        }
       }
       if (selectedTags.length > 0) {
         const txTags = tx.tags ?? [];
@@ -124,6 +132,7 @@ export default function TransactionsPage() {
         searchQuery={searchQuery}
         categories={categories}
         selectedCategory={selectedCategory}
+        availableCards={availableCards}
         availableTags={availableTags}
         selectedTags={selectedTags}
         onMonthChange={setSelectedMonth}

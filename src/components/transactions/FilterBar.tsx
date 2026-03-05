@@ -14,6 +14,7 @@ interface FilterBarProps {
   searchQuery: string;
   categories: string[];
   selectedCategory: string;
+  availableCards?: string[];
   availableTags?: string[];
   selectedTags?: string[];
   onMonthChange: (month: string) => void;
@@ -36,21 +37,13 @@ function getPast12Months(): Array<{ value: string; label: string }> {
   return months;
 }
 
-const CARD_OPTIONS = [
-  { value: 'all', label: '全カード' },
-  { value: 'SMBC', label: 'SMBC' },
-  { value: 'JCB', label: 'JCB' },
-  { value: '楽天', label: '楽天' },
-  { value: 'AMEX', label: 'AMEX' },
-  { value: 'dCard', label: 'dCard' },
-];
-
 export function FilterBar({
   selectedMonth,
   selectedCard,
   searchQuery,
   categories,
   selectedCategory,
+  availableCards = [],
   availableTags = [],
   selectedTags = [],
   onMonthChange,
@@ -100,9 +93,10 @@ export function FilterBar({
             <SelectValue placeholder="カード選択" />
           </SelectTrigger>
           <SelectContent>
-            {CARD_OPTIONS.map((c) => (
-              <SelectItem key={c.value} value={c.value}>
-                {c.label}
+            <SelectItem value="all">全カード</SelectItem>
+            {availableCards.map((card) => (
+              <SelectItem key={card} value={card}>
+                {card}
               </SelectItem>
             ))}
           </SelectContent>
@@ -112,6 +106,7 @@ export function FilterBar({
         <Select
           value={selectedCategory || '__all__'}
           onValueChange={(v) => onCategoryChange(v === '__all__' ? '' : v)}
+          // Note: '__unclassified__' is passed through as-is to the parent
         >
           <SelectTrigger
             className={`w-full md:w-36 bg-transparent text-[var(--color-text-primary)] transition-colors ${
@@ -124,6 +119,7 @@ export function FilterBar({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">全カテゴリ</SelectItem>
+            <SelectItem value="__unclassified__">未分類</SelectItem>
             {categories.filter(c => c && c.trim() !== '').map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
