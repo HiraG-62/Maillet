@@ -11,15 +11,20 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CATEGORY_KEYS = Object.keys(CATEGORIES);
+const DESCRIPTION_MAX_LEN = 80;
 
 interface TransactionDetailModalProps {
   transaction: CardTransaction | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
 }
 
 export function TransactionDetailModal({
@@ -27,6 +32,10 @@ export function TransactionDetailModal({
   open,
   onOpenChange,
   onSaved,
+  onPrev,
+  onNext,
+  hasPrev = false,
+  hasNext = false,
 }: TransactionDetailModalProps) {
   const [category, setCategory] = useState<string>('');
   const [memo, setMemo] = useState<string>('');
@@ -36,12 +45,14 @@ export function TransactionDetailModal({
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     if (transaction) {
       setCategory(transaction.category || '__none__');
       setMemo(transaction.memo ?? '');
       setTags(transaction.tags ?? []);
+      setIsDescriptionExpanded(false);
     }
   }, [transaction]);
 
@@ -89,12 +100,45 @@ export function TransactionDetailModal({
 
   if (!transaction) return null;
 
+  const description = transaction.description;
+  const hasDescription = description != null && description.trim() !== '';
+  const isLongDescription = hasDescription && description.length > DESCRIPTION_MAX_LEN;
+  const displayedDescription = isLongDescription && !isDescriptionExpanded
+    ? description.slice(0, DESCRIPTION_MAX_LEN) + '…'
+    : description;
+
+  const showNavigation = onPrev != null || onNext != null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>取引詳細</DialogTitle>
-          <DialogDescription>{transaction.merchant}</DialogDescription>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <DialogTitle>取引詳細</DialogTitle>
+              <DialogDescription>{transaction.merchant}</DialogDescription>
+            </div>
+            {showNavigation && (
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={onPrev}
+                  disabled={!hasPrev}
+                  className="p-1.5 rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-border)]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  aria-label="前の取引"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={onNext}
+                  disabled={!hasNext}
+                  className="p-1.5 rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-border)]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  aria-label="次の取引"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
@@ -125,6 +169,24 @@ export function TransactionDetailModal({
               </p>
             </div>
           </div>
+
+          {/* Description */}
+          {hasDescription && (
+            <div>
+              <label className="text-xs text-[var(--color-text-muted)] block mb-1">説明</label>
+              <p className="text-sm text-[var(--color-text-primary)] break-words">
+                {displayedDescription}
+              </p>
+              {isLongDescription && (
+                <button
+                  onClick={() => setIsDescriptionExpanded((v) => !v)}
+                  className="mt-0.5 text-xs text-[var(--color-primary)] hover:underline"
+                >
+                  {isDescriptionExpanded ? '折り畳む' : 'もっと見る'}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Category (editable) */}
           <div>

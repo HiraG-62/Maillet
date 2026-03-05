@@ -295,9 +295,11 @@ export default function DashboardPage() {
       )}
 
       {/* ===== Subscription Detection (F-002b) ===== */}
-      <div className="mb-8 slide-up" style={{ animationDelay: '0.05s' }}>
-        <SubscriptionWidget subscriptions={subscriptions} isLoading={subsLoading} />
-      </div>
+      {!isEmpty && (
+        <div className="mb-8 slide-up" style={{ animationDelay: '0.05s' }}>
+          <SubscriptionWidget subscriptions={subscriptions} isLoading={subsLoading} />
+        </div>
+      )}
 
       {/* ===== Recent Transactions ===== */}
       {!isEmpty && recentTransactions.length > 0 && (
@@ -338,23 +340,44 @@ export default function DashboardPage() {
       {isEmpty && (
         <div className="float-card p-12 text-center mb-8 fade-in">
           <div className="text-4xl mb-3">📭</div>
-          <p className="text-[var(--color-text-secondary)] text-lg mb-2">データがありません</p>
-          <p className="text-[var(--color-text-muted)] text-sm mb-6">
-            Gmailからカード利用通知を同期して始めましょう
-          </p>
-          <button
-            onClick={() => void startSync()}
-            disabled={isSyncing}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
-            style={{
-              backgroundColor: 'var(--color-primary)',
-              color: 'var(--color-text-inverse)',
-              opacity: isSyncing ? 0.6 : 1,
-              cursor: isSyncing ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSyncing ? '同期中...' : 'Gmailから同期する'}
-          </button>
+          {!authState.isAuthenticated ? (
+            <>
+              <p className="text-[var(--color-text-secondary)] text-lg mb-2">データがありません</p>
+              <p className="text-[var(--color-text-muted)] text-sm mb-6">
+                まずGmailを連携してください
+              </p>
+              <button
+                onClick={() => navigate('/settings')}
+                className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'var(--color-text-inverse)',
+                }}
+              >
+                設定画面へ →
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-[var(--color-text-secondary)] text-lg mb-2">取引が見つかりませんでした</p>
+              <p className="text-[var(--color-text-muted)] text-sm mb-6">
+                Gmail同期を実行してください
+              </p>
+              <button
+                onClick={() => void startSync()}
+                disabled={isSyncing}
+                className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'var(--color-text-inverse)',
+                  opacity: isSyncing ? 0.6 : 1,
+                  cursor: isSyncing ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isSyncing ? '同期中...' : 'Gmailから同期する'}
+              </button>
+            </>
+          )}
         </div>
       )}
 

@@ -13,7 +13,6 @@ import { downloadCsv } from '@/services/csvExport';
 export default function TransactionsPage() {
   const { transactions, isLoading, setTransactions, setLoading } = useTransactionStore();
 
-  // マウント時にDBからデータを読み込む（ページ遷移後もデータを保持）
   useEffect(() => {
     setLoading(true);
     initDB()
@@ -39,6 +38,7 @@ export default function TransactionsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mobileDisplayCount, setMobileDisplayCount] = useState(50);
   const [sortKey, setSortKey] = useState<SortKey>('date_desc');
@@ -72,7 +72,7 @@ export default function TransactionsPage() {
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (selectedMonth !== 'all') {
-        const txMonth = (tx.transaction_date ?? '').slice(0, 7); // "YYYY-MM"
+        const txMonth = (tx.transaction_date ?? '').slice(0, 7);
         if (txMonth !== selectedMonth) return false;
       }
       if (selectedCard !== 'all') {
@@ -119,7 +119,39 @@ export default function TransactionsPage() {
     return arr;
   }, [filtered, sortKey]);
 
-  // フィルター変更時にモバイル表示件数をリセット
+  useEffect(() => {
+    if (!selectedTransaction) {
+      setSelectedIndex(-1);
+      return;
+    }
+    const idx = sortedFiltered.findIndex((tx) => tx.id === selectedTransaction.id);
+    setSelectedIndex(idx);
+  }, [selectedTransaction, sortedFiltered]);
+
+  const handlePrev = useCallback(() => {
+    setSelectedIndex((idx) => {
+      if (idx <= 0) return idx;
+      return idx - 1;
+    });
+  }, []);
+
+  const handleNext = useCallback(() => {
+    setSelectedIndex((idx) => {
+      if (idx < 0 || idx >= sortedFiltered.length - 1) return idx;
+      return idx + 1;
+    });
+  }, [sortedFiltered.length]);
+
+  useEffect(() => {
+    if (selectedIndex >= 0 && selectedIndex < sortedFiltered.length) {
+      const tx = sortedFiltered[selectedIndex];
+      if (tx && tx.id !== selectedTransaction?.id) {
+        setSelectedTransaction(tx);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex]);
+
   useEffect(() => {
     setMobileDisplayCount(50);
   }, [selectedMonth, selectedCard, searchQuery, selectedCategory, selectedTags]);
@@ -184,8 +216,22 @@ export default function TransactionsPage() {
             <Receipt className="w-8 h-8 text-[var(--color-text-muted)]" />
           </div>
           <div className="text-center">
-            <p className="text-[var(--color-text-secondary)] font-medium">取引データがありません</p>
-            <p className="text-[var(--color-text-muted)] text-sm mt-1">フィルターを変更するか、メールを同期してください</p>
+            {transactions.length > 0 ? (
+              <>
+                <p className="text-[var(--color-text-secondary)] font-medium">条件に一致する取引がありません</p>
+                <button
+                  onClick={handleReset}
+                  className="text-[var(--color-primary)] text-sm mt-1 hover:underline"
+                >
+                  フィルターをリセットしてください
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-[var(--color-text-secondary)] font-medium">取引データがありません</p>
+                <p className="text-[var(--color-text-muted)] text-sm mt-1">Gmail同期を実行してください</p>
+              </>
+            )}
           </div>
         </div>
       ) : (
@@ -225,6 +271,10 @@ export default function TransactionsPage() {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSaved={handleModalSaved}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        hasPrev={selectedIndex > 0}
+        hasNext={selectedIndex >= 0 && selectedIndex < sortedFiltered.length - 1}
       />
     </div>
   );
