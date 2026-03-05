@@ -298,7 +298,7 @@ export function FilterBar({
         {hasActiveFilter && onReset && (
           <button
             onClick={onReset}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-md dark:bg-white/5 bg-black/5 dark:hover:bg-white/10 hover:bg-black/10 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-sm transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-md dark:bg-white/5 bg-black/5 dark:hover:bg-white/10 hover:bg-black/10 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-sm transition-colors shrink-0"
           >
             <X className="h-3.5 w-3.5" />
             <span>リセット</span>

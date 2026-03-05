@@ -11,7 +11,7 @@ export function TagBadge({ tag, onRemove }: TagBadgeProps) {
         <button
           type="button"
           onClick={onRemove}
-          className="leading-none hover:opacity-70 transition-opacity"
+          className="relative leading-none hover:opacity-70 transition-opacity before:content-[''] before:absolute before:-inset-4"
           aria-label={`タグ「${tag}」を削除`}
         >
           ×

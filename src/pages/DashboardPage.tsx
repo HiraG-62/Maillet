@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSync } from '@/hooks/useSync';
 import { getTransactions } from '@/lib/transactions';
 import { formatDateRelative, formatCurrency } from '@/lib/utils';
+import { getCategoryEmoji } from '@/lib/category-utils';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { CategoryBudgetProgress } from '@/components/dashboard/CategoryBudgetProgress';
 import { CategoryHealthBadge } from '@/components/dashboard/CategoryHealthBadge';
@@ -38,25 +39,13 @@ function addMonths(ym: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function getCategoryEmoji(category: string | null | undefined): string {
-  if (!category) return '💳';
-  const lower = category.toLowerCase();
-  if (lower.includes('食') || lower.includes('飲食') || lower.includes('グルメ')) return '🍽️';
-  if (lower.includes('交通') || lower.includes('鉄道')) return '🚃';
-  if (lower.includes('ショッピング') || lower.includes('衣')) return '🛍️';
-  if (lower.includes('光熱') || lower.includes('電気') || lower.includes('水道')) return '⚡';
-  if (lower.includes('通信') || lower.includes('携帯')) return '📱';
-  if (lower.includes('医療') || lower.includes('健康')) return '🏥';
-  if (lower.includes('娯楽') || lower.includes('エンタメ')) return '🎬';
-  return '💳';
-}
 
 export default function DashboardPage() {
   const { transactions, isLoading, dbWarning, setTransactions } = useTransactionStore();
   const monthlyBudget = useSettingsStore((s) => s.monthly_budget);
   const categoryBudgets = useSettingsStore((s) => s.categoryBudgets);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
-  const { error: authError } = useAuth();
+  const { authState, error: authError } = useAuth();
   const { isSyncing, result, progress, startSync } = useSync();
   const { subscriptions, isLoading: subsLoading } = useSubscriptions(transactions);
   const navigate = useNavigate();
