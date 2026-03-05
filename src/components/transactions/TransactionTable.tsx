@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { CardTransaction } from '@/types/transaction';
 import { CurrencyDisplay } from '@/components/dashboard/CurrencyDisplay';
 import { formatDateFull } from '@/lib/utils';
+import { getCategoryColor } from '@/lib/category-colors';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import {
   Table,
@@ -143,7 +144,14 @@ export function TransactionTable({ transactions, onRowClick }: TransactionTableP
                 <TableCell>
                   {tx.category ? (
                     <div className="flex items-center gap-1">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs dark:bg-white/8 bg-black/[8%] text-[var(--color-text-secondary)] border dark:border-white/10 border-black/10">
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs border"
+                        style={{
+                          backgroundColor: getCategoryColor(tx.category) + '33',
+                          color: getCategoryColor(tx.category),
+                          borderColor: getCategoryColor(tx.category) + '4D',
+                        }}
+                      >
                         {tx.category}
                       </span>
                       {tx.category_source === 'auto' && (
