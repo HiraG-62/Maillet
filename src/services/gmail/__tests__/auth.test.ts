@@ -43,6 +43,9 @@ import {
   logout,
   getAuthState,
   getAccessToken,
+  exchangeCodeForToken,
+  refreshToken,
+  AuthError,
 } from '../auth';
 import type { GmailAuthConfig, OAuthToken } from '@/types/gmail';
 
@@ -264,5 +267,146 @@ describe('getAuthState', () => {
     await logout();
     const state = await getAuthState();
     expect(state.isAuthenticated).toBe(false);
+  });
+});
+
+// ---- exchangeCodeForToken ----
+
+describe('exchangeCodeForToken', () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+    vi.stubGlobal('window', { location: { hostname: 'localhost' } });
+  });
+
+  afterEach(async () => {
+    await logout();
+    sessionStorageMock.clear();
+    mockRefreshToken = null;
+    vi.unstubAllGlobals();
+    vi.stubGlobal('sessionStorage', sessionStorageMock);
+    vi.stubGlobal('localStorage', localStorageMock);
+  });
+
+  it('GitHub Pages 環境（.github.io）では NETLIFY_ONLY エラーを投げる', async () => {
+    vi.stubGlobal('window', { location: { hostname: 'hirag-62.github.io' } });
+    await expect(
+      exchangeCodeForToken('code', 'verifier', testConfig)
+    ).rejects.toMatchObject({ code: 'NETLIFY_ONLY' });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('/api/auth-token に POST リクエストを送る', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        access_token: 'new-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      }),
+    });
+
+    await exchangeCodeForToken('auth-code', 'code-verifier', testConfig);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/auth-token',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
+  it('レスポンスが ok でない場合は TOKEN_EXCHANGE_FAILED エラーを投げる', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      text: () => Promise.resolve('Bad Request'),
+    });
+
+    await expect(
+      exchangeCodeForToken('bad-code', 'verifier', testConfig)
+    ).rejects.toMatchObject({ code: 'TOKEN_EXCHANGE_FAILED' });
+  });
+
+  it('AuthError インスタンスを投げる', async () => {
+    vi.stubGlobal('window', { location: { hostname: 'hirag-62.github.io' } });
+    await expect(
+      exchangeCodeForToken('code', 'verifier', testConfig)
+    ).rejects.toBeInstanceOf(AuthError);
+  });
+});
+
+// ---- refreshToken ----
+
+describe('refreshToken', () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+    vi.stubGlobal('window', { location: { hostname: 'localhost' } });
+  });
+
+  afterEach(async () => {
+    await logout();
+    sessionStorageMock.clear();
+    mockRefreshToken = null;
+    vi.unstubAllGlobals();
+    vi.stubGlobal('sessionStorage', sessionStorageMock);
+    vi.stubGlobal('localStorage', localStorageMock);
+  });
+
+  it('GitHub Pages 環境（.github.io）では NETLIFY_ONLY エラーを投げる', async () => {
+    vi.stubGlobal('window', { location: { hostname: 'hirag-62.github.io' } });
+    await expect(
+      refreshToken('my-refresh-token', testConfig)
+    ).rejects.toMatchObject({ code: 'NETLIFY_ONLY' });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('/api/auth-token に POST リクエストを送る', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        access_token: 'refreshed-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      }),
+    });
+
+    await refreshToken('my-refresh-token', testConfig);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/auth-token',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
+  it('レスポンスが ok でない場合は TOKEN_REFRESH_FAILED エラーを投げる', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      text: () => Promise.resolve('Unauthorized'),
+    });
+
+    await expect(
+      refreshToken('bad-refresh-token', testConfig)
+    ).rejects.toMatchObject({ code: 'TOKEN_REFRESH_FAILED' });
+  });
+
+  it('レスポンスに refresh_token がない場合は既存値を保持する', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        access_token: 'refreshed-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        scope: 'https://www.googleapis.com/auth/gmail.readonly',
+        // refresh_token なし
+      }),
+    });
+
+    const result = await refreshToken('original-refresh-token', testConfig);
+    expect(result.refresh_token).toBe('original-refresh-token');
   });
 });

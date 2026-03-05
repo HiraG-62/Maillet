@@ -10,7 +10,6 @@ const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 function getGmailConfig(): GmailAuthConfig {
   return {
     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
-    clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
     redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}`,
     scope: ['https://www.googleapis.com/auth/gmail.readonly'],
   };

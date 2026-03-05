@@ -36,7 +36,6 @@ export interface SyncDateRange {
 
 export interface GmailAuthConfig {
   clientId: string;
-  clientSecret?: string;
   redirectUri: string;
   scope: string[];
 }
